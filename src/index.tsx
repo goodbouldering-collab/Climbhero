@@ -598,7 +598,7 @@ app.get('/api/users/:id/favorites', async (c) => {
 // ============ Frontend Route ============
 
 app.get('/', (c) => {
-  return c.html(`
+  const html = `
     <!DOCTYPE html>
     <html lang="ja">
     <head>
@@ -615,7 +615,8 @@ app.get('/', (c) => {
         <script src="/static/app.js"></script>
     </body>
     </html>
-  `)
+  `;
+  return c.html(html)
 })
 
 export default app

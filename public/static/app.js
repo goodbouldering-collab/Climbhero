@@ -84,12 +84,12 @@ function updateAuthUI() {
     if (authButtons) authButtons.style.display = 'none';
     if (userMenu) {
       userMenu.style.display = 'block';
-      userMenu.innerHTML = \`
-        <span class="text-gray-700 mr-3">\${state.currentUser.username}</span>
+      userMenu.innerHTML = `
+        <span class="text-gray-700 mr-3">${state.currentUser.username}</span>
         <button onclick="showMyPageMenu(event)" class="text-purple-600 hover:text-purple-700">
           <i class="fas fa-user-circle text-2xl"></i>
         </button>
-      \`;
+      `;
     }
   } else {
     if (authButtons) authButtons.style.display = 'flex';
@@ -101,7 +101,7 @@ function showMyPageMenu(e) {
   e.stopPropagation();
   const menu = document.createElement('div');
   menu.className = 'absolute right-0 top-12 bg-white shadow-lg rounded-lg py-2 z-50 w-48';
-  menu.innerHTML = \`
+  menu.innerHTML = `
     <a href="#mypage" data-link class="block px-4 py-2 hover:bg-gray-100">
       <i class="fas fa-user mr-2"></i>マイページ
     </a>
@@ -111,7 +111,7 @@ function showMyPageMenu(e) {
     <button onclick="logout()" class="block w-full text-left px-4 py-2 hover:bg-gray-100">
       <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
     </button>
-  \`;
+  `;
   
   document.body.appendChild(menu);
   
@@ -139,22 +139,22 @@ async function logout() {
 function showAuthModal(mode = 'login') {
   const modal = document.createElement('div');
   modal.className = 'modal active';
-  modal.innerHTML = \`
+  modal.innerHTML = `
     <div class="modal-content">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">\${mode === 'login' ? 'ログイン' : '新規登録'}</h2>
+        <h2 class="text-2xl font-bold text-gray-800">${mode === 'login' ? 'ログイン' : '新規登録'}</h2>
         <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
           <i class="fas fa-times text-2xl"></i>
         </button>
       </div>
       
       <form id="auth-form" class="space-y-4">
-        \${mode === 'register' ? \`
+        ${mode === 'register' ? `
           <div>
             <label class="block text-gray-700 font-bold mb-2">ユーザー名</label>
             <input type="text" name="username" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
           </div>
-        \` : ''}
+        ` : ''}
         
         <div>
           <label class="block text-gray-700 font-bold mb-2">メールアドレス</label>
@@ -167,17 +167,17 @@ function showAuthModal(mode = 'login') {
         </div>
         
         <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition">
-          \${mode === 'login' ? 'ログイン' : '登録'}
+          ${mode === 'login' ? 'ログイン' : '登録'}
         </button>
       </form>
       
       <div class="mt-4 text-center">
-        <button onclick="switchAuthMode('\${mode === 'login' ? 'register' : 'login'}')" class="text-purple-600 hover:underline">
-          \${mode === 'login' ? 'アカウントをお持ちでない方' : 'すでにアカウントをお持ちの方'}
+        <button onclick="switchAuthMode('${mode === 'login' ? 'register' : 'login'}')" class="text-purple-600 hover:underline">
+          ${mode === 'login' ? 'アカウントをお持ちでない方' : 'すでにアカウントをお持ちの方'}
         </button>
       </div>
     </div>
-  \`;
+  `;
   
   document.body.appendChild(modal);
   
@@ -193,7 +193,7 @@ function showAuthModal(mode = 'login') {
       state.currentUser = response.data.user;
       updateAuthUI();
       closeModal();
-      showNotification(\`\${mode === 'login' ? 'ログイン' : '登録'}しました！\`, 'success');
+      showNotification(`${mode === 'login' ? 'ログイン' : '登録'}しました！`, 'success');
       router();
     } catch (error) {
       showNotification(error.response?.data?.error || 'エラーが発生しました', 'error');
@@ -216,7 +216,7 @@ function renderHomePage() {
   state.currentPage = 'home';
   const root = document.getElementById('root');
   
-  root.innerHTML = \`
+  root.innerHTML = `
     <!-- Header -->
     <header class="bg-white shadow-md sticky top-0 z-50">
       <div class="container mx-auto px-4 py-4">
@@ -424,7 +424,7 @@ function renderHomePage() {
         </div>
       </div>
     </footer>
-  \`;
+  `;
   
   updateAuthUI();
   loadVideos();
@@ -460,7 +460,7 @@ async function loadVideos(append = false) {
       category: state.currentCategory
     });
 
-    const response = await axios.get(\`/api/videos?\${params}\`);
+    const response = await axios.get(`/api/videos?${params}`);
     const { videos, pagination } = response.data;
 
     const videoGrid = document.getElementById('video-grid');
@@ -518,8 +518,8 @@ async function createVideoCard(video) {
   if (state.currentUser) {
     try {
       const [likeRes, favRes] = await Promise.all([
-        axios.get(\`/api/videos/\${video.id}/liked\`),
-        axios.get(\`/api/videos/\${video.id}/favorited\`)
+        axios.get(`/api/videos/${video.id}/liked`),
+        axios.get(`/api/videos/${video.id}/favorited`)
       ]);
       liked = likeRes.data.liked;
       favorited = favRes.data.favorited;
@@ -542,50 +542,50 @@ async function createVideoCard(video) {
     gym_review: 'ジムレビュー'
   };
 
-  card.innerHTML = \`
+  card.innerHTML = `
     <div class="video-card-inner">
       <div class="video-card-front">
         <div class="relative">
-          <img src="\${video.thumbnail_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400'}" 
-               alt="\${video.title}" 
+          <img src="${video.thumbnail_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400'}" 
+               alt="${video.title}" 
                class="w-full h-48 object-cover">
-          \${video.duration ? \`<span class="duration-badge">\${video.duration}</span>\` : ''}
+          ${video.duration ? `<span class="duration-badge">${video.duration}</span>` : ''}
         </div>
         <div class="p-4">
           <div class="flex items-center justify-between mb-2">
-            <span class="category-badge \${categoryColors[video.category] || 'bg-gray-500'} text-white">
-              \${categoryNames[video.category] || video.category}
+            <span class="category-badge ${categoryColors[video.category] || 'bg-gray-500'} text-white">
+              ${categoryNames[video.category] || video.category}
             </span>
             <div class="flex items-center space-x-3 text-gray-600">
-              <button onclick="toggleLike(\${video.id}, event)" class="hover:text-red-500 transition \${liked ? 'text-red-500' : ''}">
-                <i class="\${liked ? 'fas' : 'far'} fa-heart"></i> \${video.likes || 0}
+              <button onclick="toggleLike(${video.id}, event)" class="hover:text-red-500 transition ${liked ? 'text-red-500' : ''}">
+                <i class="${liked ? 'fas' : 'far'} fa-heart"></i> ${video.likes || 0}
               </button>
-              <button onclick="toggleFavorite(\${video.id}, event)" class="hover:text-yellow-500 transition \${favorited ? 'text-yellow-500' : ''}">
-                <i class="\${favorited ? 'fas' : 'far'} fa-star"></i>
+              <button onclick="toggleFavorite(${video.id}, event)" class="hover:text-yellow-500 transition ${favorited ? 'text-yellow-500' : ''}">
+                <i class="${favorited ? 'fas' : 'far'} fa-star"></i>
               </button>
             </div>
           </div>
-          <h4 class="text-lg font-bold text-gray-800 mb-2 line-clamp-2">\${video.title}</h4>
-          <p class="text-sm text-gray-600 mb-2">\${video.channel_name || 'Unknown'}</p>
+          <h4 class="text-lg font-bold text-gray-800 mb-2 line-clamp-2">${video.title}</h4>
+          <p class="text-sm text-gray-600 mb-2">${video.channel_name || 'Unknown'}</p>
           <div class="flex items-center justify-between text-sm text-gray-500">
-            <span><i class="fas fa-eye mr-1"></i>\${formatNumber(video.views || 0)}</span>
-            <span>\${formatDate(video.created_at)}</span>
+            <span><i class="fas fa-eye mr-1"></i>${formatNumber(video.views || 0)}</span>
+            <span>${formatDate(video.created_at)}</span>
           </div>
         </div>
       </div>
       
       <div class="video-card-back bg-white">
-        <h4 class="font-bold text-gray-800 mb-2">\${video.title}</h4>
-        <p class="text-sm text-gray-600 mb-4 line-clamp-3">\${video.description || '説明なし'}</p>
-        <button onclick="openVideo('\${video.url}')" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
+        <h4 class="font-bold text-gray-800 mb-2">${video.title}</h4>
+        <p class="text-sm text-gray-600 mb-4 line-clamp-3">${video.description || '説明なし'}</p>
+        <button onclick="openVideo('${video.url}')" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
           動画を見る
         </button>
-        <button onclick="showVideoDetail(\${video.id})" class="w-full mt-2 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
+        <button onclick="showVideoDetail(${video.id})" class="w-full mt-2 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">
           詳細・コメント
         </button>
       </div>
     </div>
-  \`;
+  `;
 
   return card;
 }
@@ -601,24 +601,24 @@ async function createHorizontalVideoCard(video) {
     gym_review: 'bg-yellow-500'
   };
 
-  card.innerHTML = \`
+  card.innerHTML = `
     <div class="relative">
-      <img src="\${video.thumbnail_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400'}" 
-           alt="\${video.title}" 
+      <img src="${video.thumbnail_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400'}" 
+           alt="${video.title}" 
            class="w-full h-40 object-cover">
-      \${video.duration ? \`<span class="duration-badge">\${video.duration}</span>\` : ''}
+      ${video.duration ? `<span class="duration-badge">${video.duration}</span>` : ''}
     </div>
     <div class="p-3">
-      <span class="category-badge \${categoryColors[video.category] || 'bg-gray-500'} text-white text-xs">
-        \${video.category}
+      <span class="category-badge ${categoryColors[video.category] || 'bg-gray-500'} text-white text-xs">
+        ${video.category}
       </span>
-      <h4 class="text-sm font-bold text-gray-800 mt-2 line-clamp-2">\${video.title}</h4>
+      <h4 class="text-sm font-bold text-gray-800 mt-2 line-clamp-2">${video.title}</h4>
       <div class="flex items-center justify-between text-xs text-gray-500 mt-2">
-        <span><i class="fas fa-eye mr-1"></i>\${formatNumber(video.views || 0)}</span>
-        <span><i class="fas fa-heart mr-1"></i>\${video.likes || 0}</span>
+        <span><i class="fas fa-eye mr-1"></i>${formatNumber(video.views || 0)}</span>
+        <span><i class="fas fa-heart mr-1"></i>${video.likes || 0}</span>
       </div>
     </div>
-  \`;
+  `;
   
   card.addEventListener('click', () => openVideo(video.url));
   
@@ -632,8 +632,8 @@ function openVideo(url) {
 async function showVideoDetail(videoId) {
   try {
     const [videoRes, commentsRes] = await Promise.all([
-      axios.get(\`/api/videos/\${videoId}\`),
-      axios.get(\`/api/videos/\${videoId}/comments\`)
+      axios.get(`/api/videos/${videoId}`),
+      axios.get(`/api/videos/${videoId}/comments`)
     ]);
     
     const video = videoRes.data;
@@ -641,57 +641,57 @@ async function showVideoDetail(videoId) {
     
     const modal = document.createElement('div');
     modal.className = 'modal active';
-    modal.innerHTML = \`
+    modal.innerHTML = `
       <div class="modal-content" style="max-width: 800px;">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-bold text-gray-800">\${video.title}</h2>
+          <h2 class="text-2xl font-bold text-gray-800">${video.title}</h2>
           <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
             <i class="fas fa-times text-2xl"></i>
           </button>
         </div>
         
         <div class="mb-6">
-          <img src="\${video.thumbnail_url}" alt="\${video.title}" class="w-full rounded-lg">
-          <p class="text-gray-600 mt-4">\${video.description || '説明なし'}</p>
+          <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full rounded-lg">
+          <p class="text-gray-600 mt-4">${video.description || '説明なし'}</p>
           <div class="flex items-center justify-between mt-4 text-gray-600">
-            <span><i class="fas fa-eye mr-2"></i>\${formatNumber(video.views)}</span>
-            <span><i class="fas fa-heart mr-2"></i>\${video.likes}</span>
-            <span>\${video.channel_name}</span>
+            <span><i class="fas fa-eye mr-2"></i>${formatNumber(video.views)}</span>
+            <span><i class="fas fa-heart mr-2"></i>${video.likes}</span>
+            <span>${video.channel_name}</span>
           </div>
-          <a href="\${video.url}" target="_blank" class="block mt-4 bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition">
+          <a href="${video.url}" target="_blank" class="block mt-4 bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition">
             動画を見る
           </a>
         </div>
         
         <div class="border-t pt-6">
-          <h3 class="text-xl font-bold mb-4">コメント (\${comments.length})</h3>
+          <h3 class="text-xl font-bold mb-4">コメント (${comments.length})</h3>
           
-          \${state.currentUser ? \`
+          ${state.currentUser ? `
             <form id="comment-form" class="mb-6">
               <textarea name="content" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" rows="3" placeholder="コメントを入力..."></textarea>
               <button type="submit" class="mt-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
                 コメントする
               </button>
             </form>
-          \` : \`
+          ` : `
             <p class="text-gray-600 mb-6">コメントするには<button onclick="closeModal(); showAuthModal('login')" class="text-purple-600 hover:underline">ログイン</button>してください。</p>
-          \`}
+          `}
           
           <div id="comments-list" class="space-y-4">
-            \${comments.map(comment => \`
+            ${comments.map(comment => `
               <div class="bg-gray-50 p-4 rounded-lg">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="font-bold text-gray-800">\${comment.username}</span>
-                  <span class="text-sm text-gray-500">\${formatDate(comment.created_at)}</span>
+                  <span class="font-bold text-gray-800">${comment.username}</span>
+                  <span class="text-sm text-gray-500">${formatDate(comment.created_at)}</span>
                 </div>
-                <p class="text-gray-700">\${comment.content}</p>
+                <p class="text-gray-700">${comment.content}</p>
               </div>
-            \`).join('')}
-            \${comments.length === 0 ? '<p class="text-gray-500 text-center">まだコメントがありません</p>' : ''}
+            `).join('')}
+            ${comments.length === 0 ? '<p class="text-gray-500 text-center">まだコメントがありません</p>' : ''}
           </div>
         </div>
       </div>
-    \`;
+    `;
     
     document.body.appendChild(modal);
     
@@ -702,7 +702,7 @@ async function showVideoDetail(videoId) {
         const data = Object.fromEntries(formData);
         
         try {
-          await axios.post(\`/api/videos/\${videoId}/comments\`, data);
+          await axios.post(`/api/videos/${videoId}/comments`, data);
           closeModal();
           showNotification('コメントを投稿しました', 'success');
           setTimeout(() => showVideoDetail(videoId), 500);
@@ -747,7 +747,7 @@ async function searchVideos() {
   }
   
   try {
-    const response = await axios.get(\`/api/videos?search=\${encodeURIComponent(query)}&limit=20\`);
+    const response = await axios.get(`/api/videos?search=${encodeURIComponent(query)}&limit=20`);
     const videos = response.data.videos;
     
     const videoGrid = document.getElementById('video-grid');
@@ -777,7 +777,7 @@ async function toggleLike(videoId, event) {
   }
   
   try {
-    const response = await axios.post(\`/api/videos/\${videoId}/like\`);
+    const response = await axios.post(`/api/videos/${videoId}/like`);
     showNotification(response.data.message, 'success');
     loadVideos();
     loadHorizontalVideos();
@@ -795,7 +795,7 @@ async function toggleFavorite(videoId, event) {
   }
   
   try {
-    const response = await axios.post(\`/api/videos/\${videoId}/favorite\`);
+    const response = await axios.post(`/api/videos/${videoId}/favorite`);
     showNotification(response.data.message, 'success');
     loadVideos();
   } catch (error) {
@@ -826,7 +826,7 @@ function setupUploadForm() {
         if (url.includes('youtube.com') || url.includes('youtu.be')) {
           const videoId = extractYouTubeId(url);
           if (videoId) {
-            thumbnailUrl = \`https://img.youtube.com/vi/\${videoId}/maxresdefault.jpg\`;
+            thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
           }
         }
 
@@ -861,7 +861,7 @@ async function renderRankingsPage() {
   state.currentPage = 'rankings';
   const root = document.getElementById('root');
   
-  root.innerHTML = \`
+  root.innerHTML = `
     <header class="bg-white shadow-md sticky top-0 z-50">
       <div class="container mx-auto px-4 py-4">
         <div class="flex justify-between items-center">
@@ -913,7 +913,7 @@ async function renderRankingsPage() {
         <p>&copy; 2025 ClimbHero. All rights reserved.</p>
       </div>
     </footer>
-  \`;
+  `;
   
   updateAuthUI();
   loadRankings('weekly');
@@ -931,7 +931,7 @@ async function loadRankings(type) {
   rankingsList.innerHTML = '<div class="spinner"></div>';
   
   try {
-    const response = await axios.get(\`/api/rankings/\${type}\`);
+    const response = await axios.get(`/api/rankings/${type}`);
     const rankings = response.data;
     
     rankingsList.innerHTML = '';
@@ -942,23 +942,23 @@ async function loadRankings(type) {
       
       const item = document.createElement('div');
       item.className = 'bg-white rounded-lg shadow-md p-6 mb-4 flex items-center hover:shadow-lg transition';
-      item.innerHTML = \`
-        <div class="ranking-medal \${rankClass || 'bg-gray-300 text-gray-700'} mr-6">
-          \${rank}
+      item.innerHTML = `
+        <div class="ranking-medal ${rankClass || 'bg-gray-300 text-gray-700'} mr-6">
+          ${rank}
         </div>
-        <img src="\${video.thumbnail_url}" alt="\${video.title}" class="w-32 h-20 object-cover rounded-lg mr-6">
+        <img src="${video.thumbnail_url}" alt="${video.title}" class="w-32 h-20 object-cover rounded-lg mr-6">
         <div class="flex-1">
-          <h3 class="text-lg font-bold text-gray-800 mb-2">\${video.title}</h3>
+          <h3 class="text-lg font-bold text-gray-800 mb-2">${video.title}</h3>
           <div class="flex items-center space-x-4 text-sm text-gray-600">
-            <span><i class="fas fa-eye mr-1"></i>\${formatNumber(video.views)}</span>
-            <span><i class="fas fa-heart mr-1"></i>\${video.likes}</span>
-            <span><i class="fas fa-star text-yellow-500 mr-1"></i>\${video.score} pts</span>
+            <span><i class="fas fa-eye mr-1"></i>${formatNumber(video.views)}</span>
+            <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
+            <span><i class="fas fa-star text-yellow-500 mr-1"></i>${video.score} pts</span>
           </div>
         </div>
-        <button onclick="openVideo('\${video.url}')" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+        <button onclick="openVideo('${video.url}')" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
           視聴
         </button>
-      \`;
+      `;
       
       rankingsList.appendChild(item);
     });
@@ -980,7 +980,7 @@ async function renderMyPage() {
   
   const root = document.getElementById('root');
   
-  root.innerHTML = \`
+  root.innerHTML = `
     <header class="bg-white shadow-md sticky top-0 z-50">
       <div class="container mx-auto px-4 py-4">
         <div class="flex justify-between items-center">
@@ -1003,13 +1003,13 @@ async function renderMyPage() {
         <div class="bg-white rounded-lg shadow-md p-8 mb-8">
           <div class="flex items-center space-x-6">
             <div class="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-              \${state.currentUser.username.charAt(0).toUpperCase()}
+              ${state.currentUser.username.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 class="text-3xl font-bold text-gray-800">\${state.currentUser.username}</h2>
-              <p class="text-gray-600">\${state.currentUser.email}</p>
+              <h2 class="text-3xl font-bold text-gray-800">${state.currentUser.username}</h2>
+              <p class="text-gray-600">${state.currentUser.email}</p>
               <span class="inline-block mt-2 px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-bold">
-                \${state.currentUser.membership_type === 'premium' ? 'プレミアム会員' : '無料会員'}
+                ${state.currentUser.membership_type === 'premium' ? 'プレミアム会員' : '無料会員'}
               </span>
             </div>
           </div>
@@ -1034,7 +1034,7 @@ async function renderMyPage() {
         <p>&copy; 2025 ClimbHero. All rights reserved.</p>
       </div>
     </footer>
-  \`;
+  `;
   
   updateAuthUI();
   showMyTab('favorites');
@@ -1054,14 +1054,14 @@ async function showMyTab(tab) {
   try {
     let videos = [];
     if (tab === 'favorites') {
-      const response = await axios.get(\`/api/users/\${state.currentUser.id}/favorites\`);
+      const response = await axios.get(`/api/users/${state.currentUser.id}/favorites`);
       videos = response.data;
     }
     
     content.innerHTML = '';
     
     if (videos.length === 0) {
-      content.innerHTML = '<p class="text-center text-gray-500 py-8">まだ\${tab === 'favorites' ? 'お気に入り' : '投稿'}がありません</p>';
+      content.innerHTML = `<p class="text-center text-gray-500 py-8">まだ${tab === 'favorites' ? 'お気に入り' : '投稿'}がありません</p>`;
     } else {
       const grid = document.createElement('div');
       grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6';
@@ -1082,7 +1082,7 @@ async function showMyTab(tab) {
 async function renderBlogPage() {
   const root = document.getElementById('root');
   
-  root.innerHTML = \`
+  root.innerHTML = `
     <header class="bg-white shadow-md sticky top-0 z-50">
       <div class="container mx-auto px-4 py-4">
         <div class="flex justify-between items-center">
@@ -1107,11 +1107,11 @@ async function renderBlogPage() {
             <i class="fas fa-blog text-purple-600 mr-3"></i>
             ブログ
           </h1>
-          \${state.currentUser ? \`
+          ${state.currentUser ? `
             <button onclick="showBlogEditor()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
               <i class="fas fa-plus mr-2"></i>新規投稿
             </button>
-          \` : ''}
+          ` : ''}
         </div>
         
         <div id="blog-list">
@@ -1125,7 +1125,7 @@ async function renderBlogPage() {
         <p>&copy; 2025 ClimbHero. All rights reserved.</p>
       </div>
     </footer>
-  \`;
+  `;
   
   updateAuthUI();
   loadBlogPosts();
@@ -1143,31 +1143,31 @@ async function loadBlogPosts() {
     posts.forEach(post => {
       const postCard = document.createElement('div');
       postCard.className = 'bg-white rounded-lg shadow-md overflow-hidden mb-6 hover:shadow-lg transition cursor-pointer';
-      postCard.innerHTML = \`
-        <img src="\${post.image_url || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800'}" 
-             alt="\${post.title}" 
+      postCard.innerHTML = `
+        <img src="${post.image_url || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800'}" 
+             alt="${post.title}" 
              class="w-full h-64 object-cover">
         <div class="p-6">
-          <p class="text-sm text-gray-500 mb-2">\${formatDate(post.published_date)}</p>
-          <h2 class="text-2xl font-bold text-gray-800 mb-3">\${post.title}</h2>
-          <p class="text-gray-600 mb-4 line-clamp-3">\${post.content}</p>
+          <p class="text-sm text-gray-500 mb-2">${formatDate(post.published_date)}</p>
+          <h2 class="text-2xl font-bold text-gray-800 mb-3">${post.title}</h2>
+          <p class="text-gray-600 mb-4 line-clamp-3">${post.content}</p>
           <div class="flex justify-between items-center">
-            <button onclick="navigateTo('#blog/\${post.id}')" class="text-purple-600 font-bold hover:underline">
+            <button onclick="navigateTo('#blog/${post.id}')" class="text-purple-600 font-bold hover:underline">
               続きを読む →
             </button>
-            \${state.currentUser ? \`
+            ${state.currentUser ? `
               <div class="space-x-2">
-                <button onclick="editBlog(\${post.id})" class="text-blue-600 hover:text-blue-700">
+                <button onclick="editBlog(${post.id})" class="text-blue-600 hover:text-blue-700">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteBlog(\${post.id})" class="text-red-600 hover:text-red-700">
+                <button onclick="deleteBlog(${post.id})" class="text-red-600 hover:text-red-700">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
-            \` : ''}
+            ` : ''}
           </div>
         </div>
-      \`;
+      `;
       
       blogList.appendChild(postCard);
     });
@@ -1183,10 +1183,10 @@ async function loadBlogPosts() {
 function showBlogEditor(postId = null) {
   const modal = document.createElement('div');
   modal.className = 'modal active';
-  modal.innerHTML = \`
+  modal.innerHTML = `
     <div class="modal-content" style="max-width: 800px;">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">\${postId ? 'ブログ編集' : 'ブログ投稿'}</h2>
+        <h2 class="text-2xl font-bold text-gray-800">${postId ? 'ブログ編集' : 'ブログ投稿'}</h2>
         <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
           <i class="fas fa-times text-2xl"></i>
         </button>
@@ -1210,20 +1210,20 @@ function showBlogEditor(postId = null) {
         
         <div>
           <label class="block text-gray-700 font-bold mb-2">公開日</label>
-          <input type="date" name="published_date" value="\${new Date().toISOString().split('T')[0]}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+          <input type="date" name="published_date" value="${new Date().toISOString().split('T')[0]}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
         </div>
         
         <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition">
-          \${postId ? '更新' : '投稿'}
+          ${postId ? '更新' : '投稿'}
         </button>
       </form>
     </div>
-  \`;
+  `;
   
   document.body.appendChild(modal);
   
   if (postId) {
-    axios.get(\`/api/blog/\${postId}\`).then(response => {
+    axios.get(`/api/blog/${postId}`).then(response => {
       const post = response.data;
       const form = document.getElementById('blog-form');
       form.elements.title.value = post.title;
@@ -1240,7 +1240,7 @@ function showBlogEditor(postId = null) {
     
     try {
       if (postId) {
-        await axios.put(\`/api/blog/\${postId}\`, data);
+        await axios.put(`/api/blog/${postId}`, data);
         showNotification('ブログを更新しました', 'success');
       } else {
         await axios.post('/api/blog', data);
@@ -1266,7 +1266,7 @@ async function deleteBlog(postId) {
   if (!confirm('本当に削除しますか？')) return;
   
   try {
-    await axios.delete(\`/api/blog/\${postId}\`);
+    await axios.delete(`/api/blog/${postId}`);
     showNotification('ブログを削除しました', 'success');
     loadBlogPosts();
   } catch (error) {
@@ -1280,10 +1280,10 @@ async function renderBlogDetailPage(blogId) {
   root.innerHTML = '<div class="spinner"></div>';
   
   try {
-    const response = await axios.get(\`/api/blog/\${blogId}\`);
+    const response = await axios.get(`/api/blog/${blogId}`);
     const post = response.data;
     
-    root.innerHTML = \`
+    root.innerHTML = `
       <header class="bg-white shadow-md sticky top-0 z-50">
         <div class="container mx-auto px-4 py-4">
           <div class="flex justify-between items-center">
@@ -1300,15 +1300,15 @@ async function renderBlogDetailPage(blogId) {
 
       <article class="container mx-auto px-4 py-12">
         <div class="max-w-3xl mx-auto">
-          <img src="\${post.image_url || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1200'}" 
-               alt="\${post.title}" 
+          <img src="${post.image_url || 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1200'}" 
+               alt="${post.title}" 
                class="w-full h-96 object-cover rounded-lg mb-8">
           
-          <p class="text-sm text-gray-500 mb-4">\${formatDate(post.published_date)}</p>
-          <h1 class="text-4xl font-bold text-gray-800 mb-8">\${post.title}</h1>
+          <p class="text-sm text-gray-500 mb-4">${formatDate(post.published_date)}</p>
+          <h1 class="text-4xl font-bold text-gray-800 mb-8">${post.title}</h1>
           
           <div class="prose max-w-none text-gray-700 leading-relaxed" style="white-space: pre-wrap;">
-            \${post.content}
+            ${post.content}
           </div>
         </div>
       </article>
@@ -1318,7 +1318,7 @@ async function renderBlogDetailPage(blogId) {
           <p>&copy; 2025 ClimbHero. All rights reserved.</p>
         </div>
       </footer>
-    \`;
+    `;
     
     updateAuthUI();
   } catch (error) {
@@ -1351,20 +1351,20 @@ function formatDate(dateString) {
 
   if (diffDays === 0) return '今日';
   if (diffDays === 1) return '昨日';
-  if (diffDays < 7) return \`\${diffDays}日前\`;
-  if (diffDays < 30) return \`\${Math.floor(diffDays / 7)}週間前\`;
-  if (diffDays < 365) return \`\${Math.floor(diffDays / 30)}ヶ月前\`;
+  if (diffDays < 7) return `${diffDays}日前`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}週間前`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}ヶ月前`;
   return date.toLocaleDateString('ja-JP');
 }
 
 function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
-  notification.className = \`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-50 transform transition-all duration-300 \${
+  notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-50 transform transition-all duration-300 ${
     type === 'success' ? 'bg-green-500' :
     type === 'error' ? 'bg-red-500' :
     type === 'warning' ? 'bg-yellow-500' :
     'bg-blue-500'
-  }\`;
+  }`;
   notification.textContent = message;
 
   document.body.appendChild(notification);
