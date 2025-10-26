@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { serveStatic } from 'hono/cloudflare-workers'
 import { setCookie, getCookie } from 'hono/cookie'
+import appJs from '../public/static/app.js?raw'
+import stylesCss from '../public/static/styles.css?raw'
 
 type Bindings = {
   DB: D1Database;
@@ -12,8 +13,14 @@ const app = new Hono<{ Bindings: Bindings }>()
 // Enable CORS for API routes
 app.use('/api/*', cors())
 
-// Serve static files from public directory
-app.use('/static/*', serveStatic({ root: './public' }))
+// Serve static files manually
+app.get('/static/app.js', (c) => {
+  return c.text(appJs, 200, { 'Content-Type': 'application/javascript; charset=utf-8' })
+})
+
+app.get('/static/styles.css', (c) => {
+  return c.text(stylesCss, 200, { 'Content-Type': 'text/css; charset=utf-8' })
+})
 
 // ============ Helper Functions ============
 
@@ -590,7 +597,7 @@ app.get('/api/users/:id/favorites', async (c) => {
 
 // ============ Frontend Route ============
 
-app.get('*', (c) => {
+app.get('/', (c) => {
   return c.html(`
     <!DOCTYPE html>
     <html lang="ja">
