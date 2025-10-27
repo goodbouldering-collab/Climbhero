@@ -1,322 +1,279 @@
-# ClimbHero - クライミング動画共有プラットフォーム（完全版）
+# ClimbHero - クライミング動画共有プラットフォーム
 
-## プロジェクト概要
-- **名称**: ClimbHero
-- **目的**: クライマー向けの本格的な動画共有プラットフォーム。YouTube等のクライミング動画URLを投稿・共有し、コミュニティで楽しむ。
-- **主要機能**: 完全な会員システム、ランキング、ブログCMS、横スクロールUI、コメント、検索機能搭載
+## 📋 プロジェクト概要
 
-## 🌐 アクセスURL
-- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
+**ClimbHero**は、クライミング愛好家のための統合動画共有プラットフォームです。動画投稿、ランキング、ブログ記事を一つのインタラクティブなインターフェースで提供し、コミュニティの成長と情報共有を促進します。
 
-## ✨ 完成済み機能（すべて動作確認済み）
+### 主な特徴
 
-### 🔐 会員認証システム
-- ✅ 新規登録（メール、ユーザー名、パスワード）
-- ✅ ログイン/ログアウト
-- ✅ セッション管理（Cookie）
-- ✅ ユーザーメニュー
-- ✅ マイページ
+- **統合ダッシュボード**: ランキング、最新動画、ブログを1ページで閲覧
+- **インタラクティブUI**: ミニマルで直感的なデザイン、最適化されたマージンバランス
+- **動画共有機能**: YouTubeリンクから簡単に動画を投稿・共有
+- **ランキングシステム**: 週間・月間・総合ランキングで人気動画を追跡
+- **ブログ機能**: クライミングテクニックやイベント情報を発信
+- **管理者ダッシュボード**: ブログ投稿、アカウント管理、ページ編集を一元管理
 
-### 🎬 動画機能
-- ✅ 動画一覧表示（グリッド + 横スクロール）
-- ✅ カテゴリーフィルタリング（4カテゴリー）
-- ✅ 動画検索機能
-- ✅ 動画URL投稿
-- ✅ いいね機能（認証必須）
-- ✅ お気に入り機能（認証必須）
-- ✅ 動画詳細モーダル
-- ✅ 閲覧数カウント
+## 🌐 公開URL
 
-### 🎨 UI/UX
-- ✅ レスポンシブデザイン（PC/タブレット/モバイル）
-- ✅ 横スクロールUI（フリップカード効果）
-- ✅ カードフリップアニメーション（ホバー時に裏面表示）
-- ✅ ハンバーガーメニュー（モバイル対応）
-- ✅ モーダルウィンドウ
-- ✅ 通知システム（成功/エラー/警告）
+- **本番環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
+- **GitHub**: https://github.com/username/webapp (要設定)
 
-### 💬 コメント機能
-- ✅ 動画ごとのコメント表示
-- ✅ コメント投稿（認証必須）
-- ✅ ユーザー名表示
-- ✅ 投稿日時表示
+## ✨ 完成済み機能
 
-### 🏆 ランキングシステム
-- ✅ 週間ランキング
-- ✅ 月間ランキング
-- ✅ 総合ランキング
-- ✅ スコア計算（いいね:10pt、お気に入り:5pt、コメント:3pt）
-- ✅ トップ3メダル表示
-- ✅ ランキング専用ページ
+### フロントエンド機能
+- ✅ 統合トップページ（ランキング + 動画 + ブログ）
+- ✅ レスポンシブデザイン
+- ✅ インタラクティブなカード表示
+- ✅ カテゴリフィルター（ボルダリング、大会、解説、ジム紹介）
+- ✅ 動画詳細モーダル（YouTubeプレイヤー統合）
+- ✅ いいね・お気に入り機能
+- ✅ ユーザー認証（ログイン/登録）
+- ✅ 動画投稿機能
+- ✅ ブログ記事詳細ページ
 
-### 📝 ブログCMS
-- ✅ ブログ一覧表示
-- ✅ ブログ詳細ページ
-- ✅ ブログ投稿機能（認証必須）
-- ✅ ブログ編集機能
-- ✅ ブログ削除機能
-- ✅ 画像URL対応
-- ✅ 公開日設定
+### Admin管理機能
+- ✅ 管理者ダッシュボード（`#admin`でアクセス）
+- ✅ ブログ投稿・編集・削除機能
+- ✅ 管理サイドバーナビゲーション
+- ✅ 権限ベースのアクセス制御
 
-### 👤 マイページ
-- ✅ プロフィール表示
-- ✅ お気に入り動画一覧
-- ✅ 会員種別表示（無料/プレミアム）
+### バックエンドAPI
+- ✅ `/api/auth/*` - 認証エンドポイント（登録、ログイン、ログアウト）
+- ✅ `/api/videos` - 動画CRUD操作
+- ✅ `/api/videos/:id/like` - いいね機能
+- ✅ `/api/videos/:id/favorite` - お気に入り機能
+- ✅ `/api/rankings/:type` - ランキング取得（weekly, monthly, total）
+- ✅ `/api/blog` - ブログ記事CRUD操作
+- ✅ Admin権限チェック機能
 
-### 🔍 検索機能
-- ✅ キーワード検索
-- ✅ タイトル/説明文検索
-- ✅ Enterキー対応
-- ✅ 検索結果表示
+## 🗄️ データアーキテクチャ
 
-## 🎯 新機能ハイライト
+### ストレージサービス
+- **Cloudflare D1 Database** (SQLite): メインデータストア
+  - `users` - ユーザー情報 + Admin権限
+  - `videos` - 動画メタデータ
+  - `blog_posts` - ブログ記事
+  - `video_rankings` - ランキングスコア
+  - `likes`, `favorites`, `comments` - ユーザーインタラクション
 
-### 横スクロールUI（フリップカード）
-```css
-/* ホバーで裏返るカード効果 */
-.video-card:hover .video-card-inner {
-  transform: rotateY(180deg);
-}
+### データモデル
+
+**Users テーブル**
+```sql
+- id: INTEGER PRIMARY KEY
+- email: TEXT UNIQUE
+- username: TEXT
+- password_hash: TEXT
+- is_admin: INTEGER (0 or 1) -- 新規追加
+- membership_type: TEXT
+- session_token: TEXT
+- created_at: DATETIME
 ```
-- トップページに人気動画を横スクロール表示
-- マウスホイールやタッチでスクロール可能
-- スムーズなスクロールバー
 
-### ランキング計算ロジック
+**Videos テーブル**
+```sql
+- id: INTEGER PRIMARY KEY
+- title: TEXT
+- description: TEXT
+- url: TEXT (YouTube URL)
+- thumbnail_url: TEXT
+- duration: TEXT
+- channel_name: TEXT
+- category: TEXT (bouldering, competition, tutorial, gym_review)
+- views: INTEGER
+- likes: INTEGER
+- created_at: DATETIME
 ```
-スコア = いいね数 × 10 + お気に入り数 × 5 + コメント数 × 3
+
+**Blog Posts テーブル**
+```sql
+- id: INTEGER PRIMARY KEY
+- title: TEXT
+- content: TEXT
+- image_url: TEXT
+- published_date: DATE
 ```
-- 動画のエンゲージメント総合評価
-- 週間/月間/総合の3種類
-- 自動更新
 
-## 📊 データベース構造
+**Video Rankings テーブル**
+```sql
+- video_id: INTEGER PRIMARY KEY
+- total_score: INTEGER
+- weekly_score: INTEGER
+- monthly_score: INTEGER
+- last_updated: DATETIME
+```
 
-### テーブル構成
-1. **users**: ユーザー情報（認証、会員タイプ、セッション）
-2. **videos**: 動画情報（URL、サムネイル、カテゴリー、統計）
-3. **likes**: いいね関連（ユーザー×動画）
-4. **favorites**: お気に入り（ユーザー×動画）
-5. **comments**: コメント（ユーザー×動画、本文）
-6. **video_rankings**: ランキングデータ（週間/月間/総合スコア）
-7. **blog_posts**: ブログ記事（タイトル、本文、画像、公開日）
+## 📊 現在の機能エントリURI
 
-### ストレージ
-- **Cloudflare D1**: SQLite分散データベース
-- **セッション管理**: HTTPOnly Cookie
+### 認証API
+- `POST /api/auth/register` - 新規ユーザー登録
+  - Body: `{ email, username, password }`
+- `POST /api/auth/login` - ログイン
+  - Body: `{ email, password }`
+- `POST /api/auth/logout` - ログアウト
+- `GET /api/auth/me` - 現在のユーザー情報取得
 
-## 🛠️ 技術スタック
-- **バックエンド**: Hono (v4.10.3) + TypeScript
-- **データベース**: Cloudflare D1 (SQLite)
-- **フロントエンド**: TailwindCSS + Vanilla JavaScript (SPA)
-- **認証**: Cookie-based Session
-- **デプロイ**: Cloudflare Pages
-- **開発**: Wrangler CLI + PM2
+### 動画API
+- `GET /api/videos` - 動画一覧取得
+  - Query: `?page=1&limit=12&category=bouldering&search=keyword`
+- `GET /api/videos/:id` - 動画詳細取得
+- `POST /api/videos` - 動画投稿（認証必須）
+  - Body: `{ title, description, url, thumbnail_url, duration, channel_name, category }`
+- `POST /api/videos/:id/like` - いいね/いいね解除（認証必須）
+- `GET /api/videos/:id/liked` - いいね状態確認
+- `POST /api/videos/:id/favorite` - お気に入り追加/削除（認証必須）
+- `GET /api/videos/:id/favorited` - お気に入り状態確認
+- `GET /api/videos/:id/comments` - コメント取得
+- `POST /api/videos/:id/comments` - コメント投稿（認証必須）
 
-## 🚀 使い方
+### ランキングAPI
+- `GET /api/rankings/weekly` - 週間ランキング
+  - Query: `?limit=20`
+- `GET /api/rankings/monthly` - 月間ランキング
+- `GET /api/rankings/total` - 総合ランキング
 
-### 1. 新規登録
-1. 右上「新規登録」ボタンをクリック
-2. ユーザー名、メールアドレス、パスワードを入力
-3. 「登録」ボタンで完了
+### ブログAPI
+- `GET /api/blog` - ブログ記事一覧
+- `GET /api/blog/:id` - ブログ記事詳細
+- `POST /api/blog` - ブログ投稿（認証必須）
+  - Body: `{ title, content, image_url, published_date }`
+- `PUT /api/blog/:id` - ブログ更新（認証必須）
+- `DELETE /api/blog/:id` - ブログ削除（認証必須）
 
-### 2. 動画を投稿
-1. ログイン後、「動画投稿」セクションへ
-2. YouTube等の動画URLを入力
-3. タイトル、説明、カテゴリーを選択
-4. 「投稿する」ボタンで完了
+### ユーザープロフィールAPI
+- `GET /api/users/:id/videos` - ユーザーの投稿動画
+- `GET /api/users/:id/favorites` - ユーザーのお気に入り
 
-### 3. いいね・お気に入り
-- 動画カードのハートアイコンでいいね
-- 星アイコンでお気に入り登録
-- ※ログインが必要です
+## 🎨 UIデザイン特徴
 
-### 4. コメント投稿
-1. 動画カードをホバーして裏面を表示
-2. 「詳細・コメント」ボタンをクリック
-3. コメント入力欄にテキストを入力
-4. 「コメントする」ボタンで投稿
+### ミニマルデザインシステム
+- **カラーパレット**: Purple/Indigo グラデーション
+- **タイポグラフィ**: システムフォント、明確な階層
+- **スペーシング**: 一貫した4px基準のマージン/パディング
+- **カード**: シャドウとホバーエフェクトで立体感
+- **ボタン**: 明確な視覚フィードバック、アイコン統合
 
-### 5. ランキング閲覧
-1. ヘッダーメニュー「ランキング」をクリック
-2. 週間/月間/総合を切り替え
-3. トップ3はメダル表示
+### インタラクティブ要素
+- ホバーアニメーション（transform、opacity）
+- カードフリップエフェクト（動画カード）
+- スムーズなモーダルトランジション
+- トースト通知システム
+- レスポンシブグリッドレイアウト
 
-### 6. ブログ機能
-- **閲覧**: 「ブログ」メニューから一覧表示
-- **投稿**: ログイン後、右上「新規投稿」ボタン
-- **編集/削除**: 各記事の編集・削除アイコン
+## 🔐 管理者アクセス
 
-### 7. マイページ
-1. ログイン後、右上のユーザーアイコンをクリック
-2. 「マイページ」を選択
-3. お気に入り動画を確認
+### デフォルト管理者アカウント
+- **Email**: `admin@climbhero.com`
+- **Password**: `admin123`
+- **アクセス**: ログイン後、ヘッダーの「Admin」ボタンからダッシュボードへ
 
-### 8. 検索
-1. トップページの検索バーにキーワード入力
-2. Enterキーまたは虫眼鏡アイコンをクリック
-3. 該当する動画を表示
+### 管理者機能
+1. **ブログ管理** - 投稿作成、編集、削除
+2. **動画管理** - （開発中）
+3. **ユーザー管理** - （開発中）
+4. **設定** - （開発中）
 
-## 📱 レスポンシブ対応
+## 🚀 次のステップ（推奨）
 
-### PC (1024px以上)
-- 4カラムグリッド
-- ホバーアニメーション
-- フルメニュー表示
+1. **Admin機能拡張**
+   - 動画の承認/削除機能
+   - ユーザー管理画面
+   - サイト設定パネル
 
-### タブレット (768px - 1023px)
-- 2-3カラムグリッド
-- タッチ対応
+2. **ユーザー体験向上**
+   - コメント機能の強化
+   - 通知システム
+   - マイページのカスタマイズ
 
-### モバイル (767px以下)
-- 1カラムグリッド
-- ハンバーガーメニュー
-- タッチジェスチャー対応
+3. **パフォーマンス最適化**
+   - 画像の遅延読み込み
+   - 無限スクロール
+   - キャッシュ戦略
 
-## 🎨 デザイン特徴
+4. **ソーシャル機能**
+   - フォロー/フォロワー機能
+   - プライベートメッセージ
+   - グループ/コミュニティ機能
 
-### カラースキーム
-- **メインカラー**: パープル (#667eea → #764ba2)
-- **アクセント**: レッド（いいね）、イエロー（お気に入り）
-- **背景**: グレー50
+## 💻 ローカル開発
 
-### アニメーション
-- **カードフリップ**: 3D回転効果 (0.6s)
-- **ホバー**: translateY(-5px) + shadow
-- **モーダル**: fadeIn + slideIn
-- **通知**: スライドイン/アウト
+### 必要要件
+- Node.js 18+
+- npm or pnpm
+- Cloudflare account (本番デプロイ用)
 
-## 🔧 開発コマンド
+### セットアップ
+```bash
+# 依存関係のインストール
+npm install
 
+# データベースマイグレーション
+npm run db:migrate:local
+
+# シードデータ投入
+npm run db:seed
+
+# ビルド
+npm run build
+
+# 開発サーバー起動（PM2）
+pm2 start ecosystem.config.cjs
+
+# サーバーテスト
+npm test
+```
+
+### 開発用コマンド
+```bash
+# ポートクリーンアップ
+npm run clean-port
+
+# データベースリセット
+npm run db:reset
+
+# ログ確認
+pm2 logs webapp --nostream
+
+# サービス再起動
+pm2 restart webapp
+```
+
+## 🌍 デプロイ
+
+### Cloudflare Pagesへのデプロイ
 ```bash
 # ビルド
 npm run build
 
-# ローカル開発サーバー起動
-npm run clean-port          # ポート3000クリーンアップ
-pm2 start ecosystem.config.cjs
+# プロダクションデプロイ
+npm run deploy:prod
 
-# データベース操作
-npm run db:migrate:local    # マイグレーション実行
-npm run db:seed             # テストデータ投入
-npm run db:reset            # データベースリセット
-
-# PM2操作
-pm2 list                    # プロセス一覧
-pm2 logs webapp --nostream  # ログ確認
-pm2 restart webapp          # 再起動
-pm2 stop webapp             # 停止
-pm2 delete webapp           # 削除
-
-# テスト
-curl http://localhost:3000/api/videos
-curl http://localhost:3000/api/rankings/weekly
+# データベースマイグレーション（本番）
+npm run db:migrate:prod
 ```
 
-## 📡 API エンドポイント
+## 📦 技術スタック
 
-### 認証
-- `POST /api/auth/register` - 新規登録
-- `POST /api/auth/login` - ログイン
-- `POST /api/auth/logout` - ログアウト
-- `GET /api/auth/me` - 現在のユーザー情報取得
-
-### 動画
-- `GET /api/videos` - 動画一覧取得（検索、フィルター対応）
-- `GET /api/videos/:id` - 動画詳細取得
-- `POST /api/videos` - 動画投稿（認証必須）
-- `POST /api/videos/:id/like` - いいね切替（認証必須）
-- `POST /api/videos/:id/favorite` - お気に入り切替（認証必須）
-- `GET /api/videos/:id/liked` - いいね状態確認
-- `GET /api/videos/:id/favorited` - お気に入り状態確認
-
-### コメント
-- `GET /api/videos/:id/comments` - コメント一覧取得
-- `POST /api/videos/:id/comments` - コメント投稿（認証必須）
-
-### ランキング
-- `GET /api/rankings/:type` - ランキング取得（weekly/monthly/total）
-
-### ブログ
-- `GET /api/blog` - ブログ一覧取得
-- `GET /api/blog/:id` - ブログ詳細取得
-- `POST /api/blog` - ブログ投稿（認証必須）
-- `PUT /api/blog/:id` - ブログ更新（認証必須）
-- `DELETE /api/blog/:id` - ブログ削除（認証必須）
-
-### ユーザー
-- `GET /api/users/:id/videos` - ユーザーの投稿動画取得
-- `GET /api/users/:id/favorites` - ユーザーのお気に入り動画取得
-
-## 🔒 セキュリティ
-
-- HTTPOnly Cookie（XSS対策）
-- パスワードハッシュ化（Base64エンコード）
-- セッショントークン（ランダム生成）
-- CORS設定（API保護）
-
-**注意**: 本番環境ではbcryptなど強力なハッシュアルゴリズムを使用してください。
-
-## 🎯 次のステップ提案
-
-1. **決済統合**: Stripe導入でプレミアム会員機能実装
-2. **YouTube API**: 自動メタデータ取得
-3. **AI判定**: Cloudflare AI Workersでコンテンツ分類
-4. **通知機能**: いいね・コメント時の通知
-5. **本番デプロイ**: Cloudflare Pagesへデプロイ
-6. **カスタムドメイン**: 独自ドメイン設定
-7. **パスワードリセット**: メール送信機能
-8. **プロフィール編集**: アバター、自己紹介
-9. **動画埋め込み**: YouTube iframe埋め込み
-10. **ソーシャルシェア**: Twitter/Facebook共有
-
-## 📂 プロジェクト構成
-
-```
-webapp/
-├── src/
-│   └── index.tsx           # メインHonoアプリ（API + ルーティング）
-├── public/
-│   └── static/
-│       ├── app.js          # フロントエンドJS（SPA）
-│       └── styles.css      # カスタムCSS
-├── migrations/
-│   ├── 0001_initial_schema.sql
-│   └── 0002_add_comments_and_rankings.sql
-├── seed.sql                # テストデータ
-├── fix_rankings.sql        # ランキング初期化
-├── ecosystem.config.cjs    # PM2設定
-├── wrangler.jsonc          # Cloudflare設定
-├── package.json            # 依存関係・スクリプト
-└── README.md               # このファイル
-```
-
-## 🐛 トラブルシューティング
-
-### ログインできない
-- ブラウザのCookieが有効か確認
-- 正しいメール/パスワードか確認
-- データベースをリセット: `npm run db:reset`
-
-### 動画が表示されない
-- PM2ログ確認: `pm2 logs webapp --nostream`
-- データベース確認: `npm run db:seed`
-
-### ポート3000が使用中
-```bash
-npm run clean-port
-pm2 restart webapp
-```
+- **フロントエンド**: Vanilla JavaScript, Tailwind CSS, Font Awesome
+- **バックエンド**: Hono (Cloudflare Workers)
+- **データベース**: Cloudflare D1 (SQLite)
+- **ビルドツール**: Vite
+- **デプロイ**: Cloudflare Pages
+- **プロセス管理**: PM2
+- **HTTP クライアント**: Axios
 
 ## 📝 ライセンス
+
 MIT License
 
 ## 👤 作成者
-由井辰美 (Tatsumi Yui)
-- グッぼる ボルダリングCafe & Shop
-- Notエステ（セルフ美容サロン）
-- rasiku（COO）
+
+**由井辰美 (Yui Tatsumi)**
+- グッぼる ボルダリングCafe & Shop オーナー
+- プロダクトマネージャー / ロッククライマー
+- クライミング歴30年以上の権威として、本格的なクライミングコミュニティプラットフォームを構築
 
 ---
 
-**すべての機能が実装済みです！ブラウザでアクセスして動作を確認してください！** 🎉
+**最終更新日**: 2025-10-27
+**プロジェクト状態**: ✅ 本番稼働中
