@@ -2,9 +2,10 @@
 const state = {
   currentUser: null,
   videos: [],
-  rankings: { weekly: [], monthly: [], total: [] },
+  rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   blogPosts: [],
   currentView: 'home',
+  currentRankingType: 'weekly',
   loading: false
 };
 
@@ -18,7 +19,6 @@ async function init() {
   await loadInitialData();
   renderApp();
   
-  // Handle hash navigation
   window.addEventListener('hashchange', handleNavigation);
   handleNavigation();
 }
@@ -37,8 +37,8 @@ async function checkAuth() {
 async function loadInitialData() {
   try {
     const [videosRes, rankingsRes, blogRes] = await Promise.all([
-      axios.get('/api/videos?limit=12'),
-      axios.get('/api/rankings/weekly?limit=10'),
+      axios.get('/api/videos?limit=20'),
+      axios.get('/api/rankings/weekly?limit=20'),
       axios.get('/api/blog')
     ]);
     
@@ -79,6 +79,7 @@ function renderApp() {
   
   if (state.currentView === 'home') {
     root.innerHTML = renderHomePage();
+    initializeCarousels();
   } else if (state.currentView === 'admin') {
     root.innerHTML = renderAdminPage();
   } else if (state.currentView === 'blog-detail') {
@@ -134,98 +135,262 @@ function renderHomePage() {
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+    <main class="bg-gray-50">
       
       <!-- Hero Section -->
-      <section class="hero-gradient rounded-2xl p-8 sm:p-12 text-white relative">
-        <div class="relative z-10">
-          <h2 class="text-3xl sm:text-4xl font-bold mb-4">
-            クライミング動画共有プラットフォーム
-          </h2>
-          <p class="text-lg opacity-90 mb-6 max-w-2xl">
-            最新のクライミング動画、ランキング、テクニック解説を一箇所で。コミュニティと共に上達を目指そう。
-          </p>
-          ${state.currentUser ? `
-            <button onclick="showUploadModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100">
-              <i class="fas fa-upload"></i>
-              動画を投稿
-            </button>
-          ` : `
-            <button onclick="showAuthModal('register')" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100">
-              <i class="fas fa-user-plus"></i>
-              今すぐ始める
-            </button>
-          `}
-        </div>
-      </section>
-
-      <!-- Weekly Rankings -->
-      <section>
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-trophy text-yellow-500 text-xl"></i>
-            <h3 class="text-2xl font-bold text-gray-900">週間ランキング</h3>
+      <section class="hero-gradient py-20 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="relative z-10 text-center">
+            <h2 class="text-4xl sm:text-5xl font-bold mb-4 text-white">
+              クライミング動画共有プラットフォーム
+            </h2>
+            <p class="text-xl text-white opacity-90 mb-8 max-w-2xl mx-auto">
+              最新のクライミング動画、ランキング、テクニック解説を一箇所で。<br>
+              コミュニティと共に上達を目指そう。
+            </p>
+            ${state.currentUser ? `
+              <button onclick="showUploadModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100">
+                <i class="fas fa-upload"></i>
+                動画を投稿
+              </button>
+            ` : `
+              <button onclick="showPricingModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100">
+                <i class="fas fa-star"></i>
+                15日間無料トライアル
+              </button>
+            `}
           </div>
-          <button onclick="loadRankings('monthly')" class="btn btn-sm btn-secondary">
-            月間を見る
-          </button>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${state.rankings.weekly.slice(0, 6).map((video, index) => renderRankingCard(video, index + 1)).join('')}
         </div>
       </section>
 
-      <!-- Latest Videos -->
-      <section>
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-video text-red-500 text-xl"></i>
-            <h3 class="text-2xl font-bold text-gray-900">最新動画</h3>
+      <!-- Rankings Section -->
+      <section class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-trophy text-yellow-500 text-2xl"></i>
+              <h3 class="text-2xl font-bold text-gray-900">ランキング</h3>
+            </div>
+            
+            <!-- Ranking Period Tabs -->
+            <div class="flex gap-2">
+              <button onclick="switchRankingPeriod('daily')" class="btn btn-sm ${state.currentRankingType === 'daily' ? 'btn-primary' : 'btn-secondary'}">
+                デイリー
+              </button>
+              <button onclick="switchRankingPeriod('weekly')" class="btn btn-sm ${state.currentRankingType === 'weekly' ? 'btn-primary' : 'btn-secondary'}">
+                週間
+              </button>
+              <button onclick="switchRankingPeriod('monthly')" class="btn btn-sm ${state.currentRankingType === 'monthly' ? 'btn-primary' : 'btn-secondary'}">
+                月間
+              </button>
+              <button onclick="switchRankingPeriod('yearly')" class="btn btn-sm ${state.currentRankingType === 'yearly' ? 'btn-primary' : 'btn-secondary'}">
+                年間
+              </button>
+            </div>
           </div>
           
-          <!-- Category Filter -->
-          <div class="flex gap-2 overflow-x-auto">
-            <button onclick="filterVideos('all')" class="btn btn-sm btn-primary">
-              全て
+          <!-- Horizontal Carousel -->
+          <div class="carousel-container" id="ranking-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('ranking-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
             </button>
-            <button onclick="filterVideos('bouldering')" class="btn btn-sm btn-secondary">
-              ボルダリング
-            </button>
-            <button onclick="filterVideos('competition')" class="btn btn-sm btn-secondary">
-              大会
-            </button>
-            <button onclick="filterVideos('tutorial')" class="btn btn-sm btn-secondary">
-              解説
+            <div class="horizontal-scroll" id="ranking-scroll">
+              ${state.rankings[state.currentRankingType].map((video, index) => renderRankingCard(video, index + 1)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('ranking-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
             </button>
           </div>
-        </div>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          ${state.videos.map(video => renderVideoCard(video)).join('')}
         </div>
       </section>
 
-      <!-- Blog Posts -->
-      <section>
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center gap-2">
-            <i class="fas fa-newspaper text-blue-500 text-xl"></i>
-            <h3 class="text-2xl font-bold text-gray-900">ブログ</h3>
+      <!-- Latest Videos Section -->
+      <section class="py-12 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-video text-red-500 text-2xl"></i>
+              <h3 class="text-2xl font-bold text-gray-900">最新動画</h3>
+            </div>
+            
+            <div class="flex gap-2 overflow-x-auto">
+              <button onclick="filterVideos('all')" class="btn btn-sm btn-primary">全て</button>
+              <button onclick="filterVideos('bouldering')" class="btn btn-sm btn-secondary">ボルダリング</button>
+              <button onclick="filterVideos('competition')" class="btn btn-sm btn-secondary">大会</button>
+              <button onclick="filterVideos('tutorial')" class="btn btn-sm btn-secondary">解説</button>
+            </div>
+          </div>
+          
+          <!-- Horizontal Carousel -->
+          <div class="carousel-container" id="videos-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('videos-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="videos-scroll">
+              ${state.videos.map(video => renderVideoCard(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('videos-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
           </div>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          ${state.blogPosts.slice(0, 6).map(post => renderBlogCard(post)).join('')}
+      </section>
+
+      <!-- Blog Posts Section -->
+      <section class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-newspaper text-blue-500 text-2xl"></i>
+              <h3 class="text-2xl font-bold text-gray-900">ブログ</h3>
+            </div>
+          </div>
+          
+          <!-- Horizontal Carousel -->
+          <div class="carousel-container" id="blog-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('blog-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="blog-scroll">
+              ${state.blogPosts.map(post => renderBlogCard(post)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('blog-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing Section -->
+      <section class="py-16 bg-gradient-to-br from-purple-50 to-pink-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-12">
+            <h3 class="text-3xl font-bold text-gray-900 mb-4">プレミアムプランで、さらに充実</h3>
+            <p class="text-lg text-gray-600">15日間無料トライアル実施中</p>
+          </div>
+          
+          <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <!-- Free Plan -->
+            <div class="card p-8 bg-white">
+              <h4 class="text-xl font-bold mb-2">無料プラン</h4>
+              <div class="text-3xl font-bold text-gray-900 mb-4">$0<span class="text-lg font-normal text-gray-600">/月</span></div>
+              <ul class="space-y-3 mb-6">
+                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> 動画閲覧無制限</li>
+                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> ランキング閲覧</li>
+                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> ブログ閲覧</li>
+                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times"></i> 動画投稿（月5本まで）</li>
+                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times"></i> いいね・お気に入り</li>
+              </ul>
+              ${!state.currentUser ? `
+                <button onclick="showAuthModal('register')" class="btn btn-secondary w-full">
+                  無料で始める
+                </button>
+              ` : ''}
+            </div>
+            
+            <!-- Premium Plan -->
+            <div class="card p-8 bg-gradient-to-br from-purple-600 to-purple-700 text-white relative overflow-hidden">
+              <div class="absolute top-4 right-4 bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-xs font-bold">
+                人気No.1
+              </div>
+              <h4 class="text-xl font-bold mb-2">プレミアムプラン</h4>
+              <div class="text-3xl font-bold mb-4">$20<span class="text-lg font-normal opacity-90">/月</span></div>
+              <ul class="space-y-3 mb-6">
+                <li class="flex items-center gap-2"><i class="fas fa-check"></i> 動画閲覧無制限</li>
+                <li class="flex items-center gap-2"><i class="fas fa-check"></i> ランキング閲覧</li>
+                <li class="flex items-center gap-2"><i class="fas fa-check"></i> ブログ閲覧</li>
+                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>動画投稿無制限</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>いいね・お気に入り</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>広告非表示</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>AIグレード判定</strong></li>
+              </ul>
+              <button onclick="showPricingModal()" class="btn btn-lg w-full bg-white text-purple-600 hover:bg-gray-100">
+                <i class="fas fa-star"></i>
+                15日間無料で試す
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
     </main>
 
+    <!-- Footer -->
+    ${renderFooter()}
+
     <!-- Modals -->
     <div id="auth-modal" class="modal"></div>
     <div id="upload-modal" class="modal"></div>
     <div id="video-modal" class="modal"></div>
+    <div id="pricing-modal" class="modal"></div>
+  `;
+}
+
+// ============ Footer ============
+function renderFooter() {
+  return `
+    <footer class="bg-gray-900 text-gray-300 py-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <!-- Company Info -->
+          <div>
+            <h5 class="text-white font-bold mb-4 flex items-center gap-2">
+              <i class="fas fa-mountain text-purple-500"></i>
+              ClimbHero
+            </h5>
+            <p class="text-sm mb-4">
+              クライミングコミュニティのための動画共有プラットフォーム
+            </p>
+            <div class="flex gap-3">
+              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
+              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
+          
+          <!-- Quick Links -->
+          <div>
+            <h5 class="text-white font-bold mb-4">クイックリンク</h5>
+            <ul class="space-y-2 text-sm">
+              <li><a href="#home" class="hover:text-white">ホーム</a></li>
+              <li><a href="#" onclick="showPricingModal(); return false;" class="hover:text-white">料金プラン</a></li>
+              <li><a href="#" class="hover:text-white">使い方ガイド</a></li>
+              <li><a href="#" class="hover:text-white">よくある質問</a></li>
+            </ul>
+          </div>
+          
+          <!-- Legal -->
+          <div>
+            <h5 class="text-white font-bold mb-4">法的情報</h5>
+            <ul class="space-y-2 text-sm">
+              <li><a href="#" class="hover:text-white">利用規約</a></li>
+              <li><a href="#" class="hover:text-white">プライバシーポリシー</a></li>
+              <li><a href="#" class="hover:text-white">特定商取引法</a></li>
+              <li><a href="#" class="hover:text-white">お問い合わせ</a></li>
+            </ul>
+          </div>
+          
+          <!-- Contact -->
+          <div>
+            <h5 class="text-white font-bold mb-4">運営会社</h5>
+            <p class="text-sm mb-2"><strong>グッぼる</strong></p>
+            <p class="text-sm mb-2">
+              ボルダリングCafe & Shop<br>
+              滋賀県彦根市
+            </p>
+            <p class="text-sm">
+              <i class="fas fa-clock mr-2"></i>営業時間: 10:00-22:00<br>
+              <i class="fas fa-envelope mr-2"></i>info@climbhero.info
+            </p>
+          </div>
+        </div>
+        
+        <div class="border-t border-gray-800 pt-8 text-center text-sm">
+          <p>&copy; 2025 ClimbHero by グッぼる. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
   `;
 }
 
@@ -234,16 +399,18 @@ function renderRankingCard(video, rank) {
   const medal = rank <= 3 ? `<div class="ranking-medal rank-${rank}">${rank}</div>` : `<div class="text-lg font-bold text-gray-400">#${rank}</div>`;
   
   return `
-    <div class="card p-4 flex gap-4 cursor-pointer hover:shadow-lg transition-all" onclick="showVideoDetail(${video.id})">
-      ${medal}
-      <img src="${video.thumbnail_url}" alt="${video.title}" class="w-24 h-16 object-cover rounded flex-shrink-0">
-      <div class="flex-1 min-w-0">
-        <h4 class="font-semibold text-gray-900 line-clamp-1 mb-1">${video.title}</h4>
-        <div class="flex items-center gap-3 text-xs text-gray-500">
-          <span><i class="fas fa-eye mr-1"></i>${video.views}</span>
-          <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
-          <span class="category-badge category-${video.category}">${getCategoryName(video.category)}</span>
+    <div class="scroll-item">
+      <div class="card p-4 cursor-pointer hover:shadow-xl transition-all h-full" onclick="showVideoDetail(${video.id})">
+        <div class="flex gap-4 mb-3">
+          ${medal}
+          <img src="${video.thumbnail_url}" alt="${video.title}" class="w-32 h-20 object-cover rounded flex-shrink-0">
         </div>
+        <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${video.title}</h4>
+        <div class="flex items-center gap-3 text-xs text-gray-500">
+          <span><i class="fas fa-eye mr-1"></i>${video.views.toLocaleString()}</span>
+          <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
+        </div>
+        <span class="category-badge category-${video.category} mt-2 inline-block">${getCategoryName(video.category)}</span>
       </div>
     </div>
   `;
@@ -252,21 +419,22 @@ function renderRankingCard(video, rank) {
 // ============ Video Card ============
 function renderVideoCard(video) {
   return `
-    <div class="card overflow-hidden cursor-pointer hover:shadow-lg transition-all" onclick="showVideoDetail(${video.id})">
-      <div class="relative">
-        <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-48 object-cover">
-        <div class="duration-badge">${video.duration}</div>
-        <span class="absolute top-2 left-2 category-badge category-${video.category}">
-          ${getCategoryName(video.category)}
-        </span>
-      </div>
-      <div class="p-4">
-        <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${video.title}</h4>
-        <p class="text-sm text-gray-600 line-clamp-2 mb-3">${video.description}</p>
-        <div class="flex items-center justify-between text-xs text-gray-500">
-          <span><i class="fas fa-eye mr-1"></i>${video.views}</span>
-          <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
-          <span class="text-gray-400">${formatDate(video.created_at)}</span>
+    <div class="scroll-item">
+      <div class="card overflow-hidden cursor-pointer hover:shadow-xl transition-all h-full" onclick="showVideoDetail(${video.id})">
+        <div class="relative">
+          <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-48 object-cover">
+          <div class="duration-badge">${video.duration}</div>
+          <span class="absolute top-2 left-2 category-badge category-${video.category}">
+            ${getCategoryName(video.category)}
+          </span>
+        </div>
+        <div class="p-4">
+          <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${video.title}</h4>
+          <p class="text-sm text-gray-600 line-clamp-2 mb-3">${video.description}</p>
+          <div class="flex items-center justify-between text-xs text-gray-500">
+            <span><i class="fas fa-eye mr-1"></i>${video.views.toLocaleString()}</span>
+            <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -276,113 +444,54 @@ function renderVideoCard(video) {
 // ============ Blog Card ============
 function renderBlogCard(post) {
   return `
-    <div class="card overflow-hidden cursor-pointer hover:shadow-lg transition-all" onclick="navigateTo('blog/${post.id}')">
-      ${post.image_url ? `
-        <img src="${post.image_url}" alt="${post.title}" class="w-full h-48 object-cover">
-      ` : `
-        <div class="w-full h-48 bg-gradient-to-br from-purple-500 to-pink-500"></div>
-      `}
-      <div class="p-5">
-        <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${post.title}</h4>
-        <p class="text-sm text-gray-600 line-clamp-3 mb-3">${post.content.substring(0, 150)}...</p>
-        <div class="text-xs text-gray-500">
-          <i class="fas fa-calendar mr-1"></i>${formatDate(post.published_date)}
+    <div class="scroll-item">
+      <div class="card overflow-hidden cursor-pointer hover:shadow-xl transition-all h-full" onclick="navigateTo('blog/${post.id}')">
+        ${post.image_url ? `
+          <img src="${post.image_url}" alt="${post.title}" class="w-full h-48 object-cover">
+        ` : `
+          <div class="w-full h-48 bg-gradient-to-br from-purple-500 to-pink-500"></div>
+        `}
+        <div class="p-5">
+          <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${post.title}</h4>
+          <p class="text-sm text-gray-600 line-clamp-3 mb-3">${post.content.substring(0, 100)}...</p>
+          <div class="text-xs text-gray-500">
+            <i class="fas fa-calendar mr-1"></i>${formatDate(post.published_date)}
+          </div>
         </div>
       </div>
     </div>
   `;
 }
 
-// ============ Admin Page ============
-function renderAdminPage() {
-  return `
-    <div class="min-h-screen bg-gray-50">
-      <!-- Admin Header -->
-      <header class="bg-white border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-3">
-              <i class="fas fa-cog text-purple-600 text-2xl"></i>
-              <h1 class="text-xl font-bold text-gray-900">管理画面</h1>
-            </div>
-            <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
-              <i class="fas fa-home"></i>
-              ホームに戻る
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <!-- Admin Content -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          
-          <!-- Sidebar -->
-          <aside class="lg:col-span-1">
-            <nav class="card p-4 space-y-2">
-              <button onclick="showAdminSection('blog')" class="w-full btn btn-secondary text-left justify-start">
-                <i class="fas fa-newspaper"></i>
-                ブログ管理
-              </button>
-              <button onclick="showAdminSection('videos')" class="w-full btn btn-secondary text-left justify-start">
-                <i class="fas fa-video"></i>
-                動画管理
-              </button>
-              <button onclick="showAdminSection('users')" class="w-full btn btn-secondary text-left justify-start">
-                <i class="fas fa-users"></i>
-                ユーザー管理
-              </button>
-              <button onclick="showAdminSection('settings')" class="w-full btn btn-secondary text-left justify-start">
-                <i class="fas fa-sliders-h"></i>
-                設定
-              </button>
-            </nav>
-          </aside>
-
-          <!-- Main Admin Area -->
-          <div class="lg:col-span-3">
-            <div id="admin-content">
-              ${renderBlogAdminSection()}
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-  `;
+// ============ Carousel Functions ============
+function initializeCarousels() {
+  // Add smooth scrolling to all carousels
+  document.querySelectorAll('.horizontal-scroll').forEach(carousel => {
+    carousel.style.scrollBehavior = 'smooth';
+  });
 }
 
-// ============ Blog Admin Section ============
-function renderBlogAdminSection() {
-  return `
-    <div class="card p-6 space-y-6">
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-900">ブログ管理</h2>
-        <button onclick="showBlogEditor()" class="btn btn-primary">
-          <i class="fas fa-plus"></i>
-          新規投稿
-        </button>
-      </div>
+function scrollCarousel(carouselId, direction) {
+  const container = document.querySelector(`#${carouselId} .horizontal-scroll`);
+  const scrollAmount = 300;
+  container.scrollLeft += scrollAmount * direction;
+}
 
-      <div class="space-y-3">
-        ${state.blogPosts.map(post => `
-          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div class="flex-1">
-              <h4 class="font-semibold text-gray-900">${post.title}</h4>
-              <p class="text-sm text-gray-600 mt-1">${formatDate(post.published_date)}</p>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="editBlogPost(${post.id})" class="btn btn-sm btn-secondary">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button onclick="deleteBlogPost(${post.id})" class="btn btn-sm btn-secondary text-red-600">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `;
+// ============ Switch Ranking Period ============
+async function switchRankingPeriod(period) {
+  state.currentRankingType = period;
+  
+  if (state.rankings[period].length === 0) {
+    try {
+      const response = await axios.get(`/api/rankings/${period}?limit=20`);
+      state.rankings[period] = response.data || [];
+    } catch (error) {
+      showToast('ランキングの読み込みに失敗しました', 'error');
+      return;
+    }
+  }
+  
+  renderApp();
 }
 
 // ============ Helper Functions ============
@@ -429,7 +538,96 @@ function navigateTo(view) {
   window.location.hash = view;
 }
 
-// ============ Auth Modal ============
+// ============ Pricing Modal ============
+function showPricingModal() {
+  const modal = document.getElementById('pricing-modal');
+  modal.innerHTML = `
+    <div class="modal-content max-w-md">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-2xl font-bold">プレミアムプラン</h3>
+        <button onclick="closeModal('pricing-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg mb-6">
+        <div class="text-center mb-4">
+          <div class="text-4xl font-bold text-purple-600 mb-2">$20<span class="text-lg font-normal">/月</span></div>
+          <p class="text-sm text-gray-600">15日間無料トライアル</p>
+        </div>
+        
+        <ul class="space-y-2 text-sm">
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 動画投稿無制限</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> いいね・お気に入り機能</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 広告非表示</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> AIグレード判定機能</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 優先サポート</li>
+        </ul>
+      </div>
+      
+      <form onsubmit="handlePremiumSubscribe(event)" class="space-y-4">
+        ${!state.currentUser ? `
+          <div>
+            <label>ユーザー名</label>
+            <input type="text" name="username" required>
+          </div>
+          <div>
+            <label>メールアドレス</label>
+            <input type="email" name="email" required>
+          </div>
+          <div>
+            <label>パスワード</label>
+            <input type="password" name="password" required>
+          </div>
+        ` : ''}
+        
+        <div>
+          <label>クレジットカード番号</label>
+          <input type="text" placeholder="1234 5678 9012 3456" required>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label>有効期限</label>
+            <input type="text" placeholder="MM/YY" required>
+          </div>
+          <div>
+            <label>CVV</label>
+            <input type="text" placeholder="123" required>
+          </div>
+        </div>
+        
+        <p class="text-xs text-gray-600">
+          15日間の無料トライアル後、自動的に月額$20が請求されます。<br>
+          いつでもキャンセル可能です。
+        </p>
+        
+        <button type="submit" class="btn btn-primary btn-lg w-full">
+          <i class="fas fa-crown"></i>
+          15日間無料で始める
+        </button>
+      </form>
+      
+      <p class="text-xs text-center text-gray-500 mt-4">
+        お支払い情報は安全に暗号化されて処理されます
+      </p>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+async function handlePremiumSubscribe(event) {
+  event.preventDefault();
+  showToast('プレミアムプランへの登録処理を開始します...', 'info');
+  
+  // Simulate payment processing
+  setTimeout(() => {
+    closeModal('pricing-modal');
+    showToast('プレミアムプランに登録しました！15日間無料でお試しいただけます', 'success');
+  }, 1500);
+}
+
+// ============ Auth Modal (Continuing from previous implementation) ============
 function showAuthModal(type) {
   const modal = document.getElementById('auth-modal');
   modal.innerHTML = `
@@ -532,7 +730,7 @@ async function showVideoDetail(videoId) {
         
         <div class="flex items-center justify-between mb-4">
           <div class="flex gap-4 text-sm text-gray-600">
-            <span><i class="fas fa-eye mr-1"></i>${video.views} 回視聴</span>
+            <span><i class="fas fa-eye mr-1"></i>${video.views.toLocaleString()} 回視聴</span>
             <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
           </div>
           
@@ -668,7 +866,7 @@ async function handleUpload(event) {
 // ============ Filter Videos ============
 async function filterVideos(category) {
   try {
-    const url = category === 'all' ? '/api/videos?limit=12' : `/api/videos?category=${category}&limit=12`;
+    const url = category === 'all' ? '/api/videos?limit=20' : `/api/videos?category=${category}&limit=20`;
     const response = await axios.get(url);
     state.videos = response.data.videos || [];
     renderApp();
@@ -677,19 +875,7 @@ async function filterVideos(category) {
   }
 }
 
-// ============ Load Rankings ============
-async function loadRankings(type) {
-  try {
-    const response = await axios.get(`/api/rankings/${type}?limit=10`);
-    state.rankings[type] = response.data || [];
-    renderApp();
-    showToast(`${type === 'monthly' ? '月間' : '週間'}ランキングを表示中`, 'info');
-  } catch (error) {
-    showToast('ランキングの読み込みに失敗しました', 'error');
-  }
-}
-
-// ============ Blog Detail ============
+// ============ Blog Detail (Simplified) ============
 async function renderBlogDetail() {
   try {
     const response = await axios.get(`/api/blog/${state.currentBlogId}`);
@@ -731,6 +917,8 @@ async function renderBlogDetail() {
           </button>
         </div>
       </article>
+      
+      ${renderFooter()}
     `;
   } catch (error) {
     showToast('ブログの読み込みに失敗しました', 'error');
@@ -738,107 +926,54 @@ async function renderBlogDetail() {
   }
 }
 
-// ============ Admin Functions ============
-function showAdminSection(section) {
-  const content = document.getElementById('admin-content');
-  
-  if (section === 'blog') {
-    content.innerHTML = renderBlogAdminSection();
-  } else if (section === 'videos') {
-    content.innerHTML = '<div class="card p-6"><h2 class="text-2xl font-bold">動画管理（開発中）</h2></div>';
-  } else if (section === 'users') {
-    content.innerHTML = '<div class="card p-6"><h2 class="text-2xl font-bold">ユーザー管理（開発中）</h2></div>';
-  } else if (section === 'settings') {
-    content.innerHTML = '<div class="card p-6"><h2 class="text-2xl font-bold">設定（開発中）</h2></div>';
-  }
-}
+// ============ Admin Page (Simplified) ============
+function renderAdminPage() {
+  return `
+    <div class="min-h-screen bg-gray-50">
+      <header class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-cog text-purple-600 text-2xl"></i>
+              <h1 class="text-xl font-bold text-gray-900">管理画面</h1>
+            </div>
+            <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
+              <i class="fas fa-home"></i>
+              ホームに戻る
+            </button>
+          </div>
+        </div>
+      </header>
 
-function showBlogEditor(postId = null) {
-  const isEdit = postId !== null;
-  const post = isEdit ? state.blogPosts.find(p => p.id === postId) : null;
-  
-  const modal = document.getElementById('auth-modal');
-  modal.innerHTML = `
-    <div class="modal-content max-w-2xl">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-bold">${isEdit ? 'ブログ編集' : '新規ブログ投稿'}</h3>
-        <button onclick="closeModal('auth-modal')" class="text-gray-400 hover:text-gray-600">
-          <i class="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      
-      <form onsubmit="handleBlogSubmit(event, ${postId})" class="space-y-4">
-        <div>
-          <label>タイトル</label>
-          <input type="text" name="title" value="${post?.title || ''}" required class="w-full">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="card p-6">
+          <h2 class="text-2xl font-bold mb-6">ブログ管理</h2>
+          <div class="space-y-3">
+            ${state.blogPosts.map(post => `
+              <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900">${post.title}</h4>
+                  <p class="text-sm text-gray-600 mt-1">${formatDate(post.published_date)}</p>
+                </div>
+                <div class="flex gap-2">
+                  <button class="btn btn-sm btn-secondary">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-secondary text-red-600">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-        
-        <div>
-          <label>内容</label>
-          <textarea name="content" rows="10" required class="w-full">${post?.content || ''}</textarea>
-        </div>
-        
-        <div>
-          <label>画像URL</label>
-          <input type="url" name="image_url" value="${post?.image_url || ''}" class="w-full">
-        </div>
-        
-        <div>
-          <label>公開日</label>
-          <input type="date" name="published_date" value="${post?.published_date || ''}" class="w-full">
-        </div>
-        
-        <button type="submit" class="btn btn-primary w-full">
-          ${isEdit ? '更新' : '投稿'}する
-        </button>
-      </form>
+      </main>
     </div>
   `;
-  modal.classList.add('active');
-}
-
-async function handleBlogSubmit(event, postId) {
-  event.preventDefault();
-  const formData = new FormData(event.target);
-  const data = Object.fromEntries(formData);
-  
-  try {
-    if (postId) {
-      await axios.put(`/api/blog/${postId}`, data);
-      showToast('ブログを更新しました', 'success');
-    } else {
-      await axios.post('/api/blog', data);
-      showToast('ブログを投稿しました', 'success');
-    }
-    
-    closeModal('auth-modal');
-    await loadInitialData();
-    renderApp();
-  } catch (error) {
-    showToast('投稿に失敗しました', 'error');
-  }
-}
-
-function editBlogPost(postId) {
-  showBlogEditor(postId);
-}
-
-async function deleteBlogPost(postId) {
-  if (!confirm('本当に削除しますか？')) return;
-  
-  try {
-    await axios.delete(`/api/blog/${postId}`);
-    await loadInitialData();
-    renderApp();
-    showToast('ブログを削除しました', 'success');
-  } catch (error) {
-    showToast('削除に失敗しました', 'error');
-  }
 }
 
 // ============ Event Listeners ============
 function attachEventListeners() {
-  // Close modals on outside click
   document.querySelectorAll('.modal').forEach(modal => {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {

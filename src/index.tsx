@@ -422,12 +422,14 @@ app.post('/api/videos/:id/comments', async (c) => {
 // Get rankings
 app.get('/api/rankings/:type', async (c) => {
   const { env } = c
-  const type = c.req.param('type') // 'weekly', 'monthly', 'total'
+  const type = c.req.param('type') // 'daily', 'weekly', 'monthly', 'yearly', 'total'
   const limit = parseInt(c.req.query('limit') || '20')
 
   let scoreColumn = 'total_score'
+  if (type === 'daily') scoreColumn = 'daily_score'
   if (type === 'weekly') scoreColumn = 'weekly_score'
   if (type === 'monthly') scoreColumn = 'monthly_score'
+  if (type === 'yearly') scoreColumn = 'yearly_score'
 
   try {
     const { results: rankings } = await env.DB.prepare(`

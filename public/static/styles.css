@@ -245,6 +245,43 @@ button:disabled {
 
 /* ==================== Horizontal Scroll ==================== */
 
+.carousel-container {
+  position: relative;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+
+.carousel-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.carousel-btn-left {
+  left: -20px;
+}
+
+.carousel-btn-right {
+  right: -20px;
+}
+
 .horizontal-scroll {
   display: flex;
   overflow-x: auto;
@@ -252,15 +289,13 @@ button:disabled {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: var(--primary) var(--background);
-  gap: 12px;
+  gap: 16px;
   padding: 12px 0;
-  margin: 0 -16px;
-  padding-left: 16px;
-  padding-right: 16px;
+  margin: 0;
 }
 
 .horizontal-scroll::-webkit-scrollbar {
-  height: 6px;
+  height: 8px;
 }
 
 .horizontal-scroll::-webkit-scrollbar-track {
@@ -278,8 +313,18 @@ button:disabled {
 }
 
 .scroll-item {
-  flex: 0 0 280px;
+  flex: 0 0 300px;
   scroll-snap-align: start;
+}
+
+@media (max-width: 768px) {
+  .scroll-item {
+    flex: 0 0 260px;
+  }
+  
+  .carousel-btn {
+    display: none;
+  }
 }
 
 /* ==================== Modal ==================== */
