@@ -147,7 +147,8 @@ app.get('/api/auth/me', async (c) => {
     id: (user as any).id,
     email: (user as any).email,
     username: (user as any).username,
-    membership_type: (user as any).membership_type
+    membership_type: (user as any).membership_type,
+    is_admin: (user as any).is_admin || 0
   })
 })
 
