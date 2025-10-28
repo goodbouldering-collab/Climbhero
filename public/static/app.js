@@ -315,50 +315,49 @@ function renderHomePage() {
       </section>
 
       <!-- Pricing Section -->
-      <section class="py-10 bg-gradient-to-br from-purple-50 to-pink-50">
+      <section class="py-8 bg-gradient-to-br from-purple-50 to-pink-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-12">
-            <h3 class="text-3xl font-bold text-gray-900 mb-4">プレミアムプランで、さらに充実</h3>
-            <p class="text-lg text-gray-600">15日間無料トライアル実施中</p>
+          <div class="text-center mb-6">
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">プレミアムで、あなたの動画を応援</h3>
+            <p class="text-sm text-gray-600">✨ 15日間無料トライアル実施中</p>
           </div>
           
-          <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <!-- Free Plan -->
-            <div class="card p-8 bg-white">
-              <h4 class="text-xl font-bold mb-2">無料プラン</h4>
-              <div class="text-3xl font-bold text-gray-900 mb-4">$0<span class="text-lg font-normal text-gray-600">/月</span></div>
-              <ul class="space-y-3 mb-6">
-                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> 動画閲覧無制限</li>
-                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> ランキング閲覧</li>
-                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> ブログ閲覧</li>
-                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times"></i> 動画投稿（月5本まで）</li>
-                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times"></i> いいね・お気に入り</li>
+            <div class="card p-6 bg-white">
+              <h4 class="text-lg font-bold mb-2">無料プラン</h4>
+              <div class="text-2xl font-bold text-gray-900 mb-3">$0<span class="text-sm font-normal text-gray-600">/月</span></div>
+              <ul class="space-y-2 mb-4 text-sm">
+                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500 text-xs"></i> 動画閲覧無制限</li>
+                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500 text-xs"></i> ランキング閲覧</li>
+                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">動画投稿</span> <span class="text-xs">（不可）</span></li>
+                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">いいね</span> <span class="text-xs">（3回まで）</span></li>
+                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">動画を応援</span> <span class="text-xs">（制限付き）</span></li>
               </ul>
               ${!state.currentUser ? `
-                <button onclick="showAuthModal('register')" class="btn btn-secondary w-full">
+                <button onclick="showAuthModal('register')" class="btn btn-sm btn-secondary w-full">
                   無料で始める
                 </button>
               ` : ''}
             </div>
             
             <!-- Premium Plan -->
-            <div class="card p-8 bg-gradient-to-br from-purple-600 to-purple-700 text-white relative overflow-hidden">
-              <div class="absolute top-4 right-4 bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-xs font-bold">
-                人気No.1
+            <div class="card p-6 bg-gradient-to-br from-purple-600 to-purple-700 text-white relative overflow-hidden">
+              <div class="absolute top-3 right-3 bg-yellow-400 text-purple-900 px-2 py-1 rounded-full text-xs font-bold">
+                おすすめ
               </div>
-              <h4 class="text-xl font-bold mb-2">プレミアムプラン</h4>
-              <div class="text-3xl font-bold mb-4">$20<span class="text-lg font-normal opacity-90">/月</span></div>
-              <ul class="space-y-3 mb-6">
-                <li class="flex items-center gap-2"><i class="fas fa-check"></i> 動画閲覧無制限</li>
-                <li class="flex items-center gap-2"><i class="fas fa-check"></i> ランキング閲覧</li>
-                <li class="flex items-center gap-2"><i class="fas fa-check"></i> ブログ閲覧</li>
-                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>動画投稿無制限</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>いいね・お気に入り</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>広告非表示</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-check"></i> <strong>AIグレード判定</strong></li>
+              <h4 class="text-lg font-bold mb-2">プレミアムプラン</h4>
+              <div class="text-2xl font-bold mb-3">$20<span class="text-sm font-normal opacity-90">/月</span></div>
+              <ul class="space-y-2 mb-4 text-sm">
+                <li class="flex items-center gap-2"><i class="fas fa-check text-xs"></i> 動画閲覧無制限</li>
+                <li class="flex items-center gap-2"><i class="fas fa-check text-xs"></i> ランキング閲覧</li>
+                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>あなたの動画を投稿できる</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>無制限にいいねできる</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>動画を応援してランキングUP</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-star text-yellow-300 text-xs"></i> <strong>広告非表示</strong></li>
               </ul>
-              <button onclick="showPricingModal()" class="btn btn-lg w-full bg-white text-purple-600 hover:bg-gray-100">
-                <i class="fas fa-star"></i>
+              <button onclick="showPricingModal()" class="btn btn-sm w-full bg-white text-purple-600 hover:bg-gray-100 font-bold">
+                <i class="fas fa-crown"></i>
                 15日間無料で試す
               </button>
             </div>
@@ -1041,48 +1040,48 @@ function showPremiumLimitModal(currentLikes) {
   const modal = document.getElementById('premium-limit-modal') || createModal('premium-limit-modal');
   modal.innerHTML = `
     <div class="modal-content max-w-md">
-      <div class="text-center mb-6">
-        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <i class="fas fa-crown text-white text-3xl"></i>
+      <div class="text-center mb-5">
+        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-3 flex items-center justify-center">
+          <i class="fas fa-heart text-white text-2xl"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-900 mb-2">いいね制限に達しました</h3>
-        <p class="text-gray-600">無料プランでは${currentLikes}回までいいねができます</p>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">もっと応援しませんか？</h3>
+        <p class="text-sm text-gray-600">無料プランでは${currentLikes}回までいいねができます</p>
       </div>
       
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
-        <h4 class="font-bold text-lg mb-3 text-center">プレミアムプランなら</h4>
-        <ul class="space-y-2">
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-5 mb-5">
+        <h4 class="font-bold text-base mb-3 text-center text-purple-700">プレミアムでできること</h4>
+        <ul class="space-y-2 text-sm">
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
-            <span class="text-gray-700">無制限にいいね可能</span>
+            <i class="fas fa-heart text-red-500 text-xs"></i>
+            <span class="text-gray-700"><strong>無制限にいいね</strong>してお気に入り動画を応援</span>
           </li>
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
-            <span class="text-gray-700">動画投稿無制限</span>
+            <i class="fas fa-upload text-purple-600 text-xs"></i>
+            <span class="text-gray-700"><strong>あなたの動画を投稿</strong>してコミュニティと共有</span>
           </li>
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
-            <span class="text-gray-700">広告非表示</span>
+            <i class="fas fa-trophy text-yellow-500 text-xs"></i>
+            <span class="text-gray-700"><strong>ランキングに貢献</strong>して人気動画を作る</span>
           </li>
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
-            <span class="text-gray-700">AIグレード判定機能</span>
+            <i class="fas fa-star text-purple-600 text-xs"></i>
+            <span class="text-gray-700">広告非表示で快適視聴</span>
           </li>
         </ul>
         
-        <div class="text-center mt-4">
-          <div class="text-3xl font-bold text-purple-600">$20<span class="text-lg font-normal">/月</span></div>
-          <div class="text-sm text-gray-600 mt-1">15日間無料トライアル</div>
+        <div class="text-center mt-4 pt-3 border-t border-purple-200">
+          <div class="text-2xl font-bold text-purple-600">$20<span class="text-base font-normal">/月</span></div>
+          <div class="text-xs text-gray-600 mt-1">✨ 15日間無料トライアル</div>
         </div>
       </div>
       
       <div class="flex gap-3">
-        <button onclick="closeModal('premium-limit-modal')" class="btn btn-secondary flex-1">
+        <button onclick="closeModal('premium-limit-modal')" class="btn btn-sm btn-secondary flex-1">
           後で
         </button>
-        <button onclick="closeModal('premium-limit-modal'); showPricingModal();" class="btn btn-primary flex-1">
+        <button onclick="closeModal('premium-limit-modal'); showPricingModal();" class="btn btn-sm btn-primary flex-1">
           <i class="fas fa-crown"></i>
-          今すぐアップグレード
+          今すぐ始める
         </button>
       </div>
     </div>
