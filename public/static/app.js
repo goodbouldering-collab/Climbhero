@@ -415,34 +415,54 @@ function renderFooter() {
 
 // ============ Ranking Card ============
 function renderRankingCard(video, rank) {
-  const medal = rank <= 3 ? `<div class="ranking-medal rank-${rank}">${rank}</div>` : `<div class="ranking-number">${rank}</div>`;
   const score = video.total_score || (video.views + video.likes * 10);
+  
+  // Rank badge position
+  let rankBadge = '';
+  if (rank <= 3) {
+    rankBadge = `<div class="ranking-medal rank-${rank}">${rank}</div>`;
+  } else {
+    rankBadge = `<div class="ranking-badge-number">${rank}</div>`;
+  }
   
   return `
     <div class="scroll-item">
-      <div class="ranking-item-compact" onclick="showVideoDetail(${video.id})">
-        ${medal}
-        <div class="ranking-thumbnail">
+      <div class="video-card-compact video-card-ranking" onclick="showVideoDetail(${video.id})">
+        <div class="video-thumbnail">
           <img src="${video.thumbnail_url}" alt="${video.title}">
-        </div>
-        <div class="ranking-info">
-          <div class="ranking-title line-clamp-2">${video.title}</div>
-          <div class="ranking-stats">
-            <span class="stats-badge">
-              <i class="fas fa-eye"></i> ${video.views.toLocaleString()}
-            </span>
-            <span class="stats-badge">
-              <i class="fas fa-heart"></i> ${video.likes}
-            </span>
-            <span class="category-badge category-${video.category}">${getCategoryName(video.category)}</span>
+          <div class="duration-badge">${video.duration}</div>
+          ${rankBadge}
+          <div class="ranking-overlay">
+            <div class="ranking-score-large">
+              <i class="fas fa-star"></i>
+              <span>${score.toLocaleString()}</span>
+            </div>
           </div>
         </div>
-        <div class="ranking-score">
-          <i class="fas fa-star"></i> ${score.toLocaleString()}
+        <div class="video-info-compact">
+          <div class="video-title-compact line-clamp-2">${video.title}</div>
+          <div class="video-meta-compact">
+            <span><i class="fas fa-eye"></i> ${video.views.toLocaleString()}</span>
+            <span><i class="fas fa-heart"></i> ${video.likes}</span>
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="category-badge category-${video.category}">${getCategoryName(video.category)}</span>
+            <span class="text-xs font-bold text-purple-600">
+              ${getRankChange(rank)}
+            </span>
+          </div>
         </div>
       </div>
     </div>
   `;
+}
+
+// ランキング変動を返す（デモ用）
+function getRankChange(rank) {
+  if (rank === 1) return '👑 1位';
+  if (rank <= 3) return '🔥 急上昇';
+  if (rank <= 10) return '📈 +' + Math.floor(Math.random() * 5 + 1);
+  return '⭐ NEW';
 }
 
 // ============ Video Card ============
@@ -503,6 +523,40 @@ function initializeCarousels() {
   // Add smooth scrolling to all carousels
   document.querySelectorAll('.horizontal-scroll').forEach(carousel => {
     carousel.style.scrollBehavior = 'smooth';
+    
+    // Add scroll progress indicator
+    const container = carousel.closest('.carousel-container');
+    if (container && !container.querySelector('.scroll-progress')) {
+      const progress = document.createElement('div');
+      progress.className = 'scroll-progress';
+      progress.style.width = '0%';
+      container.appendChild(progress);
+      
+      // Update progress on scroll
+      carousel.addEventListener('scroll', () => {
+        const scrollWidth = carousel.scrollWidth - carousel.clientWidth;
+        const scrolled = carousel.scrollLeft;
+        const percent = (scrolled / scrollWidth) * 100;
+        progress.style.width = percent + '%';
+      });
+    }
+  });
+  
+  // Add entrance animation to cards
+  document.querySelectorAll('.scroll-item').forEach((card, index) => {
+    card.style.animationDelay = (index * 0.05) + 's';
+    card.classList.add('animate-bounce-in');
+  });
+  
+  // Add tooltips to stats badges
+  document.querySelectorAll('.stats-badge').forEach(badge => {
+    if (badge.textContent.includes('👁') || badge.textContent.includes('eye')) {
+      badge.setAttribute('data-tooltip', '視聴回数');
+      badge.classList.add('tooltip');
+    } else if (badge.textContent.includes('❤') || badge.textContent.includes('heart')) {
+      badge.setAttribute('data-tooltip', 'いいね数');
+      badge.classList.add('tooltip');
+    }
   });
 }
 
@@ -516,17 +570,44 @@ function scrollCarousel(carouselId, direction) {
 async function switchRankingPeriod(period) {
   state.currentRankingType = period;
   
+  // Show loading skeleton
+  const rankingScroll = document.getElementById('ranking-scroll');
+  if (rankingScroll) {
+    rankingScroll.style.opacity = '0.5';
+  }
+  
   if (state.rankings[period].length === 0) {
     try {
       const response = await axios.get(`/api/rankings/${period}?limit=20`);
       state.rankings[period] = response.data || [];
     } catch (error) {
       showToast('ランキングの読み込みに失敗しました', 'error');
+      if (rankingScroll) {
+        rankingScroll.style.opacity = '1';
+      }
       return;
     }
   }
   
-  renderApp();
+  // Update tab active state
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  
+  // Re-render ranking section with animation
+  if (rankingScroll) {
+    setTimeout(() => {
+      rankingScroll.innerHTML = state.rankings[period].map((video, index) => renderRankingCard(video, index + 1)).join('');
+      rankingScroll.style.opacity = '1';
+      
+      // Re-initialize carousel features
+      document.querySelectorAll('#ranking-scroll .scroll-item').forEach((card, index) => {
+        card.style.animationDelay = (index * 0.05) + 's';
+        card.classList.add('animate-bounce-in');
+      });
+    }, 150);
+  }
 }
 
 // ============ Helper Functions ============
