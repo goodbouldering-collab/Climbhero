@@ -183,13 +183,14 @@ function renderHomePage() {
                   <span id="notification-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">0</span>
                 </button>
               </div>
-            `}
+              
               ${state.currentUser.is_admin ? `
                 <button onclick="navigateTo('admin')" class="btn btn-sm btn-secondary">
                   <i class="fas fa-cog"></i>
                   <span class="hidden sm:inline">${i18n.t('nav.admin')}</span>
                 </button>
               ` : ''}
+              
               <div class="flex items-center gap-2">
                 <div class="avatar">
                   ${state.currentUser.username[0].toUpperCase()}
@@ -1667,17 +1668,17 @@ function showShareModal(videoId) {
           ${i18n.t('share.copy_link')}
         </button>
         
-        <button onclick="shareToTwitter('${encodeURIComponent(video.title)}', '${shareUrl}')" class="btn btn-secondary w-full justify-start">
+        <button onclick="shareToTwitter('${encodeURIComponent(video.title)}', '${shareUrl}', ${videoId})" class="btn btn-secondary w-full justify-start">
           <i class="fab fa-twitter text-blue-400"></i>
           ${i18n.t('share.twitter')}
         </button>
         
-        <button onclick="shareToFacebook('${shareUrl}')" class="btn btn-secondary w-full justify-start">
+        <button onclick="shareToFacebook('${shareUrl}', ${videoId})" class="btn btn-secondary w-full justify-start">
           <i class="fab fa-facebook text-blue-600"></i>
           ${i18n.t('share.facebook')}
         </button>
         
-        <button onclick="shareToLine('${encodeURIComponent(video.title)}', '${shareUrl}')" class="btn btn-secondary w-full justify-start">
+        <button onclick="shareToLine('${encodeURIComponent(video.title)}', '${shareUrl}', ${videoId})" class="btn btn-secondary w-full justify-start">
           <i class="fab fa-line text-green-500"></i>
           ${i18n.t('share.line')}
         </button>
@@ -1695,24 +1696,24 @@ function copyToClipboard(text) {
   });
 }
 
-function shareToTwitter(text, url) {
+function shareToTwitter(text, url, videoId) {
   window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-  trackShare('twitter');
+  trackShare('twitter', videoId);
 }
 
-function shareToFacebook(url) {
+function shareToFacebook(url, videoId) {
   window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-  trackShare('facebook');
+  trackShare('facebook', videoId);
 }
 
-function shareToLine(text, url) {
+function shareToLine(text, url, videoId) {
   window.open(`https://line.me/R/msg/text/?${text}%20${url}`, '_blank');
-  trackShare('line');
+  trackShare('line', videoId);
 }
 
-async function trackShare(platform) {
+async function trackShare(platform, videoId) {
   try {
-    await axios.post('/api/shares', { platform });
+    await axios.post('/api/shares', { platform, video_id: videoId });
   } catch (error) {
     console.error('Failed to track share:', error);
   }
