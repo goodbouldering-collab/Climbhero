@@ -258,54 +258,102 @@ app.post('/api/videos', async (c) => {
   }
 })
 
-// Like video
+// Like video (新しい user_likes テーブルを使用)
 app.post('/api/videos/:id/like', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
   }
 
   const videoId = c.req.param('id')
-  const userId = (user as any).id
+  const userId = user.id
 
   try {
-    const existing = await env.DB.prepare('SELECT * FROM likes WHERE user_id = ? AND video_id = ?').bind(userId, videoId).first()
+    // Check if already liked
+    const existing = await env.DB.prepare('SELECT * FROM user_likes WHERE user_id = ? AND video_id = ?').bind(userId, videoId).first()
     
     if (existing) {
-      await env.DB.prepare('DELETE FROM likes WHERE user_id = ? AND video_id = ?').bind(userId, videoId).run()
-      await env.DB.prepare('UPDATE videos SET likes = likes - 1 WHERE id = ?').bind(videoId).run()
-      await env.DB.prepare('UPDATE video_rankings SET total_score = total_score - 10, weekly_score = weekly_score - 10, monthly_score = monthly_score - 10 WHERE video_id = ?').bind(videoId).run()
-      return c.json({ message: 'Unliked successfully', liked: false })
-    } else {
-      await env.DB.prepare('INSERT INTO likes (user_id, video_id) VALUES (?, ?)').bind(userId, videoId).run()
-      await env.DB.prepare('UPDATE videos SET likes = likes + 1 WHERE id = ?').bind(videoId).run()
-      await env.DB.prepare('UPDATE video_rankings SET total_score = total_score + 10, weekly_score = weekly_score + 10, monthly_score = monthly_score + 10 WHERE video_id = ?').bind(videoId).run()
-      return c.json({ message: 'Liked successfully', liked: true })
+      return c.json({ error: 'Already liked this video', liked: true }, 400)
     }
+
+    // Free users: Check like limit (3 likes)
+    if (user.membership_type === 'free') {
+      const likeCount = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM user_likes WHERE user_id = ?'
+      ).bind(userId).first() as any
+      
+      if (likeCount && likeCount.count >= 3) {
+        return c.json({ 
+          error: 'Free plan limit reached',
+          message: 'プレミアムプランにアップグレードすると無制限にいいねできます',
+          limit_reached: true,
+          current_count: likeCount.count
+        }, 403)
+      }
+    }
+
+    // Add like
+    await env.DB.prepare('INSERT INTO user_likes (user_id, video_id) VALUES (?, ?)').bind(userId, videoId).run()
+    await env.DB.prepare('UPDATE videos SET likes = likes + 1 WHERE id = ?').bind(videoId).run()
+    
+    // Update rankings (internal likes only)
+    await env.DB.prepare(`
+      UPDATE video_rankings 
+      SET 
+        total_score = total_score + 1,
+        daily_score = daily_score + 1,
+        weekly_score = weekly_score + 1,
+        monthly_score = monthly_score + 1,
+        yearly_score = yearly_score + 1,
+        last_updated = CURRENT_TIMESTAMP
+      WHERE video_id = ?
+    `).bind(videoId).run()
+    
+    // Get updated like count
+    const video = await env.DB.prepare('SELECT likes FROM videos WHERE id = ?').bind(videoId).first() as any
+    const userLikeCount = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM user_likes WHERE user_id = ?'
+    ).bind(userId).first() as any
+    
+    return c.json({ 
+      message: 'Liked successfully',
+      liked: true,
+      likes: video.likes,
+      user_like_count: userLikeCount.count,
+      remaining_likes: user.membership_type === 'free' ? (3 - userLikeCount.count) : 'unlimited'
+    })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
 })
 
-// Check if user liked video
+// Check if user liked video and get like info
 app.get('/api/videos/:id/liked', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
 
   if (!user) {
-    return c.json({ liked: false })
+    return c.json({ liked: false, user_like_count: 0, remaining_likes: 0 })
   }
 
   const videoId = c.req.param('id')
-  const userId = (user as any).id
+  const userId = user.id
 
   try {
-    const like = await env.DB.prepare('SELECT * FROM likes WHERE user_id = ? AND video_id = ?').bind(userId, videoId).first()
-    return c.json({ liked: !!like })
+    const like = await env.DB.prepare('SELECT * FROM user_likes WHERE user_id = ? AND video_id = ?').bind(userId, videoId).first()
+    const userLikeCount = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM user_likes WHERE user_id = ?'
+    ).bind(userId).first() as any
+    
+    return c.json({ 
+      liked: !!like,
+      user_like_count: userLikeCount.count,
+      remaining_likes: user.membership_type === 'free' ? Math.max(0, 3 - userLikeCount.count) : 'unlimited'
+    })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -610,5 +658,90 @@ app.get('/', (c) => {
   `;
   return c.html(html)
 })
+
+// ============ Media Analysis API ============
+
+// Parse video URL and extract media source and embed info
+app.post('/api/media/analyze', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { url } = body
+
+    if (!url) {
+      return c.json({ error: 'URL is required' }, 400)
+    }
+
+    let mediaSource = 'unknown'
+    let embedUrl = ''
+    let videoId = ''
+
+    // YouTube
+    if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+      mediaSource = 'youtube'
+      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)
+      if (match) {
+        videoId = match[1]
+        embedUrl = `https://www.youtube.com/embed/${videoId}`
+      }
+    }
+    // YouTube Shorts
+    else if (url.includes('youtube.com/shorts/')) {
+      mediaSource = 'youtube_shorts'
+      const match = url.match(/youtube\.com\/shorts\/([^?&\s]+)/)
+      if (match) {
+        videoId = match[1]
+        embedUrl = `https://www.youtube.com/embed/${videoId}`
+      }
+    }
+    // Vimeo
+    else if (url.includes('vimeo.com/')) {
+      mediaSource = 'vimeo'
+      const match = url.match(/vimeo\.com\/(\d+)/)
+      if (match) {
+        videoId = match[1]
+        embedUrl = `https://player.vimeo.com/video/${videoId}`
+      }
+    }
+    // Instagram
+    else if (url.includes('instagram.com/')) {
+      mediaSource = 'instagram'
+      const match = url.match(/instagram\.com\/(p|reel)\/([^/?]+)/)
+      if (match) {
+        videoId = match[2]
+        embedUrl = `https://www.instagram.com/${match[1]}/${videoId}/embed`
+      }
+    }
+    // TikTok
+    else if (url.includes('tiktok.com/')) {
+      mediaSource = 'tiktok'
+      const match = url.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/)
+      if (match) {
+        videoId = match[1]
+        embedUrl = `https://www.tiktok.com/embed/v2/${videoId}`
+      }
+    }
+
+    return c.json({
+      media_source: mediaSource,
+      video_id: videoId,
+      embed_url: embedUrl,
+      original_url: url
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get media source display name
+function getMediaSourceName(source: string): string {
+  const names: Record<string, string> = {
+    'youtube': 'YouTube',
+    'youtube_shorts': 'YouTube Shorts',
+    'vimeo': 'Vimeo',
+    'instagram': 'Instagram',
+    'tiktok': 'TikTok'
+  }
+  return names[source] || 'Unknown'
+}
 
 export default app

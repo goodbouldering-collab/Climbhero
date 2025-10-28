@@ -45,9 +45,45 @@ async function loadInitialData() {
     state.videos = videosRes.data.videos || [];
     state.rankings.weekly = rankingsRes.data || [];
     state.blogPosts = blogRes.data || [];
+    
+    // Load user like status for all videos
+    if (state.currentUser) {
+      await loadUserLikeStatus();
+    }
   } catch (error) {
     console.error('Failed to load initial data:', error);
     showToast('データの読み込みに失敗しました', 'error');
+  }
+}
+
+// Load user like status for all videos
+async function loadUserLikeStatus() {
+  if (!state.currentUser) return;
+  
+  try {
+    const allVideos = [
+      ...state.videos,
+      ...state.rankings.daily,
+      ...state.rankings.weekly,
+      ...state.rankings.monthly,
+      ...state.rankings.yearly
+    ];
+    
+    const uniqueVideoIds = [...new Set(allVideos.map(v => v.id))];
+    
+    for (const videoId of uniqueVideoIds) {
+      try {
+        const res = await axios.get(`/api/videos/${videoId}/liked`);
+        const video = allVideos.find(v => v.id === videoId);
+        if (video) {
+          video.user_liked = res.data.liked;
+        }
+      } catch (err) {
+        // Ignore individual errors
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load like status:', error);
   }
 }
 
@@ -415,7 +451,11 @@ function renderFooter() {
 
 // ============ Ranking Card ============
 function renderRankingCard(video, rank) {
-  const score = video.total_score || (video.views + video.likes * 10);
+  const score = video.total_score || video.likes;  // Now based on internal likes only
+  const mediaSource = video.media_source || 'youtube';
+  const mediaIcon = getMediaIcon(mediaSource);
+  const mediaName = getMediaName(mediaSource);
+  const isLiked = video.user_liked || false;
   
   // Rank badge position
   let rankBadge = '';
@@ -427,29 +467,38 @@ function renderRankingCard(video, rank) {
   
   return `
     <div class="scroll-item">
-      <div class="video-card-compact video-card-ranking" onclick="showVideoDetail(${video.id})">
-        <div class="video-thumbnail">
+      <div class="video-card-compact video-card-ranking">
+        <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
           <img src="${video.thumbnail_url}" alt="${video.title}">
           <div class="duration-badge">${video.duration}</div>
+          <span class="absolute top-2 right-2 media-source-badge">
+            <i class="${mediaIcon}"></i> ${mediaName}
+          </span>
           ${rankBadge}
           <div class="ranking-overlay">
             <div class="ranking-score-large">
-              <i class="fas fa-star"></i>
-              <span>${score.toLocaleString()}</span>
+              <i class="fas fa-heart"></i>
+              <span>${score.toLocaleString()} いいね</span>
             </div>
           </div>
         </div>
         <div class="video-info-compact">
-          <div class="video-title-compact line-clamp-2">${video.title}</div>
+          <div class="video-title-compact line-clamp-2" onclick="showVideoDetail(${video.id})">${video.title}</div>
           <div class="video-meta-compact">
             <span><i class="fas fa-eye"></i> ${video.views.toLocaleString()}</span>
-            <span><i class="fas fa-heart"></i> ${video.likes}</span>
+            <span class="like-count"><i class="fas fa-heart"></i> <span id="like-count-${video.id}">${video.likes}</span></span>
           </div>
           <div class="flex items-center justify-between mt-2">
-            <span class="category-badge category-${video.category}">${getCategoryName(video.category)}</span>
             <span class="text-xs font-bold text-purple-600">
               ${getRankChange(rank)}
             </span>
+            <button 
+              class="like-btn ${isLiked ? 'liked' : ''}" 
+              data-video-id="${video.id}"
+              onclick="handleLike(event, ${video.id})"
+              title="いいね">
+              <i class="fas fa-heart"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -467,30 +516,68 @@ function getRankChange(rank) {
 
 // ============ Video Card ============
 function renderVideoCard(video) {
+  const mediaSource = video.media_source || 'youtube';
+  const mediaIcon = getMediaIcon(mediaSource);
+  const mediaName = getMediaName(mediaSource);
+  const isLiked = video.user_liked || false;
+  
   return `
     <div class="scroll-item">
-      <div class="video-card-compact" onclick="showVideoDetail(${video.id})">
-        <div class="video-thumbnail">
+      <div class="video-card-compact">
+        <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
           <img src="${video.thumbnail_url}" alt="${video.title}">
           <div class="duration-badge">${video.duration}</div>
-          <span class="absolute top-2 left-2 category-badge category-${video.category}">
-            ${getCategoryName(video.category)}
+          <span class="absolute top-2 left-2 media-source-badge">
+            <i class="${mediaIcon}"></i> ${mediaName}
           </span>
         </div>
         <div class="video-info-compact">
-          <div class="video-title-compact line-clamp-2">${video.title}</div>
+          <div class="video-title-compact line-clamp-2" onclick="showVideoDetail(${video.id})">${video.title}</div>
           <div class="video-meta-compact">
             <span><i class="fas fa-eye"></i> ${video.views.toLocaleString()}</span>
-            <span><i class="fas fa-heart"></i> ${video.likes}</span>
+            <span class="like-count"><i class="fas fa-heart"></i> <span id="like-count-${video.id}">${video.likes}</span></span>
             <span><i class="fas fa-play-circle"></i> ${video.duration}</span>
           </div>
-          <div class="text-xs text-gray-500 mt-1">
-            <i class="fas fa-user-circle"></i> ${video.channel_name}
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-xs text-gray-500">
+              <i class="fas fa-user-circle"></i> ${video.channel_name}
+            </span>
+            <button 
+              class="like-btn ${isLiked ? 'liked' : ''}" 
+              data-video-id="${video.id}"
+              onclick="handleLike(event, ${video.id})"
+              title="いいね">
+              <i class="fas fa-heart"></i>
+            </button>
           </div>
         </div>
       </div>
     </div>
   `;
+}
+
+// Get media icon
+function getMediaIcon(source) {
+  const icons = {
+    'youtube': 'fab fa-youtube',
+    'youtube_shorts': 'fab fa-youtube',
+    'vimeo': 'fab fa-vimeo-v',
+    'instagram': 'fab fa-instagram',
+    'tiktok': 'fab fa-tiktok'
+  };
+  return icons[source] || 'fas fa-video';
+}
+
+// Get media display name
+function getMediaName(source) {
+  const names = {
+    'youtube': 'YouTube',
+    'youtube_shorts': 'Shorts',
+    'vimeo': 'Vimeo',
+    'instagram': 'Instagram',
+    'tiktok': 'TikTok'
+  };
+  return names[source] || 'Video';
 }
 
 // ============ Blog Card ============
@@ -879,13 +966,66 @@ async function showVideoDetail(videoId) {
   }
 }
 
+// ============ Like Handling with Free Plan Limit ============
+async function handleLike(event, videoId) {
+  event.stopPropagation(); // カードのクリックイベントを防ぐ
+  
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  
+  try {
+    const response = await axios.post(`/api/videos/${videoId}/like`);
+    const data = response.data;
+    
+    // Update UI
+    btn.classList.add('liked');
+    const likeCountEl = document.getElementById(`like-count-${videoId}`);
+    if (likeCountEl) {
+      likeCountEl.textContent = data.likes;
+    }
+    
+    // Show success message
+    if (data.remaining_likes === 0) {
+      showToast(`いいねしました！無料プランの上限に達しました`, 'success');
+      setTimeout(() => showPremiumLimitModal(data.user_like_count), 1500);
+    } else if (data.remaining_likes !== 'unlimited') {
+      showToast(`いいねしました！あと${data.remaining_likes}回いいねできます`, 'success');
+    } else {
+      showToast('いいねしました！', 'success');
+    }
+    
+  } catch (error) {
+    if (error.response && error.response.status === 400) {
+      showToast('すでにいいね済みです', 'info');
+    } else if (error.response && error.response.status === 403) {
+      // Free plan limit reached
+      showPremiumLimitModal(error.response.data.current_count);
+    } else if (error.response && error.response.status === 401) {
+      showAuthModal('login');
+    } else {
+      showToast('いいねに失敗しました', 'error');
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function likeVideo(videoId) {
   try {
     await axios.post(`/api/videos/${videoId}/like`);
     showToast('いいねしました', 'success');
     await loadInitialData();
   } catch (error) {
-    showToast('いいねに失敗しました', 'error');
+    if (error.response && error.response.status === 403) {
+      showPremiumLimitModal(3);
+    } else {
+      showToast('いいねに失敗しました', 'error');
+    }
   }
 }
 
@@ -896,6 +1036,73 @@ async function favoriteVideo(videoId) {
   } catch (error) {
     showToast('お気に入りの追加に失敗しました', 'error');
   }
+}
+
+// ============ Premium Limit Modal ============
+function showPremiumLimitModal(currentLikes) {
+  const modal = document.getElementById('premium-limit-modal') || createModal('premium-limit-modal');
+  modal.innerHTML = `
+    <div class="modal-content max-w-md">
+      <div class="text-center mb-6">
+        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <i class="fas fa-crown text-white text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">いいね制限に達しました</h3>
+        <p class="text-gray-600">無料プランでは${currentLikes}回までいいねができます</p>
+      </div>
+      
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
+        <h4 class="font-bold text-lg mb-3 text-center">プレミアムプランなら</h4>
+        <ul class="space-y-2">
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700">無制限にいいね可能</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700">動画投稿無制限</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700">広告非表示</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700">AIグレード判定機能</span>
+          </li>
+        </ul>
+        
+        <div class="text-center mt-4">
+          <div class="text-3xl font-bold text-purple-600">$20<span class="text-lg font-normal">/月</span></div>
+          <div class="text-sm text-gray-600 mt-1">15日間無料トライアル</div>
+        </div>
+      </div>
+      
+      <div class="flex gap-3">
+        <button onclick="closeModal('premium-limit-modal')" class="btn btn-secondary flex-1">
+          後で
+        </button>
+        <button onclick="closeModal('premium-limit-modal'); showPricingModal();" class="btn btn-primary flex-1">
+          <i class="fas fa-crown"></i>
+          今すぐアップグレード
+        </button>
+      </div>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+function createModal(id) {
+  const modal = document.createElement('div');
+  modal.id = id;
+  modal.className = 'modal';
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+    }
+  };
+  document.body.appendChild(modal);
+  return modal;
 }
 
 // ============ Upload Modal ============

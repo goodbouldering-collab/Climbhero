@@ -3,23 +3,23 @@ INSERT OR IGNORE INTO users (email, username, membership_type) VALUES
   ('demo@example.com', 'Demo User', 'free'),
   ('premium@example.com', 'Premium Member', 'premium');
 
--- Insert expanded sample videos (15+ videos)
-INSERT OR IGNORE INTO videos (title, description, url, thumbnail_url, duration, channel_name, category, views, likes) VALUES 
-  ('小川山 - 最高グレードV15ボルダリング完登', '小川山エリアでの高難度ボルダリングチャレンジ。V15グレードの岩に挑む様子を記録。', 'https://youtube.com/watch?v=sample1', 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400', '12:45', 'Japan Climbing', 'bouldering', 12500, 890),
-  ('IFSC World Cup 2025 決勝戦ハイライト', 'IFSCワールドカップ2025の決勝戦ハイライト。世界トップクライマーたちの激しい戦い。', 'https://youtube.com/watch?v=sample2', 'https://images.unsplash.com/photo-1564769610726-4b0e3809f42e?w=400', '08:32', 'IFSC Official', 'competition', 28920, 1342),
-  ('ボルダリング初心者講座 - 基本ムーブ完全解説', 'ボルダリング初心者向けの基本ムーブ解説動画。フットワーク、ボディポジション、手順などを詳しく説明。', 'https://youtube.com/watch?v=sample3', 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400', '15:20', 'Climbing Academy', 'tutorial', 13450, 756),
-  ('スポーツクライミング日本選手権2025 女子決勝', '日本選手権2025女子決勝の模様。トップ選手たちの華麗なムーブに注目。', 'https://youtube.com/watch?v=sample4', 'https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?w=400', '05:45', 'JMA Climbing', 'competition', 15670, 834),
-  ('御岳エリア - 新規V13ボルダー課題初登', '御岳エリアでの新規ボルダー課題の開拓記録。未登のV13課題に初挑戦。', 'https://youtube.com/watch?v=sample5', 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=400', '22:10', 'Tokyo Bouldering', 'bouldering', 9340, 498),
-  ('クライミングジム巡り - 東京最新ジム紹介', '東京都内の最新クライミングジムを巡るシリーズ。設備やコース設定を詳しく紹介。', 'https://youtube.com/watch?v=sample6', 'https://images.unsplash.com/photo-1516383274235-5f42d6c6426d?w=400', '10:32', 'Gym Hunter', 'gym_review', 8120, 387),
-  ('瑞牆山 - 伝説の課題「十一面観音」挑戦記', '瑞牆山の有名な課題「十一面観音」（V14）に挑戦。クラシック課題の魅力を紹介。', 'https://youtube.com/watch?v=sample7', 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=400', '18:23', 'Rock & Soul', 'bouldering', 11200, 623),
-  ('リードクライミング テクニック講座 Part1', 'リードクライミングの基本テクニックを解説。クリップのタイミング、ルートファインディングなど。', 'https://youtube.com/watch?v=sample8', 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=400', '13:15', 'Lead Masters', 'tutorial', 7890, 412),
-  ('世界最強クライマーVS超難関課題', '世界トップクラスのクライマーが挑む、V16グレードの超難関課題。圧倒的なパワーとテクニック。', 'https://youtube.com/watch?v=sample9', 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400', '25:40', 'Elite Climbing', 'bouldering', 45000, 2340),
-  ('オリンピック金メダリストの練習風景', '東京オリンピック金メダリストの日常トレーニング。強さの秘密に迫る。', 'https://youtube.com/watch?v=sample10', 'https://images.unsplash.com/photo-1564769610726-4b0e3809f42e?w=400', '14:28', 'Olympic Channel', 'competition', 32000, 1890),
-  ('ボルダリングジム開設マニュアル', 'ボルダリングジムを開業したい方向けの完全ガイド。必要な設備、資金、ノウハウを解説。', 'https://youtube.com/watch?v=sample11', 'https://images.unsplash.com/photo-1516383274235-5f42d6c6426d?w=400', '32:10', 'Gym Business Pro', 'gym_review', 5430, 276),
-  ('城ヶ崎海岸 - シーサイドクライミング特集', '静岡県・城ヶ崎海岸での海沿いクライミング。絶景と共に楽しむ岩登り。', 'https://youtube.com/watch?v=sample12', 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=400', '16:45', 'Seaside Climbers', 'bouldering', 6780, 345),
-  ('アジアユース選手権2025 ハイライト', 'アジアユース選手権の熱戦。未来のスター選手たちの活躍。', 'https://youtube.com/watch?v=sample13', 'https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?w=400', '09:12', 'Asia Climbing', 'competition', 4230, 189),
-  ('トレーニング完全ガイド - 筋力アップ編', 'クライミングに必要な筋力をつけるためのトレーニング方法を詳しく解説。', 'https://youtube.com/watch?v=sample14', 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400', '20:33', 'Strength Lab', 'tutorial', 9870, 567),
-  ('グッぼるジム完全ガイド - 設備＆課題紹介', '滋賀県・グッぼるボルダリングCafe&Shopの魅力を徹底紹介。充実の設備と多彩な課題。', 'https://youtube.com/watch?v=sample15', 'https://images.unsplash.com/photo-1516383274235-5f42d6c6426d?w=400', '11:50', 'Gubboru Official', 'gym_review', 3290, 198);
+-- Insert expanded sample videos (15+ videos) with media_source
+INSERT OR IGNORE INTO videos (title, description, url, thumbnail_url, duration, channel_name, category, views, likes, media_source) VALUES 
+  ('小川山 - 最高グレードV15ボルダリング完登', '小川山エリアでの高難度ボルダリングチャレンジ。V15グレードの岩に挑む様子を記録。', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400', '12:45', 'Japan Climbing', 'bouldering', 12500, 0, 'youtube'),
+  ('IFSC World Cup 2025 決勝戦ハイライト', 'IFSCワールドカップ2025の決勝戦ハイライト。世界トップクライマーたちの激しい戦い。', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://images.unsplash.com/photo-1564769610726-4b0e3809f42e?w=400', '08:32', 'IFSC Official', 'competition', 28920, 0, 'youtube'),
+  ('ボルダリング初心者講座 - 基本ムーブ完全解説', 'ボルダリング初心者向けの基本ムーブ解説動画。フットワーク、ボディポジション、手順などを詳しく説明。', 'https://vimeo.com/76979871', 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400', '15:20', 'Climbing Academy', 'tutorial', 13450, 0, 'vimeo'),
+  ('スポーツクライミング日本選手権2025 女子決勝', '日本選手権2025女子決勝の模様。トップ選手たちの華麗なムーブに注目。', 'https://www.youtube.com/shorts/abc123', 'https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?w=400', '05:45', 'JMA Climbing', 'competition', 15670, 0, 'youtube_shorts'),
+  ('御岳エリア - 新規V13ボルダー課題初登', '御岳エリアでの新規ボルダー課題の開拓記録。未登のV13課題に初挑戦。', 'https://www.instagram.com/reel/abc123/', 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=400', '22:10', 'Tokyo Bouldering', 'bouldering', 9340, 0, 'instagram'),
+  ('クライミングジム巡り - 東京最新ジム紹介', '東京都内の最新クライミングジムを巡るシリーズ。設備やコース設定を詳しく紹介。', 'https://www.tiktok.com/@user/video/123456', 'https://images.unsplash.com/photo-1516383274235-5f42d6c6426d?w=400', '10:32', 'Gym Hunter', 'gym_review', 8120, 0, 'tiktok'),
+  ('瑞牆山 - 伝説の課題「十一面観音」挑戦記', '瑞牆山の有名な課題「十一面観音」（V14）に挑戦。クラシック課題の魅力を紹介。', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=400', '18:23', 'Rock & Soul', 'bouldering', 11200, 0, 'youtube'),
+  ('リードクライミング テクニック講座 Part1', 'リードクライミングの基本テクニックを解説。クリップのタイミング、ルートファインディングなど。', 'https://vimeo.com/76979871', 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=400', '13:15', 'Lead Masters', 'tutorial', 7890, 0, 'vimeo'),
+  ('世界最強クライマーVS超難関課題', '世界トップクラスのクライマーが挑む、V16グレードの超難関課題。圧倒的なパワーとテクニック。', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400', '25:40', 'Elite Climbing', 'bouldering', 45000, 0, 'youtube'),
+  ('オリンピック金メダリストの練習風景', '東京オリンピック金メダリストの日常トレーニング。強さの秘密に迫る。', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://images.unsplash.com/photo-1564769610726-4b0e3809f42e?w=400', '14:28', 'Olympic Channel', 'competition', 32000, 0, 'youtube'),
+  ('ボルダリングジム開設マニュアル', 'ボルダリングジムを開業したい方向けの完全ガイド。必要な設備、資金、ノウハウを解説。', 'https://www.instagram.com/reel/xyz789/', 'https://images.unsplash.com/photo-1516383274235-5f42d6c6426d?w=400', '32:10', 'Gym Business Pro', 'gym_review', 5430, 0, 'instagram'),
+  ('城ヶ崎海岸 - シーサイドクライミング特集', '静岡県・城ヶ崎海岸での海沿いクライミング。絶景と共に楽しむ岩登り。', 'https://www.tiktok.com/@climber/video/789456', 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=400', '16:45', 'Seaside Climbers', 'bouldering', 6780, 0, 'tiktok'),
+  ('アジアユース選手権2025 ハイライト', 'アジアユース選手権の熱戦。未来のスター選手たちの活躍。', 'https://www.youtube.com/shorts/xyz123', 'https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?w=400', '09:12', 'Asia Climbing', 'competition', 4230, 0, 'youtube_shorts'),
+  ('トレーニング完全ガイド - 筋力アップ編', 'クライミングに必要な筋力をつけるためのトレーニング方法を詳しく解説。', 'https://vimeo.com/76979871', 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400', '20:33', 'Strength Lab', 'tutorial', 9870, 0, 'vimeo'),
+  ('グッぼるジム完全ガイド - 設備＆課題紹介', '滋賀県・グッぼるボルダリングCafe&Shopの魅力を徹底紹介。充実の設備と多彩な課題。', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://images.unsplash.com/photo-1516383274235-5f42d6c6426d?w=400', '11:50', 'Gubboru Official', 'gym_review', 3290, 0, 'youtube');
 
 -- Insert sample blog posts
 INSERT OR IGNORE INTO blog_posts (title, content, image_url, published_date) VALUES 
@@ -29,13 +29,14 @@ INSERT OR IGNORE INTO blog_posts (title, content, image_url, published_date) VAL
   ('プレミアム会員限定：AI自動グレード判定機能をリリース', 'プレミアム会員向けに、AIによる自動グレード判定機能をリリースしました。動画から課題の難易度を自動で推定し、適切なカテゴリーに分類します。精度は85%以上を達成しています。', 'https://images.unsplash.com/photo-1551135049-8a33b5883817?w=400', '2025-10-10'),
   ('クライミング動画投稿数が10,000本を突破！', 'サービス開始から1年で、投稿動画数が10,000本を突破しました。コミュニティの皆様のご協力に感謝いたします。これからも最高のクライミングプラットフォームを目指して改善を続けます。', 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400', '2025-10-05');
 
--- Insert video rankings based on video statistics
+-- Insert video rankings based on internal likes only (external likes ignored)
+-- Initial likes count is 0, will increase as users like videos
 INSERT OR IGNORE INTO video_rankings (video_id, total_score, daily_score, weekly_score, monthly_score, yearly_score) 
 SELECT 
   id,
-  views + (likes * 10) as total_score,
-  CAST((views + (likes * 10)) / 365 AS INTEGER) as daily_score,
-  CAST((views + (likes * 10)) / 52 AS INTEGER) as weekly_score,
-  CAST((views + (likes * 10)) / 12 AS INTEGER) as monthly_score,
-  views + (likes * 10) as yearly_score
+  likes as total_score,
+  CAST(likes / 365 AS INTEGER) as daily_score,
+  CAST(likes / 52 AS INTEGER) as weekly_score,
+  CAST(likes / 12 AS INTEGER) as monthly_score,
+  likes as yearly_score
 FROM videos;
