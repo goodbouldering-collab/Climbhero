@@ -138,55 +138,60 @@ function renderHomePage() {
     <main class="bg-gray-50">
       
       <!-- Hero Section -->
-      <section class="hero-gradient py-20 relative">
+      <section class="hero-gradient py-12 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="relative z-10 text-center">
-            <h2 class="text-4xl sm:text-5xl font-bold mb-4 text-white">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-3 text-white">
               クライミング動画共有プラットフォーム
             </h2>
-            <p class="text-xl text-white opacity-90 mb-8 max-w-2xl mx-auto">
-              最新のクライミング動画、ランキング、テクニック解説を一箇所で。<br>
-              コミュニティと共に上達を目指そう。
+            <p class="text-base text-white opacity-90 mb-6 max-w-2xl mx-auto">
+              最新のクライミング動画、ランキング、テクニック解説を一箇所で。コミュニティと共に上達を目指そう。
             </p>
-            ${state.currentUser ? `
-              <button onclick="showUploadModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100">
-                <i class="fas fa-upload"></i>
-                動画を投稿
+            <div class="flex gap-3 justify-center items-center flex-wrap">
+              ${state.currentUser ? `
+                <button onclick="showUploadModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100 shadow-lg">
+                  <i class="fas fa-upload"></i>
+                  動画を投稿
+                </button>
+              ` : `
+                <button onclick="showPricingModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100 shadow-lg">
+                  <i class="fas fa-star"></i>
+                  15日間無料トライアル
+                </button>
+              `}
+              <button onclick="window.location.hash='about'" class="btn btn-lg bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30">
+                <i class="fas fa-info-circle"></i>
+                ClimbHeroについて
               </button>
-            ` : `
-              <button onclick="showPricingModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100">
-                <i class="fas fa-star"></i>
-                15日間無料トライアル
-              </button>
-            `}
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Rankings Section -->
-      <section class="py-12 bg-white">
+      <section class="py-8 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-trophy text-yellow-500 text-2xl"></i>
-              <h3 class="text-2xl font-bold text-gray-900">ランキング</h3>
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-trophy"></i>
+              <span>ランキング</span>
             </div>
-            
-            <!-- Ranking Period Tabs -->
-            <div class="flex gap-2">
-              <button onclick="switchRankingPeriod('daily')" class="btn btn-sm ${state.currentRankingType === 'daily' ? 'btn-primary' : 'btn-secondary'}">
-                デイリー
-              </button>
-              <button onclick="switchRankingPeriod('weekly')" class="btn btn-sm ${state.currentRankingType === 'weekly' ? 'btn-primary' : 'btn-secondary'}">
-                週間
-              </button>
-              <button onclick="switchRankingPeriod('monthly')" class="btn btn-sm ${state.currentRankingType === 'monthly' ? 'btn-primary' : 'btn-secondary'}">
-                月間
-              </button>
-              <button onclick="switchRankingPeriod('yearly')" class="btn btn-sm ${state.currentRankingType === 'yearly' ? 'btn-primary' : 'btn-secondary'}">
-                年間
-              </button>
-            </div>
+          </div>
+          
+          <!-- Ranking Period Tabs -->
+          <div class="tab-buttons mb-4">
+            <button onclick="switchRankingPeriod('daily')" class="tab-btn ${state.currentRankingType === 'daily' ? 'active' : ''}">
+              <i class="fas fa-clock"></i> 1日
+            </button>
+            <button onclick="switchRankingPeriod('weekly')" class="tab-btn ${state.currentRankingType === 'weekly' ? 'active' : ''}">
+              <i class="fas fa-calendar-week"></i> 週間
+            </button>
+            <button onclick="switchRankingPeriod('monthly')" class="tab-btn ${state.currentRankingType === 'monthly' ? 'active' : ''}">
+              <i class="fas fa-calendar-alt"></i> 月間
+            </button>
+            <button onclick="switchRankingPeriod('yearly')" class="tab-btn ${state.currentRankingType === 'yearly' ? 'active' : ''}">
+              <i class="fas fa-calendar"></i> 年間
+            </button>
           </div>
           
           <!-- Horizontal Carousel -->
@@ -205,20 +210,31 @@ function renderHomePage() {
       </section>
 
       <!-- Latest Videos Section -->
-      <section class="py-12 bg-gray-50">
+      <section class="py-8 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-video text-red-500 text-2xl"></i>
-              <h3 class="text-2xl font-bold text-gray-900">最新動画</h3>
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-video"></i>
+              <span>最新動画</span>
             </div>
-            
-            <div class="flex gap-2 overflow-x-auto">
-              <button onclick="filterVideos('all')" class="btn btn-sm btn-primary">全て</button>
-              <button onclick="filterVideos('bouldering')" class="btn btn-sm btn-secondary">ボルダリング</button>
-              <button onclick="filterVideos('competition')" class="btn btn-sm btn-secondary">大会</button>
-              <button onclick="filterVideos('tutorial')" class="btn btn-sm btn-secondary">解説</button>
-            </div>
+          </div>
+          
+          <div class="tab-buttons mb-4">
+            <button onclick="filterVideos('all')" class="tab-btn active" data-category="all">
+              <i class="fas fa-th"></i> 全て
+            </button>
+            <button onclick="filterVideos('bouldering')" class="tab-btn" data-category="bouldering">
+              <i class="fas fa-mountain"></i> ボルダリング
+            </button>
+            <button onclick="filterVideos('competition')" class="tab-btn" data-category="competition">
+              <i class="fas fa-trophy"></i> 大会
+            </button>
+            <button onclick="filterVideos('tutorial')" class="tab-btn" data-category="tutorial">
+              <i class="fas fa-graduation-cap"></i> 解説
+            </button>
+            <button onclick="filterVideos('gym_review')" class="tab-btn" data-category="gym_review">
+              <i class="fas fa-dumbbell"></i> ジム紹介
+            </button>
           </div>
           
           <!-- Horizontal Carousel -->
@@ -237,12 +253,15 @@ function renderHomePage() {
       </section>
 
       <!-- Blog Posts Section -->
-      <section class="py-12 bg-white">
+      <section class="py-8 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-newspaper text-blue-500 text-2xl"></i>
-              <h3 class="text-2xl font-bold text-gray-900">ブログ</h3>
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fas fa-newspaper"></i>
+              <span>ブログ & ニュース</span>
+            </div>
+            <div class="section-action" onclick="window.location.hash='blog'">
+              すべて見る <i class="fas fa-arrow-right"></i>
             </div>
           </div>
           
@@ -262,7 +281,7 @@ function renderHomePage() {
       </section>
 
       <!-- Pricing Section -->
-      <section class="py-16 bg-gradient-to-br from-purple-50 to-pink-50">
+      <section class="py-10 bg-gradient-to-br from-purple-50 to-pink-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="text-center mb-12">
             <h3 class="text-3xl font-bold text-gray-900 mb-4">プレミアムプランで、さらに充実</h3>
@@ -396,21 +415,31 @@ function renderFooter() {
 
 // ============ Ranking Card ============
 function renderRankingCard(video, rank) {
-  const medal = rank <= 3 ? `<div class="ranking-medal rank-${rank}">${rank}</div>` : `<div class="text-lg font-bold text-gray-400">#${rank}</div>`;
+  const medal = rank <= 3 ? `<div class="ranking-medal rank-${rank}">${rank}</div>` : `<div class="ranking-number">${rank}</div>`;
+  const score = video.total_score || (video.views + video.likes * 10);
   
   return `
     <div class="scroll-item">
-      <div class="card p-4 cursor-pointer hover:shadow-xl transition-all h-full" onclick="showVideoDetail(${video.id})">
-        <div class="flex gap-4 mb-3">
-          ${medal}
-          <img src="${video.thumbnail_url}" alt="${video.title}" class="w-32 h-20 object-cover rounded flex-shrink-0">
+      <div class="ranking-item-compact" onclick="showVideoDetail(${video.id})">
+        ${medal}
+        <div class="ranking-thumbnail">
+          <img src="${video.thumbnail_url}" alt="${video.title}">
         </div>
-        <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${video.title}</h4>
-        <div class="flex items-center gap-3 text-xs text-gray-500">
-          <span><i class="fas fa-eye mr-1"></i>${video.views.toLocaleString()}</span>
-          <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
+        <div class="ranking-info">
+          <div class="ranking-title line-clamp-2">${video.title}</div>
+          <div class="ranking-stats">
+            <span class="stats-badge">
+              <i class="fas fa-eye"></i> ${video.views.toLocaleString()}
+            </span>
+            <span class="stats-badge">
+              <i class="fas fa-heart"></i> ${video.likes}
+            </span>
+            <span class="category-badge category-${video.category}">${getCategoryName(video.category)}</span>
+          </div>
         </div>
-        <span class="category-badge category-${video.category} mt-2 inline-block">${getCategoryName(video.category)}</span>
+        <div class="ranking-score">
+          <i class="fas fa-star"></i> ${score.toLocaleString()}
+        </div>
       </div>
     </div>
   `;
@@ -420,20 +449,23 @@ function renderRankingCard(video, rank) {
 function renderVideoCard(video) {
   return `
     <div class="scroll-item">
-      <div class="card overflow-hidden cursor-pointer hover:shadow-xl transition-all h-full" onclick="showVideoDetail(${video.id})">
-        <div class="relative">
-          <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-48 object-cover">
+      <div class="video-card-compact" onclick="showVideoDetail(${video.id})">
+        <div class="video-thumbnail">
+          <img src="${video.thumbnail_url}" alt="${video.title}">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 left-2 category-badge category-${video.category}">
             ${getCategoryName(video.category)}
           </span>
         </div>
-        <div class="p-4">
-          <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${video.title}</h4>
-          <p class="text-sm text-gray-600 line-clamp-2 mb-3">${video.description}</p>
-          <div class="flex items-center justify-between text-xs text-gray-500">
-            <span><i class="fas fa-eye mr-1"></i>${video.views.toLocaleString()}</span>
-            <span><i class="fas fa-heart mr-1"></i>${video.likes}</span>
+        <div class="video-info-compact">
+          <div class="video-title-compact line-clamp-2">${video.title}</div>
+          <div class="video-meta-compact">
+            <span><i class="fas fa-eye"></i> ${video.views.toLocaleString()}</span>
+            <span><i class="fas fa-heart"></i> ${video.likes}</span>
+            <span><i class="fas fa-play-circle"></i> ${video.duration}</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-1">
+            <i class="fas fa-user-circle"></i> ${video.channel_name}
           </div>
         </div>
       </div>
@@ -445,17 +477,20 @@ function renderVideoCard(video) {
 function renderBlogCard(post) {
   return `
     <div class="scroll-item">
-      <div class="card overflow-hidden cursor-pointer hover:shadow-xl transition-all h-full" onclick="navigateTo('blog/${post.id}')">
+      <div class="video-card-compact" onclick="navigateTo('blog/${post.id}')">
         ${post.image_url ? `
-          <img src="${post.image_url}" alt="${post.title}" class="w-full h-48 object-cover">
+          <div class="video-thumbnail">
+            <img src="${post.image_url}" alt="${post.title}">
+          </div>
         ` : `
-          <div class="w-full h-48 bg-gradient-to-br from-purple-500 to-pink-500"></div>
+          <div class="video-thumbnail" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"></div>
         `}
-        <div class="p-5">
-          <h4 class="font-semibold text-gray-900 line-clamp-2 mb-2">${post.title}</h4>
-          <p class="text-sm text-gray-600 line-clamp-3 mb-3">${post.content.substring(0, 100)}...</p>
-          <div class="text-xs text-gray-500">
-            <i class="fas fa-calendar mr-1"></i>${formatDate(post.published_date)}
+        <div class="video-info-compact">
+          <div class="video-title-compact line-clamp-2">${post.title}</div>
+          <p class="text-xs text-gray-600 line-clamp-2 mb-2 leading-relaxed">${post.content.substring(0, 80)}...</p>
+          <div class="video-meta-compact">
+            <span><i class="fas fa-calendar"></i> ${formatDate(post.published_date)}</span>
+            <span><i class="fas fa-newspaper"></i> ニュース</span>
           </div>
         </div>
       </div>
@@ -869,7 +904,21 @@ async function filterVideos(category) {
     const url = category === 'all' ? '/api/videos?limit=20' : `/api/videos?category=${category}&limit=20`;
     const response = await axios.get(url);
     state.videos = response.data.videos || [];
-    renderApp();
+    
+    // Update tab active state
+    document.querySelectorAll('[data-category]').forEach(btn => {
+      if (btn.getAttribute('data-category') === category) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    
+    // Re-render video section
+    const videosScroll = document.getElementById('videos-scroll');
+    if (videosScroll) {
+      videosScroll.innerHTML = state.videos.map(video => renderVideoCard(video)).join('');
+    }
   } catch (error) {
     showToast('動画の読み込みに失敗しました', 'error');
   }

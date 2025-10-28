@@ -28,3 +28,14 @@ INSERT OR IGNORE INTO blog_posts (title, content, image_url, published_date) VAL
   ('安全な撮影のためのガイドラインを公開しました', 'クライミング中の撮影は危険を伴う場合があります。安全に配慮した撮影方法や注意点をまとめたガイドラインを作成しました。三脚の設置位置、マット配置との兼ね合い、スポッターの配置など、具体的な指針を提供します。', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400', '2025-10-15'),
   ('プレミアム会員限定：AI自動グレード判定機能をリリース', 'プレミアム会員向けに、AIによる自動グレード判定機能をリリースしました。動画から課題の難易度を自動で推定し、適切なカテゴリーに分類します。精度は85%以上を達成しています。', 'https://images.unsplash.com/photo-1551135049-8a33b5883817?w=400', '2025-10-10'),
   ('クライミング動画投稿数が10,000本を突破！', 'サービス開始から1年で、投稿動画数が10,000本を突破しました。コミュニティの皆様のご協力に感謝いたします。これからも最高のクライミングプラットフォームを目指して改善を続けます。', 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400', '2025-10-05');
+
+-- Insert video rankings based on video statistics
+INSERT OR IGNORE INTO video_rankings (video_id, total_score, daily_score, weekly_score, monthly_score, yearly_score) 
+SELECT 
+  id,
+  views + (likes * 10) as total_score,
+  CAST((views + (likes * 10)) / 365 AS INTEGER) as daily_score,
+  CAST((views + (likes * 10)) / 52 AS INTEGER) as weekly_score,
+  CAST((views + (likes * 10)) / 12 AS INTEGER) as monthly_score,
+  views + (likes * 10) as yearly_score
+FROM videos;

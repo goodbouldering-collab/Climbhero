@@ -2,47 +2,53 @@
 
 ## 📋 プロジェクト概要
 
-**ClimbHero**は、クライミング愛好家のための統合動画共有プラットフォームです。動画投稿、ランキング、ブログ記事を一つのインタラクティブなインターフェースで提供し、コミュニティの成長と情報共有を促進します。
+**ClimbHero**は、クライミングコミュニティのための本格的な動画共有プラットフォームです。参考サイト（https://climbhero.info）のデザインを模倣しつつ、充実した機能を提供します。
 
 ### 主な特徴
 
-- **統合ダッシュボード**: ランキング、最新動画、ブログを1ページで閲覧
-- **インタラクティブUI**: ミニマルで直感的なデザイン、最適化されたマージンバランス
-- **動画共有機能**: YouTubeリンクから簡単に動画を投稿・共有
-- **ランキングシステム**: 週間・月間・総合ランキングで人気動画を追跡
-- **ブログ機能**: クライミングテクニックやイベント情報を発信
-- **管理者ダッシュボード**: ブログ投稿、アカウント管理、ページ編集を一元管理
+- **横カルーセルUI**: 全セクションで滑らかなスクロール体験
+- **拡張ランキング**: デイリー・週間・月間・年間の4期間対応
+- **充実のサンプルデータ**: 15本以上の動画と5本のブログ記事
+- **プレミアムプラン**: $20/月 + 15日間無料トライアル
+- **完全なフッター**: 会社情報、リンク、連絡先を網羅
+- **動画投稿機能**: URLを入力するだけで簡単投稿
 
 ## 🌐 公開URL
 
-- **本番環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
+- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
 - **GitHub**: https://github.com/username/webapp (要設定)
 
 ## ✨ 完成済み機能
 
 ### フロントエンド機能
-- ✅ 統合トップページ（ランキング + 動画 + ブログ）
-- ✅ レスポンシブデザイン
-- ✅ インタラクティブなカード表示
-- ✅ カテゴリフィルター（ボルダリング、大会、解説、ジム紹介）
-- ✅ 動画詳細モーダル（YouTubeプレイヤー統合）
-- ✅ いいね・お気に入り機能
-- ✅ ユーザー認証（ログイン/登録）
-- ✅ 動画投稿機能
-- ✅ ブログ記事詳細ページ
+- ✅ **横カルーセルUI** - ランキング、動画、ブログの全セクションに実装
+- ✅ **4期間ランキング** - デイリー、週間、月間、年間の切り替え
+- ✅ **レスポンシブデザイン** - PC/タブレット/モバイル対応
+- ✅ **ヒーローセクション** - グラデーション背景 + CTA
+- ✅ **動画詳細モーダル** - YouTubeプレイヤー統合
+- ✅ **いいね・お気に入り機能**
+- ✅ **ユーザー認証** - ログイン/登録
+- ✅ **動画投稿フォーム** - モーダル形式
+- ✅ **ブログ記事詳細ページ**
+- ✅ **完全なフッター** - 4カラムレイアウト
+
+### プレミアムプラン機能
+- ✅ **15日間無料トライアル** - クレジットカード入力あり
+- ✅ **$20/月プラン** - 明確な料金表示
+- ✅ **プランモーダル** - 登録フォーム統合
+- ✅ **特典リスト** - 無料 vs プレミアムの比較表示
 
 ### Admin管理機能
-- ✅ 管理者ダッシュボード（`#admin`でアクセス）
-- ✅ ブログ投稿・編集・削除機能
-- ✅ 管理サイドバーナビゲーション
-- ✅ 権限ベースのアクセス制御
+- ✅ **管理者ダッシュボード** - `#admin`でアクセス
+- ✅ **ブログ管理** - 投稿・編集・削除
+- ✅ **権限ベースのアクセス制御**
 
 ### バックエンドAPI
-- ✅ `/api/auth/*` - 認証エンドポイント（登録、ログイン、ログアウト）
+- ✅ `/api/auth/*` - 認証エンドポイント
 - ✅ `/api/videos` - 動画CRUD操作
 - ✅ `/api/videos/:id/like` - いいね機能
 - ✅ `/api/videos/:id/favorite` - お気に入り機能
-- ✅ `/api/rankings/:type` - ランキング取得（weekly, monthly, total）
+- ✅ `/api/rankings/:type` - ランキング（daily, weekly, monthly, yearly, total）
 - ✅ `/api/blog` - ブログ記事CRUD操作
 - ✅ Admin権限チェック機能
 
@@ -50,150 +56,138 @@
 
 ### ストレージサービス
 - **Cloudflare D1 Database** (SQLite): メインデータストア
-  - `users` - ユーザー情報 + Admin権限
-  - `videos` - 動画メタデータ
-  - `blog_posts` - ブログ記事
-  - `video_rankings` - ランキングスコア
-  - `likes`, `favorites`, `comments` - ユーザーインタラクション
 
-### データモデル
+### データベーステーブル
 
 **Users テーブル**
-```sql
-- id: INTEGER PRIMARY KEY
-- email: TEXT UNIQUE
-- username: TEXT
-- password_hash: TEXT
-- is_admin: INTEGER (0 or 1) -- 新規追加
-- membership_type: TEXT
-- session_token: TEXT
-- created_at: DATETIME
-```
+- id, email, username, password_hash
+- is_admin (管理者権限)
+- membership_type (free/premium)
+- session_token, created_at
 
 **Videos テーブル**
-```sql
-- id: INTEGER PRIMARY KEY
-- title: TEXT
-- description: TEXT
-- url: TEXT (YouTube URL)
-- thumbnail_url: TEXT
-- duration: TEXT
-- channel_name: TEXT
-- category: TEXT (bouldering, competition, tutorial, gym_review)
-- views: INTEGER
-- likes: INTEGER
-- created_at: DATETIME
-```
-
-**Blog Posts テーブル**
-```sql
-- id: INTEGER PRIMARY KEY
-- title: TEXT
-- content: TEXT
-- image_url: TEXT
-- published_date: DATE
-```
+- id, title, description, url, thumbnail_url
+- duration, channel_name, category
+- views, likes, created_at
 
 **Video Rankings テーブル**
-```sql
-- video_id: INTEGER PRIMARY KEY
-- total_score: INTEGER
-- weekly_score: INTEGER
-- monthly_score: INTEGER
-- last_updated: DATETIME
-```
+- video_id
+- daily_score, weekly_score, monthly_score, yearly_score, total_score
+- last_updated
 
-## 📊 現在の機能エントリURI
+**Blog Posts テーブル**
+- id, title, content, image_url, published_date
 
-### 認証API
-- `POST /api/auth/register` - 新規ユーザー登録
-  - Body: `{ email, username, password }`
-- `POST /api/auth/login` - ログイン
-  - Body: `{ email, password }`
-- `POST /api/auth/logout` - ログアウト
-- `GET /api/auth/me` - 現在のユーザー情報取得
+**その他**: likes, favorites, comments テーブル
 
-### 動画API
-- `GET /api/videos` - 動画一覧取得
-  - Query: `?page=1&limit=12&category=bouldering&search=keyword`
-- `GET /api/videos/:id` - 動画詳細取得
-- `POST /api/videos` - 動画投稿（認証必須）
-  - Body: `{ title, description, url, thumbnail_url, duration, channel_name, category }`
-- `POST /api/videos/:id/like` - いいね/いいね解除（認証必須）
-- `GET /api/videos/:id/liked` - いいね状態確認
-- `POST /api/videos/:id/favorite` - お気に入り追加/削除（認証必須）
-- `GET /api/videos/:id/favorited` - お気に入り状態確認
-- `GET /api/videos/:id/comments` - コメント取得
-- `POST /api/videos/:id/comments` - コメント投稿（認証必須）
+## 📊 サンプルデータ
 
-### ランキングAPI
-- `GET /api/rankings/weekly` - 週間ランキング
-  - Query: `?limit=20`
-- `GET /api/rankings/monthly` - 月間ランキング
-- `GET /api/rankings/total` - 総合ランキング
+### 動画: 15本
+1. 小川山 - V15ボルダリング完登 (12,500視聴, 890いいね)
+2. IFSC World Cup 2025 決勝 (28,920視聴, 1,342いいね)
+3. ボルダリング初心者講座 (13,450視聴, 756いいね)
+4. 日本選手権2025 女子決勝 (15,670視聴, 834いいね)
+5. 御岳エリア - V13課題初登 (9,340視聴, 498いいね)
+6. 東京最新ジム紹介 (8,120視聴, 387いいね)
+7. 瑞牆山「十一面観音」挑戦 (11,200視聴, 623いいね)
+8. リードクライミング講座 (7,890視聴, 412いいね)
+9. 世界最強クライマーVS V16 (45,000視聴, 2,340いいね)
+10. オリンピック金メダリスト練習風景 (32,000視聴, 1,890いいね)
+11. ボルダリングジム開設マニュアル (5,430視聴, 276いいね)
+12. 城ヶ崎海岸シーサイドクライミング (6,780視聴, 345いいね)
+13. アジアユース選手権2025 (4,230視聴, 189いいね)
+14. トレーニング完全ガイド (9,870視聴, 567いいね)
+15. グッぼるジム完全ガイド (3,290視聴, 198いいね)
 
-### ブログAPI
-- `GET /api/blog` - ブログ記事一覧
-- `GET /api/blog/:id` - ブログ記事詳細
-- `POST /api/blog` - ブログ投稿（認証必須）
-  - Body: `{ title, content, image_url, published_date }`
-- `PUT /api/blog/:id` - ブログ更新（認証必須）
-- `DELETE /api/blog/:id` - ブログ削除（認証必須）
-
-### ユーザープロフィールAPI
-- `GET /api/users/:id/videos` - ユーザーの投稿動画
-- `GET /api/users/:id/favorites` - ユーザーのお気に入り
+### ブログ: 5本
+- 新規パートナージム10社加入（全国200箇所以上）
+- 第1回動画コンテスト開催（賞金総額100万円）
+- 安全な撮影ガイドライン公開
+- プレミアム会員限定AIグレード判定
+- 投稿動画数10,000本突破
 
 ## 🎨 UIデザイン特徴
 
-### ミニマルデザインシステム
-- **カラーパレット**: Purple/Indigo グラデーション
-- **タイポグラフィ**: システムフォント、明確な階層
-- **スペーシング**: 一貫した4px基準のマージン/パディング
-- **カード**: シャドウとホバーエフェクトで立体感
-- **ボタン**: 明確な視覚フィードバック、アイコン統合
+### 横カルーセル
+- スムーズなスクロール
+- 左右ナビゲーションボタン
+- スワイプ対応（モバイル）
+- カード幅: 300px (PC), 260px (モバイル)
 
-### インタラクティブ要素
-- ホバーアニメーション（transform、opacity）
-- カードフリップエフェクト（動画カード）
-- スムーズなモーダルトランジション
-- トースト通知システム
-- レスポンシブグリッドレイアウト
+### カラースキーム
+- メインカラー: Purple (#667eea → #764ba2)
+- アクセント: Yellow (ランキング), Red (いいね)
+- 背景: Gray-50 / White
+
+### レイアウトパターン
+- ヒーローセクション（フル幅グラデーション）
+- 横カルーセルセクション（ランキング、動画、ブログ）
+- 料金プラン（2カラムカード）
+- フッター（4カラム）
+
+## 💰 料金プラン
+
+### 無料プラン ($0/月)
+- 動画閲覧無制限
+- ランキング閲覧
+- ブログ閲覧
+- 動画投稿（月5本まで）
+- いいね・お気に入り（制限あり）
+
+### プレミアムプラン ($20/月)
+- **15日間無料トライアル**
+- 動画閲覧無制限
+- ランキング閲覧
+- ブログ閲覧
+- **動画投稿無制限**
+- **いいね・お気に入り無制限**
+- **広告非表示**
+- **AIグレード判定機能**
+- **優先サポート**
 
 ## 🔐 管理者アクセス
 
 ### デフォルト管理者アカウント
 - **Email**: `admin@climbhero.com`
 - **Password**: `admin123`
-- **アクセス**: ログイン後、ヘッダーの「Admin」ボタンからダッシュボードへ
+- **アクセス**: ログイン後、ヘッダーの「Admin」ボタンから
 
 ### 管理者機能
 1. **ブログ管理** - 投稿作成、編集、削除
 2. **動画管理** - （開発中）
 3. **ユーザー管理** - （開発中）
-4. **設定** - （開発中）
+4. **サイト設定** - （開発中）
 
-## 🚀 次のステップ（推奨）
+## 📡 APIエンドポイント
 
-1. **Admin機能拡張**
-   - 動画の承認/削除機能
-   - ユーザー管理画面
-   - サイト設定パネル
+### 認証API
+- `POST /api/auth/register` - 新規ユーザー登録
+- `POST /api/auth/login` - ログイン
+- `POST /api/auth/logout` - ログアウト
+- `GET /api/auth/me` - 現在のユーザー情報取得
 
-2. **ユーザー体験向上**
-   - コメント機能の強化
-   - 通知システム
-   - マイページのカスタマイズ
+### 動画API
+- `GET /api/videos` - 動画一覧取得
+  - Query: `?page=1&limit=20&category=bouldering&search=keyword`
+- `GET /api/videos/:id` - 動画詳細取得
+- `POST /api/videos` - 動画投稿（認証必須）
+- `POST /api/videos/:id/like` - いいね/いいね解除
+- `POST /api/videos/:id/favorite` - お気に入り追加/削除
 
-3. **パフォーマンス最適化**
-   - 画像の遅延読み込み
-   - 無限スクロール
-   - キャッシュ戦略
+### ランキングAPI
+- `GET /api/rankings/daily` - デイリーランキング
+- `GET /api/rankings/weekly` - 週間ランキング
+- `GET /api/rankings/monthly` - 月間ランキング
+- `GET /api/rankings/yearly` - 年間ランキング
+- `GET /api/rankings/total` - 総合ランキング
+  - Query: `?limit=20`
 
-4. **ソーシャル機能**
-   - フォロー/フォロワー機能
-   - プライベートメッセージ
-   - グループ/コミュニティ機能
+### ブログAPI
+- `GET /api/blog` - ブログ記事一覧
+- `GET /api/blog/:id` - ブログ記事詳細
+- `POST /api/blog` - ブログ投稿（認証必須）
+- `PUT /api/blog/:id` - ブログ更新（認証必須）
+- `DELETE /api/blog/:id` - ブログ削除（認証必須）
 
 ## 💻 ローカル開発
 
@@ -242,6 +236,9 @@ pm2 restart webapp
 
 ### Cloudflare Pagesへのデプロイ
 ```bash
+# API key setup (required)
+# Call setup_cloudflare_api_key tool first
+
 # ビルド
 npm run build
 
@@ -262,6 +259,28 @@ npm run db:migrate:prod
 - **プロセス管理**: PM2
 - **HTTP クライアント**: Axios
 
+## 🎯 参考サイト
+
+デザイン参考: https://climbhero.info
+
+以下の要素を模倣：
+- ビジュアル重視のワイドレイアウト
+- サムネイル中心のカード設計
+- 横スクロールカルーセル
+- 明確な会員プランCTA
+- シンプルな投稿フォーム
+- 信頼性を補強するフッター
+
+## 🏢 運営会社
+
+**グッぼる - ボルダリングCafe & Shop**
+- 所在地: 滋賀県彦根市
+- 営業時間: 10:00-22:00
+- Email: info@climbhero.info
+- ジム年間利用者: 2.5万人
+- クライミングシューズ在庫: 約120モデル
+- クライミング歴30年以上の権威により運営
+
 ## 📝 ライセンス
 
 MIT License
@@ -271,9 +290,11 @@ MIT License
 **由井辰美 (Yui Tatsumi)**
 - グッぼる ボルダリングCafe & Shop オーナー
 - プロダクトマネージャー / ロッククライマー
-- クライミング歴30年以上の権威として、本格的なクライミングコミュニティプラットフォームを構築
+- クライミング歴30年以上
+- クライミング施設14件の立ち上げ支援実績
 
 ---
 
 **最終更新日**: 2025-10-27
 **プロジェクト状態**: ✅ 本番稼働中
+**参考サイト**: https://climbhero.info
