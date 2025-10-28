@@ -173,41 +173,39 @@ function renderHomePage() {
     <!-- Main Content -->
     <main class="bg-gray-50">
       
-      <!-- Hero Section -->
-      <section class="hero-gradient py-12 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="relative z-10 text-center">
-            <h2 class="text-3xl sm:text-4xl font-bold mb-3 text-white">
+      <!-- Hero Section with Background Image -->
+      <section class="hero-section relative overflow-hidden">
+        <div class="hero-background"></div>
+        <div class="hero-overlay"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+          <div class="text-center">
+            <h2 class="text-4xl sm:text-5xl font-bold mb-4 text-white drop-shadow-lg">
               クライミング動画共有プラットフォーム
             </h2>
-            <p class="text-base text-white opacity-90 mb-6 max-w-2xl mx-auto">
+            <p class="text-lg text-white mb-8 max-w-2xl mx-auto drop-shadow-md">
               最新のクライミング動画、ランキング、テクニック解説を一箇所で。コミュニティと共に上達を目指そう。
             </p>
-            <div class="flex gap-3 justify-center items-center flex-wrap">
-              ${state.currentUser ? `
-                <button onclick="showUploadModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100 shadow-lg">
-                  <i class="fas fa-upload"></i>
-                  動画を投稿
-                </button>
-              ` : `
-                <button onclick="showPricingModal()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100 shadow-lg">
+            <div class="flex gap-3 justify-center items-center flex-wrap mb-6">
+              <button onclick="handleUploadClick()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100 shadow-xl">
+                <i class="fas fa-upload"></i>
+                動画を投稿
+                ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? '<span class="ml-2 text-xs bg-purple-600 text-white px-2 py-1 rounded">Premium</span>' : ''}
+              </button>
+              ${!state.currentUser ? `
+                <button onclick="showPricingModal()" class="btn btn-lg bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border-2 border-white/50 shadow-xl">
                   <i class="fas fa-star"></i>
                   15日間無料トライアル
                 </button>
-              `}
-              <button onclick="window.location.hash='about'" class="btn btn-lg bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30">
-                <i class="fas fa-info-circle"></i>
-                ClimbHeroについて
-              </button>
+              ` : ''}
             </div>
           </div>
         </div>
       </section>
 
       <!-- Rankings Section -->
-      <section class="py-8 bg-white">
+      <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header">
+          <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-trophy"></i>
               <span>ランキング</span>
@@ -215,7 +213,7 @@ function renderHomePage() {
           </div>
           
           <!-- Ranking Period Tabs -->
-          <div class="tab-buttons mb-4">
+          <div class="tab-buttons mb-3">
             <button onclick="switchRankingPeriod('daily')" class="tab-btn ${state.currentRankingType === 'daily' ? 'active' : ''}">
               <i class="fas fa-clock"></i> 1日
             </button>
@@ -246,16 +244,16 @@ function renderHomePage() {
       </section>
 
       <!-- Latest Videos Section -->
-      <section class="py-8 bg-gray-50">
+      <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header">
+          <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-video"></i>
               <span>最新動画</span>
             </div>
           </div>
           
-          <div class="tab-buttons mb-4">
+          <div class="tab-buttons mb-3">
             <button onclick="filterVideos('all')" class="tab-btn active" data-category="all">
               <i class="fas fa-th"></i> 全て
             </button>
@@ -289,9 +287,9 @@ function renderHomePage() {
       </section>
 
       <!-- Blog Posts Section -->
-      <section class="py-8 bg-white">
+      <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header">
+          <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-newspaper"></i>
               <span>ブログ & ニュース</span>
@@ -1106,6 +1104,77 @@ function createModal(id) {
 }
 
 // ============ Upload Modal ============
+function handleUploadClick() {
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  if (state.currentUser.membership_type !== 'premium') {
+    showPremiumUploadModal();
+    return;
+  }
+  
+  showUploadModal();
+}
+
+function showPremiumUploadModal() {
+  const modal = document.getElementById('premium-upload-modal') || createModal('premium-upload-modal');
+  modal.innerHTML = `
+    <div class="modal-content max-w-md">
+      <div class="text-center mb-6">
+        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+          <i class="fas fa-upload text-white text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">動画投稿はプレミアム限定</h3>
+        <p class="text-gray-600">プレミアムプランで無制限に動画を投稿できます</p>
+      </div>
+      
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
+        <h4 class="font-bold text-lg mb-3 text-center">プレミアムプランの特典</h4>
+        <ul class="space-y-2">
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700"><strong>無制限</strong>の動画投稿</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700"><strong>無制限</strong>のいいね機能</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700">広告非表示</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700">AIグレード判定機能</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <i class="fas fa-check-circle text-purple-600"></i>
+            <span class="text-gray-700">優先サポート</span>
+          </li>
+        </ul>
+        
+        <div class="text-center mt-4">
+          <div class="text-3xl font-bold text-purple-600">$20<span class="text-lg font-normal">/月</span></div>
+          <div class="text-sm text-gray-600 mt-1">✨ 15日間無料トライアル</div>
+        </div>
+      </div>
+      
+      <div class="flex gap-3">
+        <button onclick="closeModal('premium-upload-modal')" class="btn btn-secondary flex-1">
+          後で
+        </button>
+        <button onclick="closeModal('premium-upload-modal'); showPricingModal();" class="btn btn-primary flex-1">
+          <i class="fas fa-crown"></i>
+          今すぐアップグレード
+        </button>
+      </div>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
 function showUploadModal() {
   const modal = document.getElementById('upload-modal');
   modal.innerHTML = `
