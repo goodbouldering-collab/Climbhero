@@ -1268,3 +1268,36 @@ a:hover {
 .media-source-badge:has(.fa-tiktok) {
   background: rgba(0, 0, 0, 0.9);
 }
+
+/* ==================== Language Switcher ==================== */
+
+.language-switcher {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.language-btn {
+  padding: 6px 10px;
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  opacity: 0.5;
+}
+
+.language-btn:hover {
+  opacity: 0.8;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.language-btn.active {
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.15);
+  transform: scale(1.1);
+}

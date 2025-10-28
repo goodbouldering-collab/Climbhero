@@ -6,8 +6,15 @@ const state = {
   blogPosts: [],
   currentView: 'home',
   currentRankingType: 'weekly',
-  loading: false
+  loading: false,
+  currentLanguage: 'ja'
 };
+
+// ============ Language Support ============
+window.addEventListener('languageChanged', (e) => {
+  state.currentLanguage = e.detail.language;
+  renderApp();
+});
 
 // ============ Initialize App ============
 document.addEventListener('DOMContentLoaded', async () => {
@@ -52,7 +59,7 @@ async function loadInitialData() {
     }
   } catch (error) {
     console.error('Failed to load initial data:', error);
-    showToast('データの読み込みに失敗しました', 'error');
+    showToast(i18n.t('toast.data_load_error'), 'error');
   }
 }
 
@@ -138,11 +145,23 @@ function renderHomePage() {
           </div>
           
           <div class="flex items-center gap-3">
+            <!-- Language Switcher -->
+            <div class="language-switcher">
+              ${i18n.getAvailableLanguages().map(lang => `
+                <button 
+                  onclick="switchLanguage('${lang.code}')" 
+                  class="language-btn ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
+                  title="${lang.name}">
+                  ${lang.flag}
+                </button>
+              `).join('')}
+            </div>
+            
             ${state.currentUser ? `
               ${state.currentUser.is_admin ? `
                 <button onclick="navigateTo('admin')" class="btn btn-sm btn-secondary">
                   <i class="fas fa-cog"></i>
-                  <span class="hidden sm:inline">Admin</span>
+                  <span class="hidden sm:inline">${i18n.t('nav.admin')}</span>
                 </button>
               ` : ''}
               <div class="flex items-center gap-2">
@@ -159,10 +178,10 @@ function renderHomePage() {
             ` : `
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary">
                 <i class="fas fa-sign-in-alt"></i>
-                ログイン
+                ${i18n.t('nav.login')}
               </button>
               <button onclick="showAuthModal('register')" class="btn btn-sm btn-secondary">
-                登録
+                ${i18n.t('nav.signup')}
               </button>
             `}
           </div>
@@ -180,21 +199,21 @@ function renderHomePage() {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
           <div class="text-center">
             <h2 class="text-4xl sm:text-5xl font-bold mb-4 text-white drop-shadow-lg">
-              クライミング動画共有プラットフォーム
+              ${i18n.t('hero.title')}
             </h2>
             <p class="text-lg text-white mb-8 max-w-2xl mx-auto drop-shadow-md">
-              最新のクライミング動画、ランキング、テクニック解説を一箇所で。コミュニティと共に上達を目指そう。
+              ${i18n.t('hero.subtitle')}
             </p>
             <div class="flex gap-3 justify-center items-center flex-wrap mb-6">
               <button onclick="handleUploadClick()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100 shadow-xl">
                 <i class="fas fa-upload"></i>
-                動画を投稿
-                ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? '<span class="ml-2 text-xs bg-purple-600 text-white px-2 py-1 rounded">Premium</span>' : ''}
+                ${i18n.t('hero.upload')}
+                ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? `<span class="ml-2 text-xs bg-purple-600 text-white px-2 py-1 rounded">${i18n.t('hero.premium_badge')}</span>` : ''}
               </button>
               ${!state.currentUser ? `
                 <button onclick="showPricingModal()" class="btn btn-lg bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border-2 border-white/50 shadow-xl">
                   <i class="fas fa-star"></i>
-                  15日間無料トライアル
+                  ${i18n.t('pricing.trial')}
                 </button>
               ` : ''}
             </div>
@@ -208,23 +227,23 @@ function renderHomePage() {
           <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-trophy"></i>
-              <span>ランキング</span>
+              <span>${i18n.t('section.rankings')}</span>
             </div>
           </div>
           
           <!-- Ranking Period Tabs -->
           <div class="tab-buttons mb-3">
             <button onclick="switchRankingPeriod('daily')" class="tab-btn ${state.currentRankingType === 'daily' ? 'active' : ''}">
-              <i class="fas fa-clock"></i> 1日
+              <i class="fas fa-clock"></i> ${i18n.t('ranking.daily')}
             </button>
             <button onclick="switchRankingPeriod('weekly')" class="tab-btn ${state.currentRankingType === 'weekly' ? 'active' : ''}">
-              <i class="fas fa-calendar-week"></i> 週間
+              <i class="fas fa-calendar-week"></i> ${i18n.t('ranking.weekly')}
             </button>
             <button onclick="switchRankingPeriod('monthly')" class="tab-btn ${state.currentRankingType === 'monthly' ? 'active' : ''}">
-              <i class="fas fa-calendar-alt"></i> 月間
+              <i class="fas fa-calendar-alt"></i> ${i18n.t('ranking.monthly')}
             </button>
             <button onclick="switchRankingPeriod('yearly')" class="tab-btn ${state.currentRankingType === 'yearly' ? 'active' : ''}">
-              <i class="fas fa-calendar"></i> 年間
+              <i class="fas fa-calendar"></i> ${i18n.t('ranking.yearly')}
             </button>
           </div>
           
@@ -249,25 +268,25 @@ function renderHomePage() {
           <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-video"></i>
-              <span>最新動画</span>
+              <span>${i18n.t('section.latest')}</span>
             </div>
           </div>
           
           <div class="tab-buttons mb-3">
             <button onclick="filterVideos('all')" class="tab-btn active" data-category="all">
-              <i class="fas fa-th"></i> 全て
+              <i class="fas fa-th"></i> ${i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All'}
             </button>
             <button onclick="filterVideos('bouldering')" class="tab-btn" data-category="bouldering">
-              <i class="fas fa-mountain"></i> ボルダリング
+              <i class="fas fa-mountain"></i> ${i18n.t('section.bouldering')}
             </button>
             <button onclick="filterVideos('competition')" class="tab-btn" data-category="competition">
-              <i class="fas fa-trophy"></i> 大会
+              <i class="fas fa-trophy"></i> ${i18n.t('section.competition')}
             </button>
             <button onclick="filterVideos('tutorial')" class="tab-btn" data-category="tutorial">
-              <i class="fas fa-graduation-cap"></i> 解説
+              <i class="fas fa-graduation-cap"></i> ${i18n.t('section.tutorial')}
             </button>
             <button onclick="filterVideos('gym_review')" class="tab-btn" data-category="gym_review">
-              <i class="fas fa-dumbbell"></i> ジム紹介
+              <i class="fas fa-dumbbell"></i> ${i18n.getCurrentLanguage() === 'ja' ? 'ジム紹介' : 'Gym Reviews'}
             </button>
           </div>
           
@@ -318,47 +337,38 @@ function renderHomePage() {
       <section class="py-8 bg-gradient-to-br from-purple-50 to-pink-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="text-center mb-6">
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">プレミアムで、あなたの動画を応援</h3>
-            <p class="text-sm text-gray-600">✨ 15日間無料トライアル実施中</p>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">${i18n.t('pricing.title')}</h3>
+            <p class="text-sm text-gray-600">✨ ${i18n.t('pricing.trial')}</p>
           </div>
           
           <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <!-- Free Plan -->
             <div class="card p-6 bg-white">
-              <h4 class="text-lg font-bold mb-2">無料プラン</h4>
-              <div class="text-2xl font-bold text-gray-900 mb-3">$0<span class="text-sm font-normal text-gray-600">/月</span></div>
+              <h4 class="text-lg font-bold mb-2">${i18n.t('pricing.free.title')}</h4>
+              <div class="text-2xl font-bold text-gray-900 mb-3">${i18n.t('pricing.free.price')}<span class="text-sm font-normal text-gray-600">${i18n.t('pricing.free.month')}</span></div>
               <ul class="space-y-2 mb-4 text-sm">
-                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500 text-xs"></i> 動画閲覧無制限</li>
-                <li class="flex items-center gap-2"><i class="fas fa-check text-green-500 text-xs"></i> ランキング閲覧</li>
-                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">動画投稿</span> <span class="text-xs">（不可）</span></li>
-                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">いいね</span> <span class="text-xs">（3回まで）</span></li>
-                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">動画を応援</span> <span class="text-xs">（制限付き）</span></li>
+                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">${i18n.t('pricing.free.upload')}</span> <span class="text-xs">${i18n.t('pricing.free.upload_status')}</span></li>
+                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">${i18n.t('pricing.free.likes')}</span> <span class="text-xs">${i18n.t('pricing.free.likes_status')}</span></li>
               </ul>
               ${!state.currentUser ? `
                 <button onclick="showAuthModal('register')" class="btn btn-sm btn-secondary w-full">
-                  無料で始める
+                  ${i18n.getCurrentLanguage() === 'ja' ? '無料で始める' : 'Start Free'}
                 </button>
               ` : ''}
             </div>
             
             <!-- Premium Plan -->
             <div class="card p-6 bg-gradient-to-br from-purple-600 to-purple-700 text-white relative overflow-hidden">
-              <div class="absolute top-3 right-3 bg-yellow-400 text-purple-900 px-2 py-1 rounded-full text-xs font-bold">
-                おすすめ
-              </div>
-              <h4 class="text-lg font-bold mb-2">プレミアムプラン</h4>
-              <div class="text-2xl font-bold mb-3">$20<span class="text-sm font-normal opacity-90">/月</span></div>
+              <h4 class="text-lg font-bold mb-2">${i18n.t('pricing.premium.title')}</h4>
+              <div class="text-2xl font-bold mb-3">${i18n.t('pricing.premium.price')}<span class="text-sm font-normal opacity-90">${i18n.t('pricing.premium.month')}</span></div>
               <ul class="space-y-2 mb-4 text-sm">
-                <li class="flex items-center gap-2"><i class="fas fa-check text-xs"></i> 動画閲覧無制限</li>
-                <li class="flex items-center gap-2"><i class="fas fa-check text-xs"></i> ランキング閲覧</li>
-                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>あなたの動画を投稿できる</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>無制限にいいねできる</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>動画を応援してランキングUP</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-star text-yellow-300 text-xs"></i> <strong>広告非表示</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature1')}</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature2')}</strong></li>
+                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature3')}</strong></li>
               </ul>
               <button onclick="showPricingModal()" class="btn btn-sm w-full bg-white text-purple-600 hover:bg-gray-100 font-bold">
-                <i class="fas fa-crown"></i>
-                15日間無料で試す
+                <i class="fas fa-rocket"></i>
+                ${i18n.t('pricing.cta')}
               </button>
             </div>
           </div>
@@ -695,14 +705,25 @@ async function switchRankingPeriod(period) {
 }
 
 // ============ Helper Functions ============
+
+// Language switcher
+function switchLanguage(lang) {
+  i18n.setLanguage(lang);
+  state.currentLanguage = lang;
+  // renderApp() will be called automatically by languageChanged event
+}
+
 function getCategoryName(category) {
-  const categories = {
-    bouldering: 'ボルダリング',
-    competition: '大会',
-    tutorial: '解説',
-    gym_review: 'ジム紹介'
+  const categoryMap = {
+    bouldering: 'section.bouldering',
+    sport: 'section.sport',
+    trad: 'section.trad',
+    competition: 'section.competition',
+    tutorial: 'section.tutorial',
+    gear: 'section.gear',
+    gym_review: i18n.getCurrentLanguage() === 'ja' ? 'ジム紹介' : 'Gym Reviews'
   };
-  return categories[category] || category;
+  return categoryMap[category] ? i18n.t(categoryMap[category]) : category;
 }
 
 function formatDate(dateString) {
@@ -711,12 +732,23 @@ function formatDate(dateString) {
   const diff = now - date;
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   
-  if (days === 0) return '今日';
-  if (days === 1) return '昨日';
-  if (days < 7) return `${days}日前`;
-  if (days < 30) return `${Math.floor(days / 7)}週間前`;
-  if (days < 365) return `${Math.floor(days / 30)}ヶ月前`;
-  return `${Math.floor(days / 365)}年前`;
+  const lang = i18n.getCurrentLanguage();
+  
+  if (lang === 'ja') {
+    if (days === 0) return '今日';
+    if (days === 1) return '昨日';
+    if (days < 7) return `${days}日前`;
+    if (days < 30) return `${Math.floor(days / 7)}週間前`;
+    if (days < 365) return `${Math.floor(days / 30)}ヶ月前`;
+    return `${Math.floor(days / 365)}年前`;
+  } else {
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+    if (days < 365) return `${Math.floor(days / 30)} months ago`;
+    return `${Math.floor(days / 365)} years ago`;
+  }
 }
 
 function showToast(message, type = 'info') {
@@ -833,7 +865,7 @@ function showAuthModal(type) {
   modal.innerHTML = `
     <div class="modal-content">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-bold">${type === 'login' ? 'ログイン' : '新規登録'}</h3>
+        <h3 class="text-xl font-bold">${type === 'login' ? i18n.t('auth.login.title') : i18n.t('auth.signup.title')}</h3>
         <button onclick="closeModal('auth-modal')" class="text-gray-400 hover:text-gray-600">
           <i class="fas fa-times text-xl"></i>
         </button>
@@ -842,30 +874,30 @@ function showAuthModal(type) {
       <form onsubmit="handleAuth(event, '${type}')" class="space-y-4">
         ${type === 'register' ? `
           <div>
-            <label>ユーザー名</label>
+            <label>${i18n.t('auth.name')}</label>
             <input type="text" name="username" required class="w-full">
           </div>
         ` : ''}
         
         <div>
-          <label>メールアドレス</label>
+          <label>${i18n.t('auth.email')}</label>
           <input type="email" name="email" required class="w-full">
         </div>
         
         <div>
-          <label>パスワード</label>
+          <label>${i18n.t('auth.password')}</label>
           <input type="password" name="password" required class="w-full">
         </div>
         
         <button type="submit" class="btn btn-primary w-full">
-          ${type === 'login' ? 'ログイン' : '登録'}
+          ${type === 'login' ? i18n.t('auth.login_btn') : i18n.t('auth.signup_btn')}
         </button>
       </form>
       
       <p class="text-sm text-center text-gray-600 mt-4">
-        ${type === 'login' ? 'アカウントをお持ちでない方は' : 'すでにアカウントをお持ちの方は'}
+        ${type === 'login' ? i18n.t('auth.switch_to_signup') : i18n.t('auth.switch_to_login')}
         <a href="#" onclick="showAuthModal('${type === 'login' ? 'register' : 'login'}')" class="text-purple-600 font-medium">
-          ${type === 'login' ? '新規登録' : 'ログイン'}
+          ${type === 'login' ? i18n.t('auth.signup.title') : i18n.t('auth.login.title')}
         </a>
       </p>
     </div>
@@ -885,9 +917,9 @@ async function handleAuth(event, type) {
     await checkAuth();
     closeModal('auth-modal');
     renderApp();
-    showToast(`${type === 'login' ? 'ログイン' : '登録'}に成功しました`, 'success');
+    showToast(i18n.t('toast.auth_success'), 'success');
   } catch (error) {
-    showToast(error.response?.data?.error || '認証に失敗しました', 'error');
+    showToast(error.response?.data?.error || i18n.t('toast.auth_error'), 'error');
   }
 }
 
@@ -896,9 +928,9 @@ async function logout() {
     await axios.post('/api/auth/logout');
     state.currentUser = null;
     renderApp();
-    showToast('ログアウトしました', 'success');
+    showToast(i18n.t('toast.logout_success'), 'success');
   } catch (error) {
-    showToast('ログアウトに失敗しました', 'error');
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ログアウトに失敗しました' : 'Logout failed', 'error');
   }
 }
 
@@ -988,24 +1020,24 @@ async function handleLike(event, videoId) {
     
     // Show success message
     if (data.remaining_likes === 0) {
-      showToast(`いいねしました！無料プランの上限に達しました`, 'success');
+      showToast(`${i18n.t('toast.like_success')} ${i18n.t('toast.like_limit')}`, 'success');
       setTimeout(() => showPremiumLimitModal(data.user_like_count), 1500);
     } else if (data.remaining_likes !== 'unlimited') {
-      showToast(`いいねしました！あと${data.remaining_likes}回いいねできます`, 'success');
+      showToast(`${i18n.t('toast.like_success')} ${i18n.t('toast.like_remaining', { count: data.remaining_likes })}`, 'success');
     } else {
-      showToast('いいねしました！', 'success');
+      showToast(i18n.t('toast.like_success'), 'success');
     }
     
   } catch (error) {
     if (error.response && error.response.status === 400) {
-      showToast('すでにいいね済みです', 'info');
+      showToast(i18n.t('toast.already_liked'), 'info');
     } else if (error.response && error.response.status === 403) {
       // Free plan limit reached
       showPremiumLimitModal(error.response.data.current_count);
     } else if (error.response && error.response.status === 401) {
       showAuthModal('login');
     } else {
-      showToast('いいねに失敗しました', 'error');
+      showToast(i18n.getCurrentLanguage() === 'ja' ? 'いいねに失敗しました' : 'Like failed', 'error');
     }
   } finally {
     btn.disabled = false;
@@ -1044,44 +1076,40 @@ function showPremiumLimitModal(currentLikes) {
         <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-3 flex items-center justify-center">
           <i class="fas fa-heart text-white text-2xl"></i>
         </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">もっと応援しませんか？</h3>
-        <p class="text-sm text-gray-600">無料プランでは${currentLikes}回までいいねができます</p>
+        <h3 class="text-xl font-bold text-gray-900 mb-2">${i18n.t('premium_limit.title')}</h3>
+        <p class="text-sm text-gray-600">${i18n.t('premium_limit.subtitle', { count: currentLikes })}</p>
       </div>
       
       <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-5 mb-5">
-        <h4 class="font-bold text-base mb-3 text-center text-purple-700">プレミアムでできること</h4>
+        <h4 class="font-bold text-base mb-3 text-center text-purple-700">${i18n.t('premium_limit.features_title')}</h4>
         <ul class="space-y-2 text-sm">
           <li class="flex items-center gap-2">
             <i class="fas fa-heart text-red-500 text-xs"></i>
-            <span class="text-gray-700"><strong>無制限にいいね</strong>してお気に入り動画を応援</span>
+            <span class="text-gray-700">${i18n.t('premium_limit.feature1')}</span>
           </li>
           <li class="flex items-center gap-2">
             <i class="fas fa-upload text-purple-600 text-xs"></i>
-            <span class="text-gray-700"><strong>あなたの動画を投稿</strong>してコミュニティと共有</span>
+            <span class="text-gray-700">${i18n.t('premium_limit.feature2')}</span>
           </li>
           <li class="flex items-center gap-2">
             <i class="fas fa-trophy text-yellow-500 text-xs"></i>
-            <span class="text-gray-700"><strong>ランキングに貢献</strong>して人気動画を作る</span>
-          </li>
-          <li class="flex items-center gap-2">
-            <i class="fas fa-star text-purple-600 text-xs"></i>
-            <span class="text-gray-700">広告非表示で快適視聴</span>
+            <span class="text-gray-700">${i18n.t('premium_limit.feature3')}</span>
           </li>
         </ul>
         
         <div class="text-center mt-4 pt-3 border-t border-purple-200">
-          <div class="text-2xl font-bold text-purple-600">$20<span class="text-base font-normal">/月</span></div>
-          <div class="text-xs text-gray-600 mt-1">✨ 15日間無料トライアル</div>
+          <div class="text-2xl font-bold text-purple-600">${i18n.t('premium_limit.price')}<span class="text-base font-normal">${i18n.t('premium_limit.month')}</span></div>
+          <div class="text-xs text-gray-600 mt-1">✨ ${i18n.t('premium_limit.trial')}</div>
         </div>
       </div>
       
       <div class="flex gap-3">
         <button onclick="closeModal('premium-limit-modal')" class="btn btn-sm btn-secondary flex-1">
-          後で
+          ${i18n.getCurrentLanguage() === 'ja' ? '後で' : 'Later'}
         </button>
         <button onclick="closeModal('premium-limit-modal'); showPricingModal();" class="btn btn-sm btn-primary flex-1">
           <i class="fas fa-crown"></i>
-          今すぐ始める
+          ${i18n.t('premium_limit.cta')}
         </button>
       </div>
     </div>
