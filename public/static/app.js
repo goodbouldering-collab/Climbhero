@@ -141,12 +141,30 @@ function renderHomePage() {
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center gap-3">
             <i class="fas fa-mountain text-purple-600 text-2xl"></i>
-            <h1 class="text-xl font-bold text-gray-900">ClimbHero</h1>
+            <h1 class="text-xl font-bold text-gray-900 hidden sm:block">ClimbHero</h1>
           </div>
           
-          <div class="flex items-center gap-3">
+          <!-- Search Bar (Desktop) -->
+          <div class="hidden md:flex flex-1 max-w-md mx-4">
+            <div class="relative w-full">
+              <input 
+                type="text" 
+                placeholder="${i18n.t('search.placeholder')}"
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                onkeyup="handleSearch(event)"
+                id="search-input">
+              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <!-- Search Icon (Mobile) -->
+            <button onclick="toggleMobileSearch()" class="md:hidden btn btn-sm btn-secondary">
+              <i class="fas fa-search"></i>
+            </button>
+            
             <!-- Language Switcher -->
-            <div class="language-switcher">
+            <div class="language-switcher hidden sm:flex">
               ${i18n.getAvailableLanguages().map(lang => `
                 <button 
                   onclick="switchLanguage('${lang.code}')" 
@@ -158,6 +176,14 @@ function renderHomePage() {
             </div>
             
             ${state.currentUser ? `
+              <!-- Notifications -->
+              <div class="relative">
+                <button onclick="toggleNotifications()" class="btn btn-sm btn-secondary relative">
+                  <i class="fas fa-bell"></i>
+                  <span id="notification-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">0</span>
+                </button>
+              </div>
+            `}
               ${state.currentUser.is_admin ? `
                 <button onclick="navigateTo('admin')" class="btn btn-sm btn-secondary">
                   <i class="fas fa-cog"></i>
@@ -546,16 +572,24 @@ function renderVideoCard(video) {
             <span><i class="fas fa-play-circle"></i> ${video.duration}</span>
           </div>
           <div class="flex items-center justify-between mt-2">
-            <span class="text-xs text-gray-500">
+            <span class="text-xs text-gray-500 truncate flex-1">
               <i class="fas fa-user-circle"></i> ${video.channel_name}
             </span>
-            <button 
-              class="like-btn ${isLiked ? 'liked' : ''}" 
-              data-video-id="${video.id}"
-              onclick="handleLike(event, ${video.id})"
-              title="いいね">
-              <i class="fas fa-heart"></i>
-            </button>
+            <div class="flex gap-1">
+              <button 
+                class="like-btn ${isLiked ? 'liked' : ''}" 
+                data-video-id="${video.id}"
+                onclick="handleLike(event, ${video.id})"
+                title="${i18n.t('video.like_btn')}">
+                <i class="fas fa-heart"></i>
+              </button>
+              <button 
+                class="share-btn" 
+                onclick="event.stopPropagation(); showShareModal(${video.id})"
+                title="${i18n.t('common.share')}">
+                <i class="fas fa-share-alt"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1415,3 +1449,294 @@ function attachEventListeners() {
     });
   });
 }
+
+// ============ Community Features ============
+
+// Search functionality
+let searchTimeout;
+function handleSearch(event) {
+  clearTimeout(searchTimeout);
+  const query = event.target.value.trim();
+  
+  if (query.length < 2) {
+    hideSearchResults();
+    return;
+  }
+  
+  searchTimeout = setTimeout(async () => {
+    try {
+      const response = await axios.get(`/api/search?q=${encodeURIComponent(query)}`);
+      showSearchResults(response.data);
+    } catch (error) {
+      console.error('Search failed:', error);
+    }
+  }, 300);
+}
+
+function showSearchResults(results) {
+  const existingResults = document.getElementById('search-results');
+  if (existingResults) existingResults.remove();
+  
+  const resultsDiv = document.createElement('div');
+  resultsDiv.id = 'search-results';
+  resultsDiv.className = 'absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto z-50';
+  
+  resultsDiv.innerHTML = `
+    <div class="p-4">
+      ${results.videos && results.videos.length > 0 ? `
+        <div class="mb-4">
+          <h4 class="font-semibold text-sm text-gray-700 mb-2">${i18n.t('search.videos')}</h4>
+          ${results.videos.map(video => `
+            <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer" onclick="showVideoDetail(${video.id})">
+              <img src="${video.thumbnail_url}" class="w-16 h-12 object-cover rounded" alt="${video.title}">
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-sm text-gray-900 truncate">${video.title}</p>
+                <p class="text-xs text-gray-500">${video.channel_name}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      ${results.users && results.users.length > 0 ? `
+        <div>
+          <h4 class="font-semibold text-sm text-gray-700 mb-2">${i18n.t('search.users')}</h4>
+          ${results.users.map(user => `
+            <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer" onclick="showUserProfile(${user.id})">
+              <div class="avatar w-10 h-10">${user.username[0].toUpperCase()}</div>
+              <div class="flex-1">
+                <p class="font-medium text-sm text-gray-900">${user.username}</p>
+                ${user.bio ? `<p class="text-xs text-gray-500 truncate">${user.bio}</p>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      
+      ${(!results.videos || results.videos.length === 0) && (!results.users || results.users.length === 0) ? `
+        <p class="text-sm text-gray-500 text-center py-4">${i18n.t('search.no_results')}</p>
+      ` : ''}
+    </div>
+  `;
+  
+  const searchContainer = document.getElementById('search-input').parentElement;
+  searchContainer.appendChild(resultsDiv);
+  
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', function closeResults(e) {
+      if (!searchContainer.contains(e.target)) {
+        hideSearchResults();
+        document.removeEventListener('click', closeResults);
+      }
+    });
+  }, 100);
+}
+
+function hideSearchResults() {
+  const results = document.getElementById('search-results');
+  if (results) results.remove();
+}
+
+// Mobile search toggle
+function toggleMobileSearch() {
+  const searchBar = document.getElementById('mobile-search');
+  if (searchBar) {
+    searchBar.remove();
+  } else {
+    const header = document.querySelector('header > div');
+    const mobileSearch = document.createElement('div');
+    mobileSearch.id = 'mobile-search';
+    mobileSearch.className = 'md:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 p-4 z-40';
+    mobileSearch.innerHTML = `
+      <div class="relative">
+        <input 
+          type="text" 
+          placeholder="${i18n.t('search.placeholder')}"
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+          onkeyup="handleSearch(event)"
+          id="mobile-search-input">
+        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+      </div>
+    `;
+    header.parentElement.appendChild(mobileSearch);
+  }
+}
+
+// Notifications
+async function toggleNotifications() {
+  const existingPanel = document.getElementById('notifications-panel');
+  if (existingPanel) {
+    existingPanel.remove();
+    return;
+  }
+  
+  try {
+    const response = await axios.get('/api/notifications');
+    const notifications = response.data;
+    
+    const panel = document.createElement('div');
+    panel.id = 'notifications-panel';
+    panel.className = 'absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto z-50';
+    
+    panel.innerHTML = `
+      <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+        <h3 class="font-bold text-gray-900">${i18n.t('notifications.title')}</h3>
+        ${notifications.length > 0 ? `
+          <button onclick="markAllNotificationsRead()" class="text-xs text-purple-600 hover:text-purple-700">
+            ${i18n.t('notifications.mark_all_read')}
+          </button>
+        ` : ''}
+      </div>
+      <div class="divide-y divide-gray-100">
+        ${notifications.length > 0 ? notifications.map(notif => `
+          <div class="p-4 hover:bg-gray-50 cursor-pointer ${notif.is_read ? 'opacity-60' : 'bg-purple-50'}" onclick="markNotificationRead(${notif.id}, '${notif.link}')">
+            <p class="text-sm font-medium text-gray-900">${notif.title}</p>
+            <p class="text-xs text-gray-600 mt-1">${notif.message}</p>
+            <p class="text-xs text-gray-400 mt-1">${formatDate(notif.created_at)}</p>
+          </div>
+        `).join('') : `
+          <div class="p-8 text-center">
+            <i class="fas fa-bell-slash text-gray-300 text-3xl mb-2"></i>
+            <p class="text-sm text-gray-500">${i18n.t('notifications.no_notifications')}</p>
+          </div>
+        `}
+      </div>
+    `;
+    
+    const notifButton = event.target.closest('button').parentElement;
+    notifButton.appendChild(panel);
+    
+    // Close on click outside
+    setTimeout(() => {
+      document.addEventListener('click', function closeNotifications(e) {
+        if (!notifButton.contains(e.target)) {
+          panel.remove();
+          document.removeEventListener('click', closeNotifications);
+        }
+      });
+    }, 100);
+    
+  } catch (error) {
+    console.error('Failed to load notifications:', error);
+  }
+}
+
+async function markNotificationRead(id, link) {
+  try {
+    await axios.post(`/api/notifications/${id}/read`);
+    if (link) {
+      window.location.href = link;
+    }
+    document.getElementById('notifications-panel').remove();
+  } catch (error) {
+    console.error('Failed to mark notification as read:', error);
+  }
+}
+
+async function markAllNotificationsRead() {
+  try {
+    await axios.post('/api/notifications/read-all');
+    document.getElementById('notifications-panel').remove();
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'すべて既読にしました' : 'All marked as read', 'success');
+  } catch (error) {
+    console.error('Failed to mark all as read:', error);
+  }
+}
+
+// Share functionality
+function showShareModal(videoId) {
+  const modal = document.getElementById('share-modal') || createModal('share-modal');
+  const video = state.videos.find(v => v.id === videoId);
+  if (!video) return;
+  
+  const shareUrl = `${window.location.origin}/#video/${videoId}`;
+  
+  modal.innerHTML = `
+    <div class="modal-content max-w-md">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold">${i18n.t('share.title')}</h3>
+        <button onclick="closeModal('share-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-3">
+        <button onclick="copyToClipboard('${shareUrl}')" class="btn btn-secondary w-full justify-start">
+          <i class="fas fa-link"></i>
+          ${i18n.t('share.copy_link')}
+        </button>
+        
+        <button onclick="shareToTwitter('${encodeURIComponent(video.title)}', '${shareUrl}')" class="btn btn-secondary w-full justify-start">
+          <i class="fab fa-twitter text-blue-400"></i>
+          ${i18n.t('share.twitter')}
+        </button>
+        
+        <button onclick="shareToFacebook('${shareUrl}')" class="btn btn-secondary w-full justify-start">
+          <i class="fab fa-facebook text-blue-600"></i>
+          ${i18n.t('share.facebook')}
+        </button>
+        
+        <button onclick="shareToLine('${encodeURIComponent(video.title)}', '${shareUrl}')" class="btn btn-secondary w-full justify-start">
+          <i class="fab fa-line text-green-500"></i>
+          ${i18n.t('share.line')}
+        </button>
+      </div>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(i18n.t('share.copied'), 'success');
+    closeModal('share-modal');
+  });
+}
+
+function shareToTwitter(text, url) {
+  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+  trackShare('twitter');
+}
+
+function shareToFacebook(url) {
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+  trackShare('facebook');
+}
+
+function shareToLine(text, url) {
+  window.open(`https://line.me/R/msg/text/?${text}%20${url}`, '_blank');
+  trackShare('line');
+}
+
+async function trackShare(platform) {
+  try {
+    await axios.post('/api/shares', { platform });
+  } catch (error) {
+    console.error('Failed to track share:', error);
+  }
+}
+
+// User profile
+function showUserProfile(userId) {
+  // TODO: Implement user profile view
+  showToast(i18n.getCurrentLanguage() === 'ja' ? 'ユーザープロフィール機能は準備中です' : 'User profile feature coming soon', 'info');
+}
+
+// Follow/Unfollow
+async function toggleFollow(userId) {
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  try {
+    const response = await axios.post(`/api/users/${userId}/follow`);
+    showToast(response.data.following ? i18n.t('common.following') : i18n.t('common.follow'), 'success');
+    renderApp();
+  } catch (error) {
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'フォロー処理に失敗しました' : 'Follow action failed', 'error');
+  }
+}
+

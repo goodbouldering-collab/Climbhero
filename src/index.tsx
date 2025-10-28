@@ -745,4 +745,227 @@ function getMediaSourceName(source: string): string {
   return names[source] || 'Unknown'
 }
 
+// ============ Search API ============
+
+app.get('/api/search', async (c) => {
+  const { env } = c
+  const query = c.req.query('q')
+  
+  if (!query || query.length < 2) {
+    return c.json({ videos: [], users: [] })
+  }
+  
+  try {
+    const searchTerm = `%${query}%`
+    
+    // Search videos
+    const videos = await env.DB.prepare(`
+      SELECT * FROM videos 
+      WHERE title LIKE ? OR description LIKE ? OR channel_name LIKE ?
+      ORDER BY views DESC
+      LIMIT 10
+    `).bind(searchTerm, searchTerm, searchTerm).all()
+    
+    // Search users
+    const users = await env.DB.prepare(`
+      SELECT id, username, bio FROM users 
+      WHERE username LIKE ? OR bio LIKE ?
+      LIMIT 10
+    `).bind(searchTerm, searchTerm).all()
+    
+    return c.json({
+      videos: videos.results || [],
+      users: users.results || []
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Notifications API ============
+
+app.get('/api/notifications', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    const notifications = await env.DB.prepare(`
+      SELECT * FROM notifications 
+      WHERE user_id = ? 
+      ORDER BY created_at DESC 
+      LIMIT 50
+    `).bind((user as any).id).all()
+    
+    return c.json(notifications.results || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+app.post('/api/notifications/:id/read', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  const notificationId = c.req.param('id')
+  
+  try {
+    await env.DB.prepare(`
+      UPDATE notifications 
+      SET is_read = 1 
+      WHERE id = ? AND user_id = ?
+    `).bind(notificationId, (user as any).id).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+app.post('/api/notifications/read-all', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    await env.DB.prepare(`
+      UPDATE notifications 
+      SET is_read = 1 
+      WHERE user_id = ?
+    `).bind((user as any).id).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Comments API ============
+
+app.get('/api/videos/:id/comments', async (c) => {
+  const { env } = c
+  const videoId = c.req.param('id')
+  
+  try {
+    const comments = await env.DB.prepare(`
+      SELECT c.*, u.username 
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.video_id = ? AND c.parent_id IS NULL
+      ORDER BY c.created_at DESC
+    `).bind(videoId).all()
+    
+    return c.json(comments.results || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+app.post('/api/videos/:id/comments', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  const videoId = c.req.param('id')
+  const { content, parent_id } = await c.req.json()
+  
+  if (!content || content.trim().length === 0) {
+    return c.json({ error: 'Comment cannot be empty' }, 400)
+  }
+  
+  try {
+    const result = await env.DB.prepare(`
+      INSERT INTO comments (video_id, user_id, parent_id, content)
+      VALUES (?, ?, ?, ?)
+    `).bind(videoId, (user as any).id, parent_id || null, content).run()
+    
+    return c.json({ 
+      success: true, 
+      comment_id: result.meta.last_row_id 
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Share Tracking API ============
+
+app.post('/api/shares', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  
+  const { video_id, platform } = await c.req.json()
+  
+  try {
+    await env.DB.prepare(`
+      INSERT INTO video_shares (video_id, user_id, platform)
+      VALUES (?, ?, ?)
+    `).bind(video_id, user ? (user as any).id : null, platform).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Follow System API ============
+
+app.post('/api/users/:id/follow', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  const followingId = c.req.param('id')
+  
+  try {
+    // Check if already following
+    const existing = await env.DB.prepare(`
+      SELECT * FROM follows 
+      WHERE follower_id = ? AND following_id = ?
+    `).bind((user as any).id, followingId).first()
+    
+    if (existing) {
+      // Unfollow
+      await env.DB.prepare(`
+        DELETE FROM follows 
+        WHERE follower_id = ? AND following_id = ?
+      `).bind((user as any).id, followingId).run()
+      
+      return c.json({ following: false })
+    } else {
+      // Follow
+      await env.DB.prepare(`
+        INSERT INTO follows (follower_id, following_id)
+        VALUES (?, ?)
+      `).bind((user as any).id, followingId).run()
+      
+      return c.json({ following: true })
+    }
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 export default app

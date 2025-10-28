@@ -161,6 +161,60 @@ const translations = {
     'common.edit': '編集',
     'common.search': '検索',
     'common.filter': 'フィルター',
+    'common.reply': '返信',
+    'common.report': '報告',
+    'common.share': '共有',
+    'common.follow': 'フォロー',
+    'common.following': 'フォロー中',
+    'common.submit': '送信',
+    
+    // Comments
+    'comments.title': 'コメント',
+    'comments.add': 'コメントを追加',
+    'comments.placeholder': 'コメントを入力してください...',
+    'comments.reply_to': '{name}に返信',
+    'comments.show_replies': '{count}件の返信を表示',
+    'comments.hide_replies': '返信を非表示',
+    'comments.edit': '編集',
+    'comments.delete': '削除',
+    'comments.deleted': 'このコメントは削除されました',
+    'comments.no_comments': 'まだコメントがありません',
+    'comments.be_first': '最初にコメントしましょう！',
+    
+    // Share
+    'share.title': '共有',
+    'share.copy_link': 'リンクをコピー',
+    'share.copied': 'リンクをコピーしました',
+    'share.twitter': 'Twitterで共有',
+    'share.facebook': 'Facebookで共有',
+    'share.line': 'LINEで共有',
+    
+    // User Profile
+    'profile.videos': '動画',
+    'profile.followers': 'フォロワー',
+    'profile.following': 'フォロー中',
+    'profile.bio': '自己紹介',
+    'profile.location': '場所',
+    'profile.climbing_since': 'クライミング歴',
+    'profile.years': '年',
+    'profile.edit_profile': 'プロフィール編集',
+    
+    // Notifications
+    'notifications.title': '通知',
+    'notifications.mark_read': '既読にする',
+    'notifications.mark_all_read': 'すべて既読にする',
+    'notifications.no_notifications': '通知はありません',
+    'notifications.new_comment': '{user}があなたの動画にコメントしました',
+    'notifications.new_reply': '{user}があなたのコメントに返信しました',
+    'notifications.new_like': '{user}があなたの動画をいいねしました',
+    'notifications.new_follower': '{user}があなたをフォローしました',
+    
+    // Search
+    'search.placeholder': '動画、ユーザーを検索...',
+    'search.results': '検索結果',
+    'search.no_results': '検索結果が見つかりませんでした',
+    'search.videos': '動画',
+    'search.users': 'ユーザー',
   },
   
   en: {
@@ -323,6 +377,60 @@ const translations = {
     'common.edit': 'Edit',
     'common.search': 'Search',
     'common.filter': 'Filter',
+    'common.reply': 'Reply',
+    'common.report': 'Report',
+    'common.share': 'Share',
+    'common.follow': 'Follow',
+    'common.following': 'Following',
+    'common.submit': 'Submit',
+    
+    // Comments
+    'comments.title': 'Comments',
+    'comments.add': 'Add a comment',
+    'comments.placeholder': 'Write a comment...',
+    'comments.reply_to': 'Reply to {name}',
+    'comments.show_replies': 'Show {count} replies',
+    'comments.hide_replies': 'Hide replies',
+    'comments.edit': 'Edit',
+    'comments.delete': 'Delete',
+    'comments.deleted': 'This comment has been deleted',
+    'comments.no_comments': 'No comments yet',
+    'comments.be_first': 'Be the first to comment!',
+    
+    // Share
+    'share.title': 'Share',
+    'share.copy_link': 'Copy Link',
+    'share.copied': 'Link copied',
+    'share.twitter': 'Share on Twitter',
+    'share.facebook': 'Share on Facebook',
+    'share.line': 'Share on LINE',
+    
+    // User Profile
+    'profile.videos': 'Videos',
+    'profile.followers': 'Followers',
+    'profile.following': 'Following',
+    'profile.bio': 'Bio',
+    'profile.location': 'Location',
+    'profile.climbing_since': 'Climbing since',
+    'profile.years': 'years',
+    'profile.edit_profile': 'Edit Profile',
+    
+    // Notifications
+    'notifications.title': 'Notifications',
+    'notifications.mark_read': 'Mark as read',
+    'notifications.mark_all_read': 'Mark all as read',
+    'notifications.no_notifications': 'No notifications',
+    'notifications.new_comment': '{user} commented on your video',
+    'notifications.new_reply': '{user} replied to your comment',
+    'notifications.new_like': '{user} liked your video',
+    'notifications.new_follower': '{user} started following you',
+    
+    // Search
+    'search.placeholder': 'Search videos, users...',
+    'search.results': 'Search Results',
+    'search.no_results': 'No results found',
+    'search.videos': 'Videos',
+    'search.users': 'Users',
   }
 };
 
