@@ -637,6 +637,11 @@ app.get('/api/users/:id/favorites', async (c) => {
 
 // ============ Frontend Route ============
 
+// Favicon handler
+app.get('/favicon.ico', (c) => {
+  return c.notFound()
+})
+
 app.get('/', (c) => {
   const html = `
     <!DOCTYPE html>
