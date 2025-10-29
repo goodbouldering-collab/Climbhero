@@ -346,6 +346,8 @@ const translations = {
     
     // Feature Explanation (Top)
     'feature.title': 'ClimbHeroの使い方',
+    'feature.toggle_show': '使い方を表示',
+    'feature.toggle_hide': '使い方を非表示',
     'feature.step1.title': '1. 会員登録（無料）',
     'feature.step1.desc': '右上の「会員登録」からアカウントを作成',
     'feature.step2.title': '2. 動画を探す',
@@ -356,6 +358,10 @@ const translations = {
     'feature.step4.desc': 'プレミアム会員（$20/月）になると、1日30件まで投稿できます',
     'feature.free_trial': '15日間無料トライアル実施中！',
     'feature.upgrade': 'プレミアムにアップグレード',
+    
+    // Recommended Videos
+    'section.recommended': 'おすすめ動画',
+    'section.featured': '注目動画',
     
     // Announcement Banner
     'announcement.latest': '最新のお知らせ',
@@ -715,16 +721,22 @@ const translations = {
     
     // Feature Explanation (Top)
     'feature.title': 'How to Use ClimbHero',
+    'feature.toggle_show': 'Show How-to',
+    'feature.toggle_hide': 'Hide How-to',
     'feature.step1.title': '1. Register (Free)',
     'feature.step1.desc': 'Create an account from "Sign Up" at the top right',
     'feature.step2.title': '2. Explore Videos',
     'feature.step2.desc': 'Discover videos by category or rankings',
     'feature.step3.title': '3. Like & Support',
-    'feature.step3.desc': 'Free members: 3 likes, Premium: unlimited likes',
+    'feature.step3.desc': 'Free members: 1 like, Premium: unlimited likes',
     'feature.step4.title': '4. Post Videos',
     'feature.step4.desc': 'Premium members ($20/month) can post up to 30 videos per day',
     'feature.free_trial': '15-day free trial available!',
     'feature.upgrade': 'Upgrade to Premium',
+    
+    // Recommended Videos
+    'section.recommended': 'Recommended Videos',
+    'section.featured': 'Featured Videos',
     
     // Announcement Banner
     'announcement.latest': 'Latest Announcements',

@@ -298,37 +298,61 @@ function renderHomePage() {
         </div>
       </section>
       
+      <!-- Announcement Text (Above Banner) -->
       ${state.announcements && state.announcements.length > 0 ? `
-      <!-- Text-Only Announcement Banner -->
-      <div class="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-              <i class="fas fa-bullhorn text-yellow-300 text-lg flex-shrink-0"></i>
-              <div class="flex-1 min-w-0">
-                <marquee behavior="scroll" direction="left" scrollamount="3" class="text-sm md:text-base">
-                  ${state.announcements.map(a => `【${a.title}】${a.content}`).join(' ▪ ')}
-                </marquee>
-              </div>
+      <div class="bg-gray-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-start gap-3">
+            <i class="fas fa-info-circle text-purple-600 text-lg mt-1 flex-shrink-0"></i>
+            <div class="flex-1">
+              <h3 class="font-bold text-gray-900 mb-2 text-sm">${i18n.t('announcement.latest')}</h3>
+              ${state.announcements.slice(0, 3).map(a => `
+                <div class="mb-2 text-sm text-gray-700">
+                  <span class="font-medium text-purple-600">● ${a.title}:</span> ${a.content}
+                </div>
+              `).join('')}
+              ${state.announcements.length > 3 ? `
+                <a href="#" onclick="showAnnouncementsModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800 font-medium">
+                  ${i18n.t('announcement.view_all')} <i class="fas fa-chevron-right"></i>
+                </a>
+              ` : ''}
             </div>
-            <a href="#" onclick="showAnnouncementsModal(); return false;" class="text-xs text-yellow-300 hover:text-yellow-100 whitespace-nowrap flex-shrink-0">
-              ${i18n.t('announcement.view_all')}
-              <i class="fas fa-chevron-right ml-1"></i>
-            </a>
           </div>
         </div>
       </div>
       ` : ''}
       
-      <!-- How to Use ClimbHero Section -->
+      ${state.announcements && state.announcements.length > 0 ? `
+      <!-- Scrolling Announcement Banner -->
+      <div class="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-bullhorn text-yellow-300 text-sm flex-shrink-0"></i>
+            <div class="flex-1 min-w-0">
+              <marquee behavior="scroll" direction="left" scrollamount="3" class="text-xs md:text-sm">
+                ${state.announcements.map(a => `【${a.title}】${a.content}`).join(' ▪ ')}
+              </marquee>
+            </div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+      
+      <!-- How to Use ClimbHero Section (Collapsible) -->
       <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">
-            <i class="fas fa-info-circle text-purple-600 mr-2"></i>
-            ${i18n.t('feature.title')}
-          </h2>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button 
+            onclick="toggleFeatureSection()" 
+            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
+            <h2 class="text-lg font-bold text-gray-900">
+              <i class="fas fa-info-circle text-purple-600 mr-2"></i>
+              ${i18n.t('feature.title')}
+            </h2>
+            <i id="feature-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </button>
           
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div id="feature-content" class="hidden mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <!-- Step 1: Register -->
             <div class="text-center">
               <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -364,19 +388,36 @@ function renderHomePage() {
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step4.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step4.desc')}</p>
             </div>
-          </div>
-          
-          <div class="text-center">
-            <p class="text-sm text-green-600 font-medium mb-3">
-              <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
-            </p>
-            <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-8 py-3 rounded-lg font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
-              <i class="fas fa-crown mr-2"></i>
-              ${i18n.t('feature.upgrade')}
-            </button>
+            </div>
+            
+            <div class="text-center">
+              <p class="text-sm text-green-600 font-medium mb-3">
+                <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
+              </p>
+              <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
+                <i class="fas fa-crown mr-2"></i>
+                ${i18n.t('feature.upgrade')}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      
+      <!-- Recommended Videos Section -->
+      <section class="py-6 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-4">
+            <div class="section-title">
+              <i class="fas fa-star"></i>
+              <span>${i18n.t('section.recommended')}</span>
+            </div>
+          </div>
+          
+          <div class="video-grid">
+            ${state.videos.slice(0, 4).map(video => renderVideoCard(video)).join('')}
+          </div>
+        </div>
+      </section>
 
       <!-- Rankings Section -->
       <section class="py-6 bg-white">
@@ -948,6 +989,20 @@ function showToast(message, type = 'info') {
 
 function navigateTo(view) {
   window.location.hash = view;
+}
+
+// ============ Feature Section Toggle ============
+function toggleFeatureSection() {
+  const content = document.getElementById('feature-content');
+  const icon = document.getElementById('feature-toggle-icon');
+  
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    icon.classList.add('rotate-180');
+  } else {
+    content.classList.add('hidden');
+    icon.classList.remove('rotate-180');
+  }
 }
 
 // ============ Pricing Modal ============
@@ -2639,5 +2694,42 @@ async function handleContactSubmit(e) {
     console.error('Failed to submit contact form:', error);
     showToast('送信に失敗しました。もう一度お試しください。', 'error');
   }
+}
+
+// ============ Announcements Modal ============
+function showAnnouncementsModal() {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+  
+  modal.innerHTML = `
+    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h2 class="text-xl font-bold">
+          <i class="fas fa-bullhorn text-purple-600 mr-2"></i>
+          ${i18n.t('announcement.latest')}
+        </h2>
+        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        ${state.announcements.map(a => `
+          <div class="border-b pb-4 last:border-b-0">
+            <h3 class="font-bold text-lg mb-2 text-gray-900">${a.title}</h3>
+            <p class="text-gray-600 text-sm mb-2">${a.content}</p>
+            <span class="text-xs text-gray-400">
+              <i class="fas fa-calendar mr-1"></i>
+              ${new Date(a.created_at).toLocaleDateString('ja-JP')}
+            </span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
 }
 
