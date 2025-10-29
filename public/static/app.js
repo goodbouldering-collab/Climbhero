@@ -954,73 +954,71 @@ function navigateTo(view) {
 function showPricingModal() {
   const modal = document.getElementById('pricing-modal');
   modal.innerHTML = `
-    <div class="modal-content" style="max-width: 450px; width: 90%;"
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-2xl font-bold">プレミアムプラン</h3>
+    <div class="modal-content" style="max-width: 380px; width: 90%;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">プレミアムプラン</h3>
         <button onclick="closeModal('pricing-modal')" class="text-gray-400 hover:text-gray-600">
-          <i class="fas fa-times text-xl"></i>
+          <i class="fas fa-times"></i>
         </button>
       </div>
       
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg mb-6">
-        <div class="text-center mb-4">
-          <div class="text-4xl font-bold text-purple-600 mb-2">$20<span class="text-lg font-normal">/月</span></div>
-          <p class="text-sm text-gray-600">15日間無料トライアル</p>
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg mb-4">
+        <div class="text-center mb-3">
+          <div class="text-2xl font-bold text-purple-600 mb-1">$20<span class="text-sm font-normal">/月</span></div>
+          <p class="text-xs text-gray-600">15日間無料トライアル</p>
         </div>
         
-        <ul class="space-y-2 text-sm">
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 動画投稿無制限</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> いいね・お気に入り機能</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 広告非表示</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> AIグレード判定機能</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 優先サポート</li>
+        <ul class="space-y-1 text-xs">
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> 動画投稿無制限</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> いいね・お気に入り機能</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> 広告非表示</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> AIグレード判定機能</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> 優先サポート</li>
         </ul>
       </div>
       
-      <form onsubmit="handlePremiumSubscribe(event)" class="space-y-4">
+      <form onsubmit="handlePremiumSubscribe(event)" class="space-y-3">
         ${!state.currentUser ? `
           <div>
-            <label>ユーザー名</label>
-            <input type="text" name="username" required>
+            <label class="text-sm">ユーザー名</label>
+            <input type="text" name="username" required class="text-sm">
           </div>
           <div>
-            <label>メールアドレス</label>
-            <input type="email" name="email" required>
+            <label class="text-sm">メールアドレス</label>
+            <input type="email" name="email" required class="text-sm">
           </div>
           <div>
-            <label>パスワード</label>
-            <input type="password" name="password" required>
+            <label class="text-sm">パスワード</label>
+            <input type="password" name="password" required class="text-sm">
           </div>
         ` : ''}
         
         <div>
-          <label>クレジットカード番号</label>
-          <input type="text" placeholder="1234 5678 9012 3456" required>
+          <label class="text-sm">クレジットカード番号</label>
+          <input type="text" placeholder="1234 5678 9012 3456" required class="text-sm">
         </div>
         
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label>有効期限</label>
-            <input type="text" placeholder="MM/YY" required>
-          </div>
-          <div>
-            <label>CVV</label>
-            <input type="text" placeholder="123" required>
-          </div>
+        <div>
+          <label class="text-sm">有効期限</label>
+          <input type="text" placeholder="MM/YY" required class="text-sm">
+        </div>
+        
+        <div>
+          <label class="text-sm">CVV</label>
+          <input type="text" placeholder="123" required class="text-sm">
         </div>
         
         <p class="text-xs text-gray-600">
-          15日間の無料トライアル後、自動的に月額$20が請求されます。<br>
-          いつでもキャンセル可能です。
+          15日間の無料トライアル後、自動的に月額$20が請求されます。いつでもキャンセル可能です。
         </p>
         
-        <button type="submit" class="btn btn-primary btn-lg w-full">
+        <button type="submit" class="btn btn-primary w-full text-sm py-2">
           <i class="fas fa-crown"></i>
           15日間無料で始める
         </button>
       </form>
       
-      <p class="text-xs text-center text-gray-500 mt-4">
+      <p class="text-xs text-center text-gray-500 mt-3">
         お支払い情報は安全に暗号化されて処理されます
       </p>
     </div>
@@ -1043,38 +1041,38 @@ async function handlePremiumSubscribe(event) {
 function showAuthModal(type) {
   const modal = document.getElementById('auth-modal');
   modal.innerHTML = `
-    <div class="modal-content">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-bold">${type === 'login' ? i18n.t('auth.login.title') : i18n.t('auth.signup.title')}</h3>
+    <div class="modal-content" style="max-width: 380px; width: 90%;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">${type === 'login' ? i18n.t('auth.login.title') : i18n.t('auth.signup.title')}</h3>
         <button onclick="closeModal('auth-modal')" class="text-gray-400 hover:text-gray-600">
-          <i class="fas fa-times text-xl"></i>
+          <i class="fas fa-times"></i>
         </button>
       </div>
       
-      <form onsubmit="handleAuth(event, '${type}')" class="space-y-4">
+      <form onsubmit="handleAuth(event, '${type}')" class="space-y-3">
         ${type === 'register' ? `
           <div>
-            <label>${i18n.t('auth.name')}</label>
-            <input type="text" name="username" required class="w-full">
+            <label class="text-sm">${i18n.t('auth.name')}</label>
+            <input type="text" name="username" required class="w-full text-sm">
           </div>
         ` : ''}
         
         <div>
-          <label>${i18n.t('auth.email')}</label>
-          <input type="email" name="email" required class="w-full">
+          <label class="text-sm">${i18n.t('auth.email')}</label>
+          <input type="email" name="email" required class="w-full text-sm">
         </div>
         
         <div>
-          <label>${i18n.t('auth.password')}</label>
-          <input type="password" name="password" required class="w-full">
+          <label class="text-sm">${i18n.t('auth.password')}</label>
+          <input type="password" name="password" required class="w-full text-sm">
         </div>
         
-        <button type="submit" class="btn btn-primary w-full">
+        <button type="submit" class="btn btn-primary w-full text-sm py-2">
           ${type === 'login' ? i18n.t('auth.login_btn') : i18n.t('auth.signup_btn')}
         </button>
       </form>
       
-      <p class="text-sm text-center text-gray-600 mt-4">
+      <p class="text-xs text-center text-gray-600 mt-3">
         ${type === 'login' ? i18n.t('auth.switch_to_signup') : i18n.t('auth.switch_to_login')}
         <a href="#" onclick="showAuthModal('${type === 'login' ? 'register' : 'login'}')" class="text-purple-600 font-medium">
           ${type === 'login' ? i18n.t('auth.signup.title') : i18n.t('auth.login.title')}
@@ -1251,18 +1249,18 @@ async function favoriteVideo(videoId) {
 function showPremiumLimitModal(currentLikes) {
   const modal = document.getElementById('premium-limit-modal') || createModal('premium-limit-modal');
   modal.innerHTML = `
-    <div class="modal-content max-w-md">
-      <div class="text-center mb-5">
-        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-3 flex items-center justify-center">
-          <i class="fas fa-heart text-white text-2xl"></i>
+    <div class="modal-content" style="max-width: 360px; width: 90%;">
+      <div class="text-center mb-4">
+        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-2 flex items-center justify-center">
+          <i class="fas fa-heart text-white text-lg"></i>
         </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">${i18n.t('premium_limit.title')}</h3>
-        <p class="text-sm text-gray-600">${i18n.t('premium_limit.subtitle', { count: currentLikes })}</p>
+        <h3 class="text-base font-bold text-gray-900 mb-1">${i18n.t('premium_limit.title')}</h3>
+        <p class="text-xs text-gray-600">${i18n.t('premium_limit.subtitle', { count: currentLikes })}</p>
       </div>
       
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-5 mb-5">
-        <h4 class="font-bold text-base mb-3 text-center text-purple-700">${i18n.t('premium_limit.features_title')}</h4>
-        <ul class="space-y-2 text-sm">
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 mb-4">
+        <h4 class="font-bold text-sm mb-2 text-center text-purple-700">${i18n.t('premium_limit.features_title')}</h4>
+        <ul class="space-y-1 text-xs">
           <li class="flex items-center gap-2">
             <i class="fas fa-heart text-red-500 text-xs"></i>
             <span class="text-gray-700">${i18n.t('premium_limit.feature1')}</span>
@@ -1277,17 +1275,17 @@ function showPremiumLimitModal(currentLikes) {
           </li>
         </ul>
         
-        <div class="text-center mt-4 pt-3 border-t border-purple-200">
-          <div class="text-2xl font-bold text-purple-600">${i18n.t('premium_limit.price')}<span class="text-base font-normal">${i18n.t('premium_limit.month')}</span></div>
+        <div class="text-center mt-3 pt-2 border-t border-purple-200">
+          <div class="text-xl font-bold text-purple-600">${i18n.t('premium_limit.price')}<span class="text-sm font-normal">${i18n.t('premium_limit.month')}</span></div>
           <div class="text-xs text-gray-600 mt-1">✨ ${i18n.t('premium_limit.trial')}</div>
         </div>
       </div>
       
-      <div class="flex gap-3">
-        <button onclick="closeModal('premium-limit-modal')" class="btn btn-sm btn-secondary flex-1">
+      <div class="flex gap-2">
+        <button onclick="closeModal('premium-limit-modal')" class="btn btn-sm btn-secondary flex-1 text-xs">
           ${i18n.getCurrentLanguage() === 'ja' ? '後で' : 'Later'}
         </button>
-        <button onclick="closeModal('premium-limit-modal'); showPricingModal();" class="btn btn-sm btn-primary flex-1">
+        <button onclick="closeModal('premium-limit-modal'); showPricingModal();" class="btn btn-sm btn-primary flex-1 text-xs">
           <i class="fas fa-crown"></i>
           ${i18n.t('premium_limit.cta')}
         </button>
@@ -1328,51 +1326,51 @@ function handleUploadClick() {
 function showPremiumUploadModal() {
   const modal = document.getElementById('premium-upload-modal') || createModal('premium-upload-modal');
   modal.innerHTML = `
-    <div class="modal-content max-w-md">
-      <div class="text-center mb-6">
-        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <i class="fas fa-upload text-white text-3xl"></i>
+    <div class="modal-content" style="max-width: 360px; width: 90%;">
+      <div class="text-center mb-4">
+        <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-3 flex items-center justify-center">
+          <i class="fas fa-upload text-white text-xl"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-900 mb-2">動画投稿はプレミアム限定</h3>
-        <p class="text-gray-600">プレミアムプランで無制限に動画を投稿できます</p>
+        <h3 class="text-base font-bold text-gray-900 mb-1">動画投稿はプレミアム限定</h3>
+        <p class="text-xs text-gray-600">プレミアムプランで無制限に動画を投稿できます</p>
       </div>
       
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
-        <h4 class="font-bold text-lg mb-3 text-center">プレミアムプランの特典</h4>
-        <ul class="space-y-2">
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 mb-4">
+        <h4 class="font-bold text-sm mb-2 text-center">プレミアムプランの特典</h4>
+        <ul class="space-y-1 text-xs">
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
+            <i class="fas fa-check-circle text-purple-600 text-xs"></i>
             <span class="text-gray-700"><strong>無制限</strong>の動画投稿</span>
           </li>
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
+            <i class="fas fa-check-circle text-purple-600 text-xs"></i>
             <span class="text-gray-700"><strong>無制限</strong>のいいね機能</span>
           </li>
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
+            <i class="fas fa-check-circle text-purple-600 text-xs"></i>
             <span class="text-gray-700">広告非表示</span>
           </li>
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
+            <i class="fas fa-check-circle text-purple-600 text-xs"></i>
             <span class="text-gray-700">AIグレード判定機能</span>
           </li>
           <li class="flex items-center gap-2">
-            <i class="fas fa-check-circle text-purple-600"></i>
+            <i class="fas fa-check-circle text-purple-600 text-xs"></i>
             <span class="text-gray-700">優先サポート</span>
           </li>
         </ul>
         
-        <div class="text-center mt-4">
-          <div class="text-3xl font-bold text-purple-600">$20<span class="text-lg font-normal">/月</span></div>
-          <div class="text-sm text-gray-600 mt-1">✨ 15日間無料トライアル</div>
+        <div class="text-center mt-3">
+          <div class="text-xl font-bold text-purple-600">$20<span class="text-sm font-normal">/月</span></div>
+          <div class="text-xs text-gray-600 mt-1">✨ 15日間無料トライアル</div>
         </div>
       </div>
       
-      <div class="flex gap-3">
-        <button onclick="closeModal('premium-upload-modal')" class="btn btn-secondary flex-1">
+      <div class="flex gap-2">
+        <button onclick="closeModal('premium-upload-modal')" class="btn btn-secondary flex-1 text-xs">
           後で
         </button>
-        <button onclick="closeModal('premium-upload-modal'); showPricingModal();" class="btn btn-primary flex-1">
+        <button onclick="closeModal('premium-upload-modal'); showPricingModal();" class="btn btn-primary flex-1 text-xs">
           <i class="fas fa-crown"></i>
           今すぐアップグレード
         </button>
