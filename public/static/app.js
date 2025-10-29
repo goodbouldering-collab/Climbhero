@@ -4,10 +4,19 @@ const state = {
   videos: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   blogPosts: [],
+  announcements: [],
   currentView: 'home',
   currentRankingType: 'weekly',
   loading: false,
-  currentLanguage: 'ja'
+  currentLanguage: 'ja',
+  heroSlideIndex: 0,
+  heroSlides: [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=600&fit=crop&q=90', // Mountain rock face
+    'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1920&h=600&fit=crop&q=90', // Granite cliff
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&h=600&fit=crop&q=90', // Mountain peak
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=600&fit=crop&q=90&sat=-100', // Rock formation
+    'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1920&h=600&fit=crop&q=90'  // Canyon walls
+  ]
 };
 
 // ============ Language Support ============
@@ -26,6 +35,9 @@ async function init() {
   await loadInitialData();
   renderApp();
   
+  // Initialize hero slideshow
+  initHeroSlideshow();
+  
   window.addEventListener('hashchange', handleNavigation);
   handleNavigation();
 }
@@ -40,18 +52,39 @@ async function checkAuth() {
   }
 }
 
+// ============ Hero Slideshow ============
+function initHeroSlideshow() {
+  setInterval(() => {
+    state.heroSlideIndex = (state.heroSlideIndex + 1) % state.heroSlides.length;
+    updateHeroSlide();
+  }, 5000); // Change slide every 5 seconds
+}
+
+function updateHeroSlide() {
+  const slides = document.querySelectorAll('.hero-slide');
+  slides.forEach((slide, index) => {
+    if (index === state.heroSlideIndex) {
+      slide.classList.add('active');
+    } else {
+      slide.classList.remove('active');
+    }
+  });
+}
+
 // ============ Load Initial Data ============
 async function loadInitialData() {
   try {
-    const [videosRes, rankingsRes, blogRes] = await Promise.all([
+    const [videosRes, rankingsRes, blogRes, announcementsRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
       axios.get('/api/rankings/weekly?limit=20'),
-      axios.get('/api/blog')
+      axios.get('/api/blog'),
+      axios.get('/api/announcements')
     ]);
     
     state.videos = videosRes.data.videos || [];
     state.rankings.weekly = rankingsRes.data || [];
     state.blogPosts = blogRes.data || [];
+    state.announcements = announcementsRes.data || [];
     
     // Load user like status for all videos
     if (state.currentUser) {
@@ -111,6 +144,14 @@ function handleNavigation() {
   } else if (hash.startsWith('blog/')) {
     state.currentView = 'blog-detail';
     state.currentBlogId = hash.split('/')[1];
+  } else if (hash === 'terms') {
+    state.currentView = 'terms';
+  } else if (hash === 'privacy') {
+    state.currentView = 'privacy';
+  } else if (hash === 'about') {
+    state.currentView = 'about';
+  } else if (hash === 'contact') {
+    state.currentView = 'contact';
   }
   
   renderApp();
@@ -127,6 +168,14 @@ function renderApp() {
     root.innerHTML = renderAdminPage();
   } else if (state.currentView === 'blog-detail') {
     renderBlogDetail();
+  } else if (state.currentView === 'terms') {
+    renderStaticPage('terms');
+  } else if (state.currentView === 'privacy') {
+    renderStaticPage('privacy');
+  } else if (state.currentView === 'about') {
+    renderStaticPage('about');
+  } else if (state.currentView === 'contact') {
+    renderContactPage();
   }
   
   attachEventListeners();
@@ -219,34 +268,115 @@ function renderHomePage() {
     <!-- Main Content -->
     <main class="bg-gray-50">
       
-      <!-- Hero Section with Background Image -->
+      <!-- Hero Section with Slideshow -->
       <section class="hero-section relative overflow-hidden">
-        <div class="hero-background"></div>
-        <div class="hero-overlay"></div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
-          <div class="text-center">
-            <h2 class="text-4xl sm:text-5xl font-bold mb-4 text-white drop-shadow-lg">
-              ${i18n.t('hero.title')}
-            </h2>
-            <p class="text-lg text-white mb-8 max-w-2xl mx-auto drop-shadow-md">
-              ${i18n.t('hero.subtitle')}
-            </p>
-            <div class="flex gap-3 justify-center items-center flex-wrap mb-6">
-              <button onclick="handleUploadClick()" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100 shadow-xl">
-                <i class="fas fa-upload"></i>
-                ${i18n.t('hero.upload')}
-                ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? `<span class="ml-2 text-xs bg-purple-600 text-white px-2 py-1 rounded">${i18n.t('hero.premium_badge')}</span>` : ''}
+        <div class="hero-slideshow">
+          ${state.heroSlides.map((slide, index) => `
+            <div class="hero-slide ${index === state.heroSlideIndex ? 'active' : ''}" style="background-image: url('${slide}')"></div>
+          `).join('')}
+        </div>
+        <div class="hero-content">
+          <h1 class="hero-title">
+            ${i18n.t('hero.title')}
+          </h1>
+          <p class="hero-subtitle">
+            ${i18n.t('hero.subtitle')}
+          </p>
+          <div class="hero-cta-buttons">
+            <button onclick="handleUploadClick()" class="hero-cta-btn hero-cta-primary">
+              <i class="fas fa-upload"></i>
+              ${i18n.t('hero.upload')}
+              ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? `<span class="ml-2 text-xs bg-black/30 px-3 py-1 rounded-full">${i18n.t('hero.premium_badge')}</span>` : ''}
+            </button>
+            ${!state.currentUser ? `
+              <button onclick="showPricingModal()" class="hero-cta-btn hero-cta-secondary">
+                <i class="fas fa-star"></i>
+                ${i18n.t('pricing.trial')}
               </button>
-              ${!state.currentUser ? `
-                <button onclick="showPricingModal()" class="btn btn-lg bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border-2 border-white/50 shadow-xl">
-                  <i class="fas fa-star"></i>
-                  ${i18n.t('pricing.trial')}
-                </button>
-              ` : ''}
-            </div>
+            ` : ''}
           </div>
         </div>
       </section>
+      
+      ${state.announcements && state.announcements.length > 0 ? `
+      <!-- Text-Only Announcement Banner -->
+      <div class="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+              <i class="fas fa-bullhorn text-yellow-300 text-lg flex-shrink-0"></i>
+              <div class="flex-1 min-w-0">
+                <marquee behavior="scroll" direction="left" scrollamount="3" class="text-sm md:text-base">
+                  ${state.announcements.map(a => `【${a.title}】${a.content}`).join(' ▪ ')}
+                </marquee>
+              </div>
+            </div>
+            <a href="#" onclick="showAnnouncementsModal(); return false;" class="text-xs text-yellow-300 hover:text-yellow-100 whitespace-nowrap flex-shrink-0">
+              ${i18n.t('announcement.view_all')}
+              <i class="fas fa-chevron-right ml-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+      
+      <!-- How to Use ClimbHero Section -->
+      <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">
+            <i class="fas fa-info-circle text-purple-600 mr-2"></i>
+            ${i18n.t('feature.title')}
+          </h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <!-- Step 1: Register -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-user-plus text-3xl text-purple-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step1.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step1.desc')}</p>
+            </div>
+            
+            <!-- Step 2: Explore -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-search text-3xl text-blue-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step2.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step2.desc')}</p>
+            </div>
+            
+            <!-- Step 3: Like -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-heart text-3xl text-red-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step3.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step3.desc')}</p>
+            </div>
+            
+            <!-- Step 4: Post -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-upload text-3xl text-yellow-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step4.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step4.desc')}</p>
+            </div>
+          </div>
+          
+          <div class="text-center">
+            <p class="text-sm text-green-600 font-medium mb-3">
+              <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
+            </p>
+            <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-8 py-3 rounded-lg font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
+              <i class="fas fa-crown mr-2"></i>
+              ${i18n.t('feature.upgrade')}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Rankings Section -->
       <section class="py-6 bg-white">
@@ -304,16 +434,16 @@ function renderHomePage() {
               <i class="fas fa-th"></i> ${i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All'}
             </button>
             <button onclick="filterVideos('bouldering')" class="tab-btn" data-category="bouldering">
-              <i class="fas fa-mountain"></i> ${i18n.t('section.bouldering')}
+              <i class="fas fa-grip-lines"></i> ${i18n.t('section.bouldering')}
             </button>
-            <button onclick="filterVideos('competition')" class="tab-btn" data-category="competition">
-              <i class="fas fa-trophy"></i> ${i18n.t('section.competition')}
+            <button onclick="filterVideos('lead')" class="tab-btn" data-category="lead">
+              <i class="fas fa-link"></i> ${i18n.t('section.lead')}
             </button>
-            <button onclick="filterVideos('tutorial')" class="tab-btn" data-category="tutorial">
-              <i class="fas fa-graduation-cap"></i> ${i18n.t('section.tutorial')}
+            <button onclick="filterVideos('alpine')" class="tab-btn" data-category="alpine">
+              <i class="fas fa-mountain"></i> ${i18n.t('section.alpine')}
             </button>
-            <button onclick="filterVideos('gym_review')" class="tab-btn" data-category="gym_review">
-              <i class="fas fa-dumbbell"></i> ${i18n.getCurrentLanguage() === 'ja' ? 'ジム紹介' : 'Gym Reviews'}
+            <button onclick="filterVideos('other')" class="tab-btn" data-category="other">
+              <i class="fas fa-ellipsis-h"></i> ${i18n.t('section.other')}
             </button>
           </div>
           
@@ -431,10 +561,18 @@ function renderFooter() {
               クライミングコミュニティのための動画共有プラットフォーム
             </p>
             <div class="flex gap-3">
-              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
-              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
-              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
-              <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-youtube"></i></a>
+              <a href="https://twitter.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Twitter">
+                <i class="fab fa-twitter"></i>
+              </a>
+              <a href="https://facebook.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Facebook">
+                <i class="fab fa-facebook"></i>
+              </a>
+              <a href="https://instagram.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Instagram">
+                <i class="fab fa-instagram"></i>
+              </a>
+              <a href="https://youtube.com/@climbhero" target="_blank" class="text-gray-400 hover:text-white" title="YouTube">
+                <i class="fab fa-youtube"></i>
+              </a>
             </div>
           </div>
           
@@ -443,9 +581,9 @@ function renderFooter() {
             <h5 class="text-white font-bold mb-4">クイックリンク</h5>
             <ul class="space-y-2 text-sm">
               <li><a href="#home" class="hover:text-white">ホーム</a></li>
+              <li><a href="#about" class="hover:text-white">ClimbHeroについて</a></li>
               <li><a href="#" onclick="showPricingModal(); return false;" class="hover:text-white">料金プラン</a></li>
-              <li><a href="#" class="hover:text-white">使い方ガイド</a></li>
-              <li><a href="#" class="hover:text-white">よくある質問</a></li>
+              <li><a href="#contact" class="hover:text-white">お問い合わせ</a></li>
             </ul>
           </div>
           
@@ -453,30 +591,37 @@ function renderFooter() {
           <div>
             <h5 class="text-white font-bold mb-4">法的情報</h5>
             <ul class="space-y-2 text-sm">
-              <li><a href="#" class="hover:text-white">利用規約</a></li>
-              <li><a href="#" class="hover:text-white">プライバシーポリシー</a></li>
-              <li><a href="#" class="hover:text-white">特定商取引法</a></li>
-              <li><a href="#" class="hover:text-white">お問い合わせ</a></li>
+              <li><a href="#terms" class="hover:text-white">利用規約</a></li>
+              <li><a href="#privacy" class="hover:text-white">プライバシーポリシー</a></li>
+              <li><a href="#about" class="hover:text-white">運営会社</a></li>
+              <li><a href="#contact" class="hover:text-white">お問い合わせ</a></li>
             </ul>
           </div>
           
-          <!-- Contact -->
+          <!-- Contact & Support -->
           <div>
-            <h5 class="text-white font-bold mb-4">運営会社</h5>
-            <p class="text-sm mb-2"><strong>グッぼる</strong></p>
-            <p class="text-sm mb-2">
-              ボルダリングCafe & Shop<br>
-              滋賀県彦根市
+            <h5 class="text-white font-bold mb-4">サポート</h5>
+            <p class="text-sm mb-3">
+              <i class="fas fa-clock mr-2 text-purple-400"></i>
+              <strong>平日 10:00-18:00</strong>
+            </p>
+            <p class="text-sm mb-3">
+              <i class="fas fa-map-marker-alt mr-2 text-purple-400"></i>
+              〒100-0001<br>
+              <span class="ml-6">東京都千代田区1-1-1</span>
             </p>
             <p class="text-sm">
-              <i class="fas fa-clock mr-2"></i>営業時間: 10:00-22:00<br>
-              <i class="fas fa-envelope mr-2"></i>info@climbhero.info
+              <i class="fas fa-envelope mr-2 text-purple-400"></i>
+              <a href="#contact" class="hover:text-white">お問い合わせフォーム</a>
             </p>
           </div>
         </div>
         
         <div class="border-t border-gray-800 pt-8 text-center text-sm">
-          <p>&copy; 2025 ClimbHero by グッぼる. All rights reserved.</p>
+          <p>&copy; 2025 ClimbHero. All rights reserved.</p>
+          <p class="mt-2 text-xs text-gray-500">
+            Powered by AI-driven video classification | Built with ❤️ for climbers
+          </p>
         </div>
       </div>
     </footer>
@@ -751,12 +896,12 @@ function switchLanguage(lang) {
 function getCategoryName(category) {
   const categoryMap = {
     bouldering: 'section.bouldering',
-    sport: 'section.sport',
-    trad: 'section.trad',
+    lead: 'section.lead',
+    alpine: 'section.alpine',
+    other: 'section.other',
     competition: 'section.competition',
     tutorial: 'section.tutorial',
-    gear: 'section.gear',
-    gym_review: i18n.getCurrentLanguage() === 'ja' ? 'ジム紹介' : 'Gym Reviews'
+    gear: 'section.gear'
   };
   return categoryMap[category] ? i18n.t(categoryMap[category]) : category;
 }
@@ -809,7 +954,7 @@ function navigateTo(view) {
 function showPricingModal() {
   const modal = document.getElementById('pricing-modal');
   modal.innerHTML = `
-    <div class="modal-content max-w-md">
+    <div class="modal-content" style="max-width: 450px; width: 90%;"
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-2xl font-bold">プレミアムプラン</h3>
         <button onclick="closeModal('pricing-modal')" class="text-gray-400 hover:text-gray-600">
@@ -1276,12 +1421,12 @@ function showUploadModal() {
           </div>
           
           <div>
-            <label>カテゴリ</label>
+            <label>${i18n.t('upload.category')}</label>
             <select name="category" required class="w-full">
-              <option value="bouldering">ボルダリング</option>
-              <option value="competition">大会</option>
-              <option value="tutorial">解説</option>
-              <option value="gym_review">ジム紹介</option>
+              <option value="bouldering">${i18n.t('section.bouldering')}</option>
+              <option value="lead">${i18n.t('section.lead')}</option>
+              <option value="alpine">${i18n.t('section.alpine')}</option>
+              <option value="other">${i18n.t('section.other')}</option>
             </select>
           </div>
         </div>
@@ -1414,25 +1559,131 @@ function renderAdminPage() {
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="card p-6">
-          <h2 class="text-2xl font-bold mb-6">ブログ管理</h2>
-          <div class="space-y-3">
-            ${state.blogPosts.map(post => `
-              <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div class="flex-1">
-                  <h4 class="font-semibold text-gray-900">${post.title}</h4>
-                  <p class="text-sm text-gray-600 mt-1">${formatDate(post.published_date)}</p>
-                </div>
-                <div class="flex gap-2">
-                  <button class="btn btn-sm btn-secondary">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <button class="btn btn-sm btn-secondary text-red-600">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-            `).join('')}
+        <!-- Video Management Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-video mr-2"></i>
+              ${i18n.t('admin.videos')}
+            </div>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>${i18n.t('admin.video_title')}</th>
+                  <th>${i18n.t('admin.video_category')}</th>
+                  <th>${i18n.t('admin.video_likes')}</th>
+                  <th>${i18n.t('admin.video_views')}</th>
+                  <th>${i18n.t('common.edit')}</th>
+                </tr>
+              </thead>
+              <tbody id="admin-videos-table">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 20px;">
+                    ${i18n.t('common.loading')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Stripe Settings Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fab fa-stripe mr-2"></i>
+              ${i18n.t('admin.stripe')}
+            </div>
+          </div>
+          <div class="admin-form">
+            <div class="admin-form-group">
+              <label>${i18n.t('stripe.public_key')}</label>
+              <input type="text" id="stripe-publishable-key" placeholder="pk_test_..." />
+            </div>
+            <div class="admin-form-group">
+              <label>${i18n.t('stripe.secret_key')}</label>
+              <input type="password" id="stripe-secret-key" placeholder="sk_test_..." />
+            </div>
+            <div class="admin-form-group">
+              <label>${i18n.t('stripe.webhook_secret')}</label>
+              <input type="password" id="stripe-webhook-secret" placeholder="whsec_..." />
+            </div>
+            <button onclick="saveStripeSettings()" class="btn btn-primary">
+              <i class="fas fa-save mr-2"></i>
+              ${i18n.t('stripe.save')}
+            </button>
+          </div>
+        </div>
+        
+        <!-- Email Campaign Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-envelope mr-2"></i>
+              ${i18n.t('admin.email')}
+            </div>
+            <button onclick="createEmailCampaign()" class="btn btn-primary btn-sm">
+              <i class="fas fa-plus mr-2"></i>
+              ${i18n.t('email.new_campaign')}
+            </button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>${i18n.t('email.subject')}</th>
+                  <th>${i18n.t('email.recipient_count')}</th>
+                  <th>${i18n.t('email.status')}</th>
+                  <th>${i18n.t('email.sent_at')}</th>
+                  <th>${i18n.t('common.edit')}</th>
+                </tr>
+              </thead>
+              <tbody id="admin-email-campaigns-table">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 20px;">
+                    ${i18n.t('common.loading')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Announcements Management Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-bullhorn mr-2"></i>
+              ${i18n.t('admin.announcements')}
+            </div>
+            <button onclick="showAnnouncementModal()" class="btn btn-primary btn-sm">
+              <i class="fas fa-plus mr-2"></i>
+              ${i18n.t('admin.announcement_new')}
+            </button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>${i18n.t('admin.announcement_title')}</th>
+                  <th>${i18n.t('admin.announcement_content')}</th>
+                  <th>${i18n.t('admin.announcement_priority')}</th>
+                  <th>${i18n.t('common.edit')}</th>
+                </tr>
+              </thead>
+              <tbody id="admin-announcements-table">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 20px;">
+                    ${i18n.t('common.loading')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
@@ -1738,6 +1989,657 @@ async function toggleFollow(userId) {
     renderApp();
   } catch (error) {
     showToast(i18n.getCurrentLanguage() === 'ja' ? 'フォロー処理に失敗しました' : 'Follow action failed', 'error');
+  }
+}
+
+
+// ============ Admin Functions ============
+
+// Load admin videos
+async function loadAdminVideos() {
+  try {
+    const response = await axios.get('/api/admin/videos');
+    const videos = response.data;
+    
+    const tbody = document.getElementById('admin-videos-table');
+    if (!tbody) return;
+    
+    if (videos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 20px;">
+            ${i18n.t('common.loading')}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = videos.map(video => `
+      <tr>
+        <td>${video.id}</td>
+        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${video.title}</td>
+        <td>${getCategoryName(video.category)}</td>
+        <td>${video.likes}</td>
+        <td>${video.views}</td>
+        <td>
+          <div class="admin-actions">
+            <button onclick="editVideo(${video.id})" class="btn-edit">
+              <i class="fas fa-edit"></i> ${i18n.t('common.edit')}
+            </button>
+            <button onclick="deleteVideo(${video.id})" class="btn-delete">
+              <i class="fas fa-trash"></i> ${i18n.t('common.delete')}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error('Failed to load admin videos:', error);
+  }
+}
+
+// Edit video
+async function editVideo(videoId) {
+  try {
+    const response = await axios.get(`/api/videos/${videoId}`);
+    const video = response.data;
+    
+    const title = prompt(i18n.t('admin.video_title'), video.title);
+    if (!title) return;
+    
+    const category = prompt(i18n.t('admin.video_category') + ' (bouldering/lead/alpine/other)', video.category);
+    if (!category) return;
+    
+    const likes = parseInt(prompt(i18n.t('admin.video_likes'), video.likes) || '0');
+    const views = parseInt(prompt(i18n.t('admin.video_views'), video.views) || '0');
+    
+    await axios.put(`/api/admin/videos/${videoId}`, {
+      title,
+      description: video.description,
+      category,
+      likes,
+      views
+    });
+    
+    showToast(i18n.getCurrentLanguage() === 'ja' ? '動画を更新しました' : 'Video updated', 'success');
+    loadAdminVideos();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to edit video:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? '動画の更新に失敗しました' : 'Failed to update video', 'error');
+  }
+}
+
+// Delete video
+async function deleteVideo(videoId) {
+  if (!confirm(i18n.t('admin.video_confirm_delete'))) return;
+  
+  try {
+    await axios.delete(`/api/admin/videos/${videoId}`);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? '動画を削除しました' : 'Video deleted', 'success');
+    loadAdminVideos();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to delete video:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? '動画の削除に失敗しました' : 'Failed to delete video', 'error');
+  }
+}
+
+// Load admin announcements
+async function loadAdminAnnouncements() {
+  try {
+    const response = await axios.get('/api/admin/announcements');
+    const announcements = response.data;
+    
+    const tbody = document.getElementById('admin-announcements-table');
+    if (!tbody) return;
+    
+    if (announcements.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 20px;">
+            ${i18n.t('announcement.no_announcements')}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = announcements.map(announcement => `
+      <tr>
+        <td>${announcement.id}</td>
+        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${announcement.title}</td>
+        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${announcement.content}</td>
+        <td>
+          <span class="badge ${announcement.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+            ${announcement.is_active ? i18n.t('admin.announcement_active') : i18n.t('admin.announcement_inactive')}
+          </span>
+        </td>
+        <td>
+          <div class="admin-actions">
+            <button onclick="editAnnouncement(${announcement.id})" class="btn-edit">
+              <i class="fas fa-edit"></i> ${i18n.t('common.edit')}
+            </button>
+            <button onclick="deleteAnnouncement(${announcement.id})" class="btn-delete">
+              <i class="fas fa-trash"></i> ${i18n.t('common.delete')}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error('Failed to load admin announcements:', error);
+  }
+}
+
+// Show announcement modal
+function showAnnouncementModal(announcementId = null) {
+  // Simple prompt-based implementation
+  const title = prompt(i18n.t('admin.announcement_title'), '');
+  if (!title) return;
+  
+  const content = prompt(i18n.t('admin.announcement_content'), '');
+  if (!content) return;
+  
+  const priority = parseInt(prompt(i18n.t('admin.announcement_priority') + ' (0-10)', '0') || '0');
+  const is_active = confirm(i18n.getCurrentLanguage() === 'ja' ? '公開しますか？' : 'Make it active?') ? 1 : 0;
+  
+  if (announcementId) {
+    updateAnnouncement(announcementId, { title, content, priority, is_active });
+  } else {
+    createAnnouncement({ title, content, priority, is_active });
+  }
+}
+
+// Create announcement
+async function createAnnouncement(data) {
+  try {
+    await axios.post('/api/admin/announcements', data);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせを作成しました' : 'Announcement created', 'success');
+    loadAdminAnnouncements();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to create announcement:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせの作成に失敗しました' : 'Failed to create announcement', 'error');
+  }
+}
+
+// Edit announcement
+async function editAnnouncement(announcementId) {
+  try {
+    const response = await axios.get('/api/admin/announcements');
+    const announcements = response.data;
+    const announcement = announcements.find(a => a.id === announcementId);
+    
+    if (!announcement) return;
+    
+    const title = prompt(i18n.t('admin.announcement_title'), announcement.title);
+    if (!title) return;
+    
+    const content = prompt(i18n.t('admin.announcement_content'), announcement.content);
+    if (!content) return;
+    
+    const priority = parseInt(prompt(i18n.t('admin.announcement_priority') + ' (0-10)', announcement.priority) || '0');
+    const is_active = confirm(i18n.getCurrentLanguage() === 'ja' ? '公開しますか？' : 'Make it active?') ? 1 : 0;
+    
+    await updateAnnouncement(announcementId, { title, content, priority, is_active });
+  } catch (error) {
+    console.error('Failed to edit announcement:', error);
+  }
+}
+
+// Update announcement
+async function updateAnnouncement(announcementId, data) {
+  try {
+    await axios.put(`/api/admin/announcements/${announcementId}`, data);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせを更新しました' : 'Announcement updated', 'success');
+    loadAdminAnnouncements();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to update announcement:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせの更新に失敗しました' : 'Failed to update announcement', 'error');
+  }
+}
+
+// Delete announcement
+async function deleteAnnouncement(announcementId) {
+  if (!confirm(i18n.t('admin.announcement_confirm_delete'))) return;
+  
+  try {
+    await axios.delete(`/api/admin/announcements/${announcementId}`);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせを削除しました' : 'Announcement deleted', 'success');
+    loadAdminAnnouncements();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to delete announcement:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせの削除に失敗しました' : 'Failed to delete announcement', 'error');
+  }
+}
+
+// Call load functions when admin page is rendered
+if (window.location.hash === '#admin') {
+  setTimeout(() => {
+    loadAdminVideos();
+    loadAdminAnnouncements();
+  }, 100);
+}
+
+
+// ============ Stripe Settings Functions ============
+
+// Load Stripe settings
+async function loadStripeSettings() {
+  try {
+    const response = await axios.get('/api/admin/stripe-settings');
+    const settings = response.data;
+    
+    document.getElementById('stripe-publishable-key').value = settings.publishable_key || '';
+    document.getElementById('stripe-secret-key').value = settings.secret_key || '';
+    document.getElementById('stripe-webhook-secret').value = settings.webhook_secret || '';
+  } catch (error) {
+    console.error('Failed to load Stripe settings:', error);
+  }
+}
+
+// Save Stripe settings
+async function saveStripeSettings() {
+  const publishable_key = document.getElementById('stripe-publishable-key').value.trim();
+  const secret_key = document.getElementById('stripe-secret-key').value.trim();
+  const webhook_secret = document.getElementById('stripe-webhook-secret').value.trim();
+  
+  if (!publishable_key || !secret_key) {
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'Publishable KeyとSecret Keyは必須です' : 'Publishable Key and Secret Key are required', 'error');
+    return;
+  }
+  
+  try {
+    await axios.post('/api/admin/stripe-settings', {
+      publishable_key,
+      secret_key,
+      webhook_secret
+    });
+    
+    showToast(i18n.t('stripe.saved'), 'success');
+  } catch (error) {
+    console.error('Failed to save Stripe settings:', error);
+    showToast(i18n.t('stripe.error'), 'error');
+  }
+}
+
+// ============ Email Campaign Functions ============
+
+// Load email campaigns
+async function loadEmailCampaigns() {
+  try {
+    const response = await axios.get('/api/admin/email-campaigns');
+    const campaigns = response.data;
+    
+    const tbody = document.getElementById('admin-email-campaigns-table');
+    if (!tbody) return;
+    
+    if (campaigns.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 20px;">
+            ${i18n.getCurrentLanguage() === 'ja' ? '配信履歴はありません' : 'No campaigns'}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = campaigns.map(campaign => `
+      <tr>
+        <td>${campaign.id}</td>
+        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${campaign.subject}</td>
+        <td>${campaign.recipient_count}</td>
+        <td>
+          <span class="badge ${
+            campaign.status === 'sent' ? 'bg-green-100 text-green-800' :
+            campaign.status === 'sending' ? 'bg-blue-100 text-blue-800' :
+            'bg-gray-100 text-gray-800'
+          }">
+            ${i18n.t('email.status_' + campaign.status)}
+          </span>
+        </td>
+        <td>${campaign.sent_at ? new Date(campaign.sent_at).toLocaleString(state.currentLanguage === 'ja' ? 'ja-JP' : 'en-US') : '-'}</td>
+        <td>
+          <div class="admin-actions">
+            ${campaign.status === 'draft' ? `
+              <button onclick="sendEmailCampaign(${campaign.id})" class="btn-edit">
+                <i class="fas fa-paper-plane"></i> ${i18n.t('email.send')}
+              </button>
+            ` : ''}
+            <button onclick="deleteEmailCampaign(${campaign.id})" class="btn-delete">
+              <i class="fas fa-trash"></i> ${i18n.t('common.delete')}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error('Failed to load email campaigns:', error);
+  }
+}
+
+// Create email campaign
+async function createEmailCampaign() {
+  const subject = prompt(i18n.t('email.subject'), '');
+  if (!subject) return;
+  
+  const content = prompt(i18n.t('email.content'), '');
+  if (!content) return;
+  
+  try {
+    await axios.post('/api/admin/email-campaigns', { subject, content });
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'メールキャンペーンを作成しました' : 'Campaign created', 'success');
+    loadEmailCampaigns();
+  } catch (error) {
+    console.error('Failed to create email campaign:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'キャンペーンの作成に失敗しました' : 'Failed to create campaign', 'error');
+  }
+}
+
+// Send email campaign
+async function sendEmailCampaign(campaignId) {
+  if (!confirm(i18n.t('email.confirm_send'))) return;
+  
+  try {
+    const response = await axios.post(`/api/admin/email-campaigns/${campaignId}/send`);
+    showToast(i18n.t('email.sent_success') + ` (${response.data.sent_count}${i18n.getCurrentLanguage() === 'ja' ? '件' : ' emails'})`, 'success');
+    loadEmailCampaigns();
+  } catch (error) {
+    console.error('Failed to send email campaign:', error);
+    showToast(i18n.t('email.sent_error'), 'error');
+  }
+}
+
+// Delete email campaign
+async function deleteEmailCampaign(campaignId) {
+  if (!confirm(i18n.getCurrentLanguage() === 'ja' ? 'このキャンペーンを削除してもよろしいですか？' : 'Delete this campaign?')) return;
+  
+  try {
+    await axios.delete(`/api/admin/email-campaigns/${campaignId}`);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'キャンペーンを削除しました' : 'Campaign deleted', 'success');
+    loadEmailCampaigns();
+  } catch (error) {
+    console.error('Failed to delete email campaign:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'キャンペーンの削除に失敗しました' : 'Failed to delete campaign', 'error');
+  }
+}
+
+// Call load functions when admin page is rendered
+if (window.location.hash === '#admin') {
+  setTimeout(() => {
+    loadAdminVideos();
+    loadAdminAnnouncements();
+    loadStripeSettings();
+    loadEmailCampaigns();
+  }, 100);
+}
+
+// ============ Static Pages ============
+
+async function renderStaticPage(pageType) {
+  const root = document.getElementById('root');
+  
+  // Show loading
+  root.innerHTML = `
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div class="text-center">
+        <i class="fas fa-spinner fa-spin text-4xl text-purple-600 mb-4"></i>
+        <p class="text-gray-600">${i18n.t('common.loading')}</p>
+      </div>
+    </div>
+  `;
+  
+  try {
+    const response = await axios.get(`/api/pages/${pageType}`);
+    const page = response.data;
+    
+    root.innerHTML = `
+      <div class="min-h-screen bg-gray-50">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+              <div class="flex items-center gap-3">
+                <a href="#home" class="flex items-center gap-3 hover:opacity-80 transition">
+                  <i class="fas fa-mountain text-purple-600 text-2xl"></i>
+                  <h1 class="text-xl font-bold text-gray-900">ClimbHero</h1>
+                </a>
+              </div>
+              <a href="#home" class="text-gray-600 hover:text-gray-900">
+                <i class="fas fa-times text-xl"></i>
+              </a>
+            </div>
+          </div>
+        </header>
+        
+        <!-- Content -->
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div class="bg-white rounded-lg shadow-sm p-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">${page.title}</h1>
+            <p class="text-sm text-gray-500 mb-8">
+              <i class="fas fa-calendar mr-2"></i>最終更新: ${page.last_updated}
+            </p>
+            
+            <div class="prose prose-lg max-w-none static-page-content">
+              ${marked.parse(page.content)}
+            </div>
+          </div>
+          
+          <div class="mt-8 text-center">
+            <a href="#home" class="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium">
+              <i class="fas fa-arrow-left"></i>
+              ホームに戻る
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Failed to load page:', error);
+    root.innerHTML = `
+      <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div class="text-center">
+          <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+          <p class="text-gray-600 mb-4">ページの読み込みに失敗しました</p>
+          <a href="#home" class="text-purple-600 hover:text-purple-700">ホームに戻る</a>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// ============ Contact Page ============
+
+function renderContactPage() {
+  const root = document.getElementById('root');
+  
+  root.innerHTML = `
+    <div class="min-h-screen bg-gray-50">
+      <!-- Header -->
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-3">
+              <a href="#home" class="flex items-center gap-3 hover:opacity-80 transition">
+                <i class="fas fa-mountain text-purple-600 text-2xl"></i>
+                <h1 class="text-xl font-bold text-gray-900">ClimbHero</h1>
+              </a>
+            </div>
+            <a href="#home" class="text-gray-600 hover:text-gray-900">
+              <i class="fas fa-times text-xl"></i>
+            </a>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Content -->
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="bg-white rounded-lg shadow-sm p-8">
+          <h1 class="text-3xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-envelope mr-3 text-purple-600"></i>
+            お問い合わせ
+          </h1>
+          <p class="text-gray-600 mb-8">
+            ご質問、ご意見、パートナーシップに関するお問い合わせは、下記フォームよりご連絡ください。
+          </p>
+          
+          <!-- Contact Form -->
+          <form id="contactForm" class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                お名前 <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="contact_name" 
+                required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="山田 太郎"
+              >
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                メールアドレス <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="email" 
+                id="contact_email" 
+                required
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="email@example.com"
+              >
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                件名
+              </label>
+              <input 
+                type="text" 
+                id="contact_subject" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="お問い合わせの件名"
+              >
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                お問い合わせ内容 <span class="text-red-500">*</span>
+              </label>
+              <textarea 
+                id="contact_message" 
+                required
+                rows="8"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="お問い合わせ内容をご記入ください"
+              ></textarea>
+            </div>
+            
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">
+                <i class="fas fa-info-circle mr-2 text-purple-600"></i>
+                ご入力いただいた個人情報は、お問い合わせ対応のみに使用し、
+                <a href="#privacy" class="text-purple-600 hover:underline">プライバシーポリシー</a>
+                に基づき適切に管理いたします。
+              </p>
+            </div>
+            
+            <div class="flex gap-4">
+              <button 
+                type="submit" 
+                class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-medium"
+              >
+                <i class="fas fa-paper-plane mr-2"></i>
+                送信する
+              </button>
+              <a 
+                href="#home" 
+                class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-medium text-center"
+              >
+                キャンセル
+              </a>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Contact Information -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <h3 class="font-bold text-gray-900 mb-4">
+              <i class="fas fa-clock mr-2 text-purple-600"></i>
+              サポート時間
+            </h3>
+            <p class="text-gray-600">平日 10:00-18:00</p>
+            <p class="text-sm text-gray-500 mt-2">
+              ※土日祝日は休業日となります
+            </p>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <h3 class="font-bold text-gray-900 mb-4">
+              <i class="fas fa-map-marker-alt mr-2 text-purple-600"></i>
+              所在地
+            </h3>
+            <p class="text-gray-600">
+              〒100-0001<br>
+              東京都千代田区1-1-1
+            </p>
+          </div>
+        </div>
+        
+        <div class="mt-8 text-center">
+          <a href="#home" class="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium">
+            <i class="fas fa-arrow-left"></i>
+            ホームに戻る
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Attach form submit handler
+  setTimeout(() => {
+    const form = document.getElementById('contactForm');
+    if (form) {
+      form.addEventListener('submit', handleContactSubmit);
+    }
+  }, 100);
+}
+
+async function handleContactSubmit(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('contact_name').value;
+  const email = document.getElementById('contact_email').value;
+  const subject = document.getElementById('contact_subject').value;
+  const message = document.getElementById('contact_message').value;
+  
+  try {
+    const response = await axios.post('/api/contact', {
+      name,
+      email,
+      subject,
+      message
+    });
+    
+    showToast(response.data.message || 'お問い合わせを受け付けました', 'success');
+    
+    // Clear form
+    document.getElementById('contactForm').reset();
+    
+    // Redirect to home after 2 seconds
+    setTimeout(() => {
+      window.location.hash = 'home';
+    }, 2000);
+  } catch (error) {
+    console.error('Failed to submit contact form:', error);
+    showToast('送信に失敗しました。もう一度お試しください。', 'error');
   }
 }
 
