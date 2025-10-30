@@ -120,6 +120,8 @@ button:disabled {
 .btn-sm {
   padding: 6px 12px;
   font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-lg {
@@ -1488,23 +1490,20 @@ a:hover {
 @media (max-width: 768px) {
   /* Ensure no horizontal overflow */
   .max-w-7xl {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
   
-  /* Prevent header overflow on small screens */
-  header .flex.items-center.gap-3 {
-    gap: 0.5rem;
-  }
-  
+  /* Mobile header optimization */
   header .btn-sm {
-    padding: 5px 10px;
+    padding: 6px 10px;
     font-size: 11px;
+    white-space: nowrap;
   }
   
-  /* Slightly smaller language switcher on mobile but still visible */
+  /* Maintain visible language switcher on mobile */
   .language-btn-medium {
-    padding: 3px 6px;
+    padding: 4px 7px;
     font-size: 14px;
   }
   
@@ -1513,6 +1512,29 @@ a:hover {
     padding: 16px !important;
     margin: 12px;
   }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens - more compact */
+  header .btn-sm {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+  
+  .language-btn-medium {
+    padding: 3px 5px;
+    font-size: 13px;
+  }
+  
+  /* Hide text on very small screens, keep icons */
+  header .btn-sm span:not(.hidden) {
+    display: none;
+  }
+  
+  header .btn-sm i {
+    margin: 0;
+  }
+}
 }
   
   /* Adjust hero section for mobile */

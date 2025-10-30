@@ -186,8 +186,8 @@ function renderHomePage() {
   return `
     <!-- Header -->
     <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16 gap-2">
+      <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div class="flex items-center justify-between h-16">
           <!-- Logo Section -->
           <div class="flex items-center flex-shrink-0">
             <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
@@ -197,7 +197,7 @@ function renderHomePage() {
           </div>
           
           <!-- Right Section -->
-          <div class="flex items-center gap-3 flex-shrink-0">
+          <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <div class="language-switcher-medium flex">
               ${i18n.getAvailableLanguages().map(lang => `
                 <button 
