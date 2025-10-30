@@ -1394,7 +1394,7 @@ a:hover {
   transform: scale(1.1);
 }
 
-/* Small Language Switcher (Header) */
+/* Small Language Switcher (Header) - Deprecated */
 .language-switcher-small {
   display: flex;
   gap: 2px;
@@ -1423,6 +1423,38 @@ a:hover {
 .language-btn-small.active {
   opacity: 1;
   background: rgba(99, 102, 241, 0.15);
+}
+
+/* Medium Language Switcher (Header - More Visible) */
+.language-switcher-medium {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.language-btn-medium {
+  padding: 4px 8px;
+  font-size: 16px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  opacity: 0.6;
+}
+
+.language-btn-medium:hover {
+  opacity: 0.9;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.language-btn-medium.active {
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.15);
+  transform: scale(1.05);
 }
 
 /* ==================== Share Button ==================== */
@@ -1461,19 +1493,19 @@ a:hover {
   }
   
   /* Prevent header overflow on small screens */
-  header .flex.items-center.gap-2 {
-    gap: 0.25rem;
+  header .flex.items-center.gap-3 {
+    gap: 0.5rem;
   }
   
   header .btn-sm {
-    padding: 4px 8px;
-    font-size: 10px;
+    padding: 5px 10px;
+    font-size: 11px;
   }
   
-  /* Even smaller language switcher on mobile */
-  .language-btn-small {
-    padding: 2px 4px;
-    font-size: 10px;
+  /* Slightly smaller language switcher on mobile but still visible */
+  .language-btn-medium {
+    padding: 3px 6px;
+    font-size: 14px;
   }
   
   /* Compact modal padding on mobile */

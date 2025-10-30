@@ -190,19 +190,19 @@ function renderHomePage() {
         <div class="flex items-center justify-between h-16 gap-2">
           <!-- Logo Section -->
           <div class="flex items-center flex-shrink-0">
-            <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-              <i class="fas fa-mountain text-xs bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-              <h1 class="text-xs sm:text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+              <i class="fas fa-mountain text-sm bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+              <h1 class="text-sm sm:text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
             </div>
           </div>
           
           <!-- Right Section -->
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <div class="language-switcher-small flex">
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="language-switcher-medium flex">
               ${i18n.getAvailableLanguages().map(lang => `
                 <button 
                   onclick="switchLanguage('${lang.code}')" 
-                  class="language-btn-small ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
+                  class="language-btn-medium ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
                   title="${lang.name}">
                   ${lang.flag}
                 </button>
