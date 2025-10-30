@@ -2,6 +2,7 @@
 const state = {
   currentUser: null,
   videos: [],
+  favorites: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   blogPosts: [],
   announcements: [],
@@ -86,9 +87,10 @@ async function loadInitialData() {
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
     
-    // Load user like status for all videos
+    // Load user like status and favorites for all videos
     if (state.currentUser) {
       await loadUserLikeStatus();
+      await loadUserFavorites();
     }
   } catch (error) {
     console.error('Failed to load initial data:', error);
@@ -124,6 +126,19 @@ async function loadUserLikeStatus() {
     }
   } catch (error) {
     console.error('Failed to load like status:', error);
+  }
+}
+
+// Load user favorites
+async function loadUserFavorites() {
+  if (!state.currentUser) return;
+  
+  try {
+    const res = await axios.get(`/api/users/${state.currentUser.id}/favorites`);
+    state.favorites = res.data || [];
+  } catch (error) {
+    console.error('Failed to load favorites:', error);
+    state.favorites = [];
   }
 }
 
@@ -513,8 +528,35 @@ function renderHomePage() {
         </div>
       </section>
 
-      <!-- Blog Posts Section -->
+      <!-- Favorites Section (Only for logged-in users) -->
+      ${state.currentUser && state.favorites && state.favorites.length > 0 ? `
       <section class="py-6 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-3">
+            <div class="section-title">
+              <i class="fas fa-heart"></i>
+              <span>${i18n.getCurrentLanguage() === 'ja' ? 'お気に入り' : 'Favorites'}</span>
+            </div>
+          </div>
+          
+          <!-- Horizontal Carousel -->
+          <div class="carousel-container" id="favorites-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('favorites-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="favorites-scroll">
+              ${state.favorites.map(video => renderVideoCard(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('favorites-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      ` : ''}
+
+      <!-- Blog Posts Section -->
+      <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-3">
             <div class="section-title">
@@ -750,6 +792,7 @@ function renderVideoCard(video) {
   const mediaIcon = getMediaIcon(mediaSource);
   const mediaName = getMediaName(mediaSource);
   const isLiked = video.user_liked || false;
+  const isFavorited = video.user_favorited || false;
   
   return `
     <div class="scroll-item">
@@ -780,6 +823,15 @@ function renderVideoCard(video) {
                 title="${i18n.t('video.like_btn')}">
                 <i class="fas fa-heart"></i>
               </button>
+              ${state.currentUser ? `
+              <button 
+                class="favorite-btn ${isFavorited ? 'favorited' : ''}" 
+                data-video-id="${video.id}"
+                onclick="handleFavorite(event, ${video.id})"
+                title="${i18n.getCurrentLanguage() === 'ja' ? 'お気に入り' : 'Favorite'}">
+                <i class="fas fa-star"></i>
+              </button>
+              ` : ''}
               <button 
                 class="share-btn" 
                 onclick="event.stopPropagation(); showShareModal(${video.id})"
@@ -800,6 +852,7 @@ function renderVideoCardWide(video) {
   const mediaIcon = getMediaIcon(mediaSource);
   const mediaName = getMediaName(mediaSource);
   const isLiked = video.user_liked || false;
+  const isFavorited = video.user_favorited || false;
   
   return `
     <div class="scroll-item-wide">
@@ -830,6 +883,15 @@ function renderVideoCardWide(video) {
                 title="${i18n.t('video.like_btn')}">
                 <i class="fas fa-heart"></i>
               </button>
+              ${state.currentUser ? `
+              <button 
+                class="favorite-btn ${isFavorited ? 'favorited' : ''}" 
+                data-video-id="${video.id}"
+                onclick="handleFavorite(event, ${video.id})"
+                title="${i18n.getCurrentLanguage() === 'ja' ? 'お気に入り' : 'Favorite'}">
+                <i class="fas fa-star"></i>
+              </button>
+              ` : ''}
               <button 
                 class="share-btn" 
                 onclick="event.stopPropagation(); showShareModal(${video.id})"
@@ -1348,6 +1410,46 @@ async function likeVideo(videoId) {
     } else {
       showToast('いいねに失敗しました', 'error');
     }
+  }
+}
+
+// Handle favorite toggle
+async function handleFavorite(event, videoId) {
+  event.stopPropagation(); // Prevent card click event
+  
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  
+  try {
+    const response = await axios.post(`/api/videos/${videoId}/favorite`);
+    const data = response.data;
+    
+    // Update button state
+    if (data.favorited) {
+      btn.classList.add('favorited');
+      showToast(i18n.getCurrentLanguage() === 'ja' ? 'お気に入りに追加しました' : 'Added to favorites', 'success');
+    } else {
+      btn.classList.remove('favorited');
+      showToast(i18n.getCurrentLanguage() === 'ja' ? 'お気に入りから削除しました' : 'Removed from favorites', 'info');
+    }
+    
+    // Reload favorites list
+    await loadUserFavorites();
+    renderApp();
+    
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      showAuthModal('login');
+    } else {
+      showToast(i18n.getCurrentLanguage() === 'ja' ? 'お気に入り処理に失敗しました' : 'Favorite action failed', 'error');
+    }
+  } finally {
+    btn.disabled = false;
   }
 }
 
