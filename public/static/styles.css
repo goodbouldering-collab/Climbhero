@@ -1429,6 +1429,22 @@ a:hover {
     padding-right: 1rem;
   }
   
+  /* Prevent header overflow on small screens */
+  header .flex.items-center.gap-3 {
+    gap: 0.5rem;
+  }
+  
+  header .btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  /* Compact modal padding on mobile */
+  .modal-content {
+    padding: 16px !important;
+    margin: 12px;
+  }
+  
   /* Adjust hero section for mobile */
   .hero-section h2 {
     font-size: 1.75rem;

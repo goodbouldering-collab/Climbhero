@@ -11,11 +11,11 @@ const state = {
   currentLanguage: 'ja',
   heroSlideIndex: 0,
   heroSlides: [
-    'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1920&h=600&fit=crop&q=90', // Climber on overhang
-    'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1920&h=600&fit=crop&q=90', // Climber silhouette
-    'https://images.unsplash.com/photo-1516901121982-4ba280115a36?w=1920&h=600&fit=crop&q=90', // Bouldering wall
-    'https://images.unsplash.com/photo-1545224144-b38cd309ef69?w=1920&h=600&fit=crop&q=90', // Indoor climbing
-    'https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?w=1920&h=600&fit=crop&q=90'  // Rock climbing outdoor
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=600&fit=crop&q=90', // Majestic mountain rock face
+    'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=1920&h=600&fit=crop&q=90', // Natural rock formation
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&h=600&fit=crop&q=90', // Mountain peak panoramic
+    'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1920&h=600&fit=crop&q=90', // Granite rock wall
+    'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1920&h=600&fit=crop&q=90'  // Rocky mountain vista
   ]
 };
 
@@ -189,10 +189,10 @@ function renderHomePage() {
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Logo Section -->
-          <div class="flex items-center gap-2">
-            <div class="flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-              <i class="fas fa-mountain text-2xl bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-              <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+          <div class="flex items-center">
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+              <i class="fas fa-mountain text-lg bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+              <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
             </div>
           </div>
           
