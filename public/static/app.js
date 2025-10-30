@@ -11,11 +11,11 @@ const state = {
   currentLanguage: 'ja',
   heroSlideIndex: 0,
   heroSlides: [
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=600&fit=crop&q=90', // Mountain rock face
-    'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1920&h=600&fit=crop&q=90', // Granite cliff
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&h=600&fit=crop&q=90', // Mountain peak
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=600&fit=crop&q=90&sat=-100', // Rock formation
-    'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1920&h=600&fit=crop&q=90'  // Canyon walls
+    'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=1920&h=600&fit=crop&q=90', // Climber on overhang
+    'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=1920&h=600&fit=crop&q=90', // Climber silhouette
+    'https://images.unsplash.com/photo-1516901121982-4ba280115a36?w=1920&h=600&fit=crop&q=90', // Bouldering wall
+    'https://images.unsplash.com/photo-1545224144-b38cd309ef69?w=1920&h=600&fit=crop&q=90', // Indoor climbing
+    'https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?w=1920&h=600&fit=crop&q=90'  // Rock climbing outdoor
   ]
 };
 
