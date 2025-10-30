@@ -188,15 +188,28 @@ function renderHomePage() {
     <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
-          <!-- Logo Section -->
+          <!-- Logo Section (Smaller) -->
           <div class="flex items-center">
-            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-              <i class="fas fa-mountain text-lg bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-              <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+            <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+              <i class="fas fa-mountain text-xs bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+              <h1 class="text-xs sm:text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
             </div>
           </div>
           
-          <!-- Language Switcher (Top Right) -->
+          <!-- Search Bar (Center, Full Width - Hidden on Mobile) -->
+          <div class="hidden md:flex flex-1 max-w-2xl mx-4">
+            <div class="relative w-full">
+              <input 
+                type="text" 
+                placeholder="${i18n.t('search.placeholder')}"
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                onkeyup="handleSearch(event)"
+                id="search-input">
+              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+          </div>
+          
+          <!-- Right Section -->
           <div class="flex items-center gap-3">
             <div class="language-switcher flex">
               ${i18n.getAvailableLanguages().map(lang => `
@@ -207,24 +220,6 @@ function renderHomePage() {
                   ${lang.flag}
                 </button>
               `).join('')}
-            </div>
-            
-            <!-- Search Icon (Mobile) -->
-            <button onclick="toggleMobileSearch()" class="md:hidden btn btn-sm btn-secondary">
-              <i class="fas fa-search"></i>
-            </button>
-            
-            <!-- Search Bar (Desktop) -->
-            <div class="hidden md:flex flex-1 max-w-md mx-4">
-              <div class="relative w-full">
-                <input 
-                  type="text" 
-                  placeholder="${i18n.t('search.placeholder')}"
-                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                  onkeyup="handleSearch(event)"
-                  id="search-input">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-              </div>
             </div>
             
             ${state.currentUser ? `
@@ -297,6 +292,21 @@ function renderHomePage() {
                 ${i18n.t('pricing.trial')}
               </button>
             ` : ''}
+          </div>
+        </div>
+      </section>
+      
+      <!-- Mobile Search Section (Visible only on mobile) -->
+      <section class="md:hidden bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+          <div class="relative w-full">
+            <input 
+              type="text" 
+              placeholder="${i18n.t('search.placeholder')}"
+              class="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              onkeyup="handleSearch(event)"
+              id="search-input-mobile">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
           </div>
         </div>
       </section>
@@ -409,7 +419,7 @@ function renderHomePage() {
       <!-- Recommended Videos Section -->
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-4">
+          <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-star"></i>
               <span>${i18n.t('section.recommended')}</span>
