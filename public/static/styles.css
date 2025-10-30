@@ -1438,8 +1438,8 @@ a:hover {
 }
 
 .language-btn-medium {
-  padding: 4px 8px;
-  font-size: 16px;
+  padding: 5px 9px;
+  font-size: 17px;
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -1503,8 +1503,8 @@ a:hover {
   
   /* Maintain visible language switcher on mobile */
   .language-btn-medium {
-    padding: 4px 7px;
-    font-size: 14px;
+    padding: 4px 8px;
+    font-size: 15px;
   }
   
   /* Compact modal padding on mobile */
@@ -1522,8 +1522,8 @@ a:hover {
   }
   
   .language-btn-medium {
-    padding: 3px 5px;
-    font-size: 13px;
+    padding: 3px 6px;
+    font-size: 14px;
   }
   
   /* Hide text on very small screens, keep icons */

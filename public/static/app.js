@@ -191,8 +191,8 @@ function renderHomePage() {
           <!-- Logo Section -->
           <div class="flex items-center flex-shrink-0">
             <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-              <i class="fas fa-mountain text-sm bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-              <h1 class="text-sm sm:text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+              <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+              <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
             </div>
           </div>
           
@@ -396,10 +396,10 @@ function renderHomePage() {
               <input 
                 type="text" 
                 placeholder="${i18n.t('search.placeholder')}"
-                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-base shadow-sm"
+                class="w-full pl-14 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-base shadow-sm"
                 onkeyup="handleSearch(event)"
                 id="search-input">
-              <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+              <i class="fas fa-search absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
             </div>
           </div>
         </div>
