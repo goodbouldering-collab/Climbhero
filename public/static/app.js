@@ -413,8 +413,16 @@ function renderHomePage() {
             </div>
           </div>
           
-          <div class="video-grid">
-            ${state.videos.slice(0, 4).map(video => renderVideoCard(video)).join('')}
+          <div class="carousel-container" id="recommended-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('recommended-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="recommended-scroll">
+              ${state.videos.slice(0, 8).map(video => renderVideoCardWide(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('recommended-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
           </div>
         </div>
       </section>
@@ -743,6 +751,56 @@ function renderVideoCard(video) {
   
   return `
     <div class="scroll-item">
+      <div class="video-card-compact">
+        <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
+          <img src="${video.thumbnail_url}" alt="${video.title}">
+          <div class="duration-badge">${video.duration}</div>
+          <span class="absolute top-2 left-2 media-source-badge">
+            <i class="${mediaIcon}"></i> ${mediaName}
+          </span>
+        </div>
+        <div class="video-info-compact">
+          <div class="video-title-compact line-clamp-2" onclick="showVideoDetail(${video.id})">${video.title}</div>
+          <div class="video-meta-compact">
+            <span><i class="fas fa-eye"></i> ${video.views.toLocaleString()}</span>
+            <span class="like-count"><i class="fas fa-heart"></i> <span id="like-count-${video.id}">${video.likes}</span></span>
+            <span><i class="fas fa-play-circle"></i> ${video.duration}</span>
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-xs text-gray-500 truncate flex-1">
+              <i class="fas fa-user-circle"></i> ${video.channel_name}
+            </span>
+            <div class="flex gap-1">
+              <button 
+                class="like-btn ${isLiked ? 'liked' : ''}" 
+                data-video-id="${video.id}"
+                onclick="handleLike(event, ${video.id})"
+                title="${i18n.t('video.like_btn')}">
+                <i class="fas fa-heart"></i>
+              </button>
+              <button 
+                class="share-btn" 
+                onclick="event.stopPropagation(); showShareModal(${video.id})"
+                title="${i18n.t('common.share')}">
+                <i class="fas fa-share-alt"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Render video card with 80% width for recommended section
+function renderVideoCardWide(video) {
+  const mediaSource = video.media_source || 'youtube';
+  const mediaIcon = getMediaIcon(mediaSource);
+  const mediaName = getMediaName(mediaSource);
+  const isLiked = video.user_liked || false;
+  
+  return `
+    <div class="scroll-item-wide">
       <div class="video-card-compact">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
           <img src="${video.thumbnail_url}" alt="${video.title}">

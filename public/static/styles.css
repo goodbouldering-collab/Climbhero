@@ -394,9 +394,19 @@ button:disabled {
   scroll-snap-align: start;
 }
 
+/* Wide scroll items (80% width for recommended videos) */
+.scroll-item-wide {
+  flex: 0 0 80%;
+  scroll-snap-align: start;
+}
+
 @media (max-width: 768px) {
   .scroll-item {
     flex: 0 0 200px;
+  }
+  
+  .scroll-item-wide {
+    flex: 0 0 85%;
   }
   
   .carousel-btn {
