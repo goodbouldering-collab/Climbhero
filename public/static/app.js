@@ -188,32 +188,17 @@ function renderHomePage() {
     <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
-          <div class="flex items-center gap-3">
-            <i class="fas fa-mountain text-purple-600 text-2xl"></i>
-            <h1 class="text-xl font-bold text-gray-900 hidden sm:block">ClimbHero</h1>
-          </div>
-          
-          <!-- Search Bar (Desktop) -->
-          <div class="hidden md:flex flex-1 max-w-md mx-4">
-            <div class="relative w-full">
-              <input 
-                type="text" 
-                placeholder="${i18n.t('search.placeholder')}"
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                onkeyup="handleSearch(event)"
-                id="search-input">
-              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          <!-- Logo Section -->
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+              <i class="fas fa-mountain text-2xl bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+              <h1 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
             </div>
           </div>
           
-          <div class="flex items-center gap-2">
-            <!-- Search Icon (Mobile) -->
-            <button onclick="toggleMobileSearch()" class="md:hidden btn btn-sm btn-secondary">
-              <i class="fas fa-search"></i>
-            </button>
-            
-            <!-- Language Switcher -->
-            <div class="language-switcher hidden sm:flex">
+          <!-- Language Switcher (Top Right) -->
+          <div class="flex items-center gap-3">
+            <div class="language-switcher flex">
               ${i18n.getAvailableLanguages().map(lang => `
                 <button 
                   onclick="switchLanguage('${lang.code}')" 
@@ -222,6 +207,24 @@ function renderHomePage() {
                   ${lang.flag}
                 </button>
               `).join('')}
+            </div>
+            
+            <!-- Search Icon (Mobile) -->
+            <button onclick="toggleMobileSearch()" class="md:hidden btn btn-sm btn-secondary">
+              <i class="fas fa-search"></i>
+            </button>
+            
+            <!-- Search Bar (Desktop) -->
+            <div class="hidden md:flex flex-1 max-w-md mx-4">
+              <div class="relative w-full">
+                <input 
+                  type="text" 
+                  placeholder="${i18n.t('search.placeholder')}"
+                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                  onkeyup="handleSearch(event)"
+                  id="search-input">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              </div>
             </div>
             
             ${state.currentUser ? `
@@ -244,7 +247,7 @@ function renderHomePage() {
                 <div class="avatar">
                   ${state.currentUser.username[0].toUpperCase()}
                 </div>
-                <span class="hidden sm:inline text-sm font-medium text-gray-700">
+                <span class="hidden lg:inline text-sm font-medium text-gray-700">
                   ${state.currentUser.username}
                 </span>
               </div>

@@ -47,7 +47,7 @@ const translations = {
     'video.liked': 'いいね済み',
     
     // Pricing Section
-    'pricing.title': 'プレミアムで、動画投稿といいね❤️5つ',
+    'pricing.title': 'プレミアムで動画投稿といいね❤️',
     'pricing.trial': '15日間無料トライアル実施中',
     'pricing.free.title': '無料プラン',
     'pricing.free.price': '$0',
@@ -422,7 +422,7 @@ const translations = {
     'video.liked': 'Liked',
     
     // Pricing Section
-    'pricing.title': 'Premium: Video Posts & ❤️5 Likes',
+    'pricing.title': 'Premium: Video Posts & ❤️ Likes',
     'pricing.trial': '15-day free trial available',
     'pricing.free.title': 'Free Plan',
     'pricing.free.price': '$0',
