@@ -1778,9 +1778,6 @@ async function renderBlogDetail() {
     const response = await axios.get(`/api/blog/${state.currentBlogId}`);
     const post = response.data;
     
-    // Scroll to top when opening blog detail
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
     const root = document.getElementById('root');
     root.innerHTML = `
       <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -1820,6 +1817,11 @@ async function renderBlogDetail() {
       
       ${renderFooter()}
     `;
+    
+    // Scroll to top AFTER rendering HTML
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 0);
   } catch (error) {
     showToast('ブログの読み込みに失敗しました', 'error');
     navigateTo('home');
