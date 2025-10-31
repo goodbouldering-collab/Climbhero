@@ -158,6 +158,11 @@ async function loadUserFavorites() {
 function handleNavigation() {
   const hash = window.location.hash.slice(1);
   
+  // CRITICAL: Scroll to top immediately when navigation changes
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  
   if (!hash || hash === 'home') {
     state.currentView = 'home';
   } else if (hash === 'admin') {
@@ -1818,10 +1823,23 @@ async function renderBlogDetail() {
       ${renderFooter()}
     `;
     
-    // Scroll to top AFTER rendering HTML
+    // CRITICAL: Force scroll to top with multiple methods for reliability
+    // Method 1: Immediate scroll (non-smooth)
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    
+    // Method 2: requestAnimationFrame for after render
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+    
+    // Method 3: Delayed smooth scroll as backup
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 0);
+    }, 100);
   } catch (error) {
     showToast('ブログの読み込みに失敗しました', 'error');
     navigateTo('home');
