@@ -53,6 +53,16 @@ async function checkAuth() {
   }
 }
 
+// ============ Array Shuffle Utility ============
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 // ============ Hero Slideshow ============
 function initHeroSlideshow() {
   setInterval(() => {
@@ -82,7 +92,9 @@ async function loadInitialData() {
       axios.get('/api/announcements')
     ]);
     
-    state.videos = videosRes.data.videos || [];
+    // Randomize video order for diversity
+    const videos = videosRes.data.videos || [];
+    state.videos = shuffleArray(videos);
     state.rankings.weekly = rankingsRes.data || [];
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
@@ -930,6 +942,48 @@ function getMediaName(source) {
   return names[source] || 'Video';
 }
 
+// Get embed URL for different platforms
+function getEmbedUrl(url, mediaSource) {
+  try {
+    if (mediaSource === 'youtube') {
+      // YouTube: https://www.youtube.com/watch?v=VIDEO_ID -> https://www.youtube.com/embed/VIDEO_ID
+      const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\/]+)/)?.[1];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    
+    if (mediaSource === 'instagram') {
+      // Instagram: https://www.instagram.com/reel/REEL_ID/ -> https://www.instagram.com/reel/REEL_ID/embed
+      const reelId = url.match(/\/reel\/([^\/]+)/)?.[1];
+      if (reelId) {
+        return `https://www.instagram.com/reel/${reelId}/embed`;
+      }
+      // Instagram post
+      const postId = url.match(/\/p\/([^\/]+)/)?.[1];
+      if (postId) {
+        return `https://www.instagram.com/p/${postId}/embed`;
+      }
+      return null;
+    }
+    
+    if (mediaSource === 'tiktok') {
+      // TikTok: https://www.tiktok.com/@user/video/VIDEO_ID -> https://www.tiktok.com/embed/VIDEO_ID
+      const videoId = url.match(/\/video\/(\d+)/)?.[1];
+      return videoId ? `https://www.tiktok.com/embed/v2/${videoId}` : null;
+    }
+    
+    if (mediaSource === 'vimeo') {
+      // Vimeo: https://vimeo.com/VIDEO_ID -> https://player.vimeo.com/video/VIDEO_ID
+      const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error generating embed URL:', error);
+    return null;
+  }
+}
+
 // ============ Blog Card ============
 function renderBlogCard(post) {
   return `
@@ -1299,6 +1353,8 @@ async function showVideoDetail(videoId) {
     const response = await axios.get(`/api/videos/${videoId}`);
     const video = response.data;
     
+    const embedUrl = getEmbedUrl(video.url, video.media_source);
+    
     const modal = document.getElementById('video-modal');
     modal.innerHTML = `
       <div class="modal-content max-w-4xl">
@@ -1310,9 +1366,22 @@ async function showVideoDetail(videoId) {
         </div>
         
         <div class="aspect-video bg-gray-900 rounded-lg mb-4">
-          <iframe src="${video.url.replace('watch?v=', 'embed/')}" 
-                  class="w-full h-full rounded-lg" 
-                  allowfullscreen></iframe>
+          ${embedUrl ? `
+            <iframe src="${embedUrl}" 
+                    class="w-full h-full rounded-lg" 
+                    allowfullscreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+          ` : `
+            <div class="w-full h-full flex items-center justify-center text-white">
+              <div class="text-center">
+                <i class="fas fa-external-link-alt text-4xl mb-4"></i>
+                <p class="mb-4">この動画は外部サイトで視聴できます</p>
+                <a href="${video.url}" target="_blank" class="btn btn-primary">
+                  <i class="fas fa-play mr-2"></i>動画を見る
+                </a>
+              </div>
+            </div>
+          `}
         </div>
         
         <div class="flex items-center justify-between mb-4">
@@ -1708,6 +1777,9 @@ async function renderBlogDetail() {
   try {
     const response = await axios.get(`/api/blog/${state.currentBlogId}`);
     const post = response.data;
+    
+    // Scroll to top when opening blog detail
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     
     const root = document.getElementById('root');
     root.innerHTML = `
