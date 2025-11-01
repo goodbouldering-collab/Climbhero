@@ -3,6 +3,7 @@ const state = {
   currentUser: null,
   videos: [],
   trendingVideos: [],
+  instagramVideos: [],
   favorites: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   blogPosts: [],
@@ -120,9 +121,10 @@ function updateHeroSlide() {
 // ============ Load Initial Data ============
 async function loadInitialData() {
   try {
-    const [videosRes, trendingRes, rankingsRes, blogRes, announcementsRes, topBannersRes, bottomBannersRes] = await Promise.all([
+    const [videosRes, trendingRes, instagramRes, rankingsRes, blogRes, announcementsRes, topBannersRes, bottomBannersRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
       axios.get('/api/videos/trending?limit=10'),
+      axios.get('/api/videos/instagram?limit=10'),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get('/api/blog'),
       axios.get('/api/announcements'),
@@ -134,6 +136,7 @@ async function loadInitialData() {
     const videos = videosRes.data.videos || [];
     state.videos = shuffleArray(videos);
     state.trendingVideos = trendingRes.data.videos || [];
+    state.instagramVideos = instagramRes.data.videos || [];
     state.rankings.weekly = rankingsRes.data || [];
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
@@ -751,18 +754,18 @@ function renderHomePage() {
         </div>
       </section>
 
-      <!-- Trending Videos Section (いいね急増中) -->
+      <!-- Trending Videos Section (注目の動画) -->
       ${state.trendingVideos && state.trendingVideos.length > 0 ? `
       <section class="py-6 bg-gradient-to-r from-pink-50 to-purple-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-fire text-orange-500"></i>
-              <span class="bg-gradient-to-r from-orange-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">いいね急増中</span>
+              <span class="bg-gradient-to-r from-orange-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">注目の動画</span>
             </div>
             <span class="text-xs text-gray-600">
               <i class="fas fa-chart-line mr-1"></i>
-              24時間以内にいいねが急増した動画
+              いいねの増加率が高い動画
             </span>
           </div>
           
@@ -775,6 +778,37 @@ function renderHomePage() {
               ${state.trendingVideos.map(video => renderVideoCardWide(video)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('trending-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      ` : ''}
+
+      <!-- Instagram Gallery Section -->
+      ${state.instagramVideos && state.instagramVideos.length > 0 ? `
+      <section class="py-6 bg-gradient-to-r from-purple-50 to-pink-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-3">
+            <div class="section-title">
+              <i class="fab fa-instagram text-pink-600"></i>
+              <span class="bg-gradient-to-r from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Instagram</span>
+            </div>
+            <span class="text-xs text-gray-600">
+              <i class="fas fa-images mr-1"></i>
+              Instagram Reelsから厳選
+            </span>
+          </div>
+          
+          <!-- Horizontal Carousel -->
+          <div class="carousel-container" id="instagram-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('instagram-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="instagram-scroll">
+              ${state.instagramVideos.map(video => renderVideoCardWide(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('instagram-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>

@@ -22,7 +22,8 @@
 
 ### フロントエンド機能
 - ✅ **横カルーセルUI** - ランキング、動画、ブログの全セクションに実装
-- ✅ **いいね急増中セクション** - 24時間以内にいいねが急増した動画を表示 🔥 NEW
+- ✅ **注目の動画セクション** - いいね増加率が高い動画を上位表示 🔥 NEW
+- ✅ **Instagramギャラリー** - Instagram Reels専用の表示エリア 📸 NEW
 - ✅ **4期間ランキング** - デイリー、週間、月間、年間の切り替え
 - ✅ **インタラクティブUI** ✨ NEW
   - ホバーアニメーション（サムネイル拡大、シマーエフェクト）
@@ -206,9 +207,13 @@
 - `GET /api/videos` - 動画一覧取得
   - Query: `?page=1&limit=20&category=bouldering&search=keyword`
 - `GET /api/videos/:id` - 動画詳細取得
-- `GET /api/videos/trending` - トレンド動画取得（いいね急増中） 🔥 NEW
+- `GET /api/videos/trending` - 注目の動画取得（増加率順） 🔥 NEW
   - Query: `?limit=10`
-  - 24時間以内のいいね数と前24時間のいいね数を比較してランク付け
+  - いいね増加率で計算: (recent_24h - previous_24h) / previous_24h * 100
+  - previous=0の場合は優先順位を最高に設定 (recent * 1000)
+- `GET /api/videos/instagram` - Instagram動画一覧取得 📸 NEW
+  - Query: `?limit=10`
+  - media_source='instagram'でフィルタリング
 - `POST /api/videos` - 動画投稿（認証必須）
 - `POST /api/videos/:id/like` - いいね/いいね解除
 - `POST /api/videos/:id/favorite` - お気に入り追加/削除
@@ -340,13 +345,22 @@ MIT License
 
 ## 🎉 最新アップデート (2025-11-01)
 
-### 🔥 トレンド動画機能実装
-- ✅ **いいね急増中セクション**: 24時間以内にいいねが急増した動画をリアルタイム表示
-  - データベースビュー `trending_videos` を作成（最近24時間 vs 前24時間のいいね数比較）
+### 🔥 トレンド動画機能実装（増加率ベース）
+- ✅ **注目の動画セクション**: いいねの増加率が高い動画を上位表示
+  - データベースビュー `trending_videos` を更新（増加率計算: (recent - previous) / previous * 100）
+  - 前24時間が0の場合は recent * 1000 で優先順位付け
   - `/api/videos/trending` APIエンドポイント実装
   - 火アイコン🔥と鮮やかなグラデーションタイトル（オレンジ→ピンク）
+  - サブタイトル: "いいねの増加率が高い動画"
   - カルーセル形式で横スクロール表示
   - ランキングセクション直下に配置、視認性向上
+- ✅ **Instagramギャラリーセクション**: Instagram Reels専用の表示エリア
+  - `/api/videos/instagram` APIエンドポイント追加
+  - Instagram動画のみをフィルタリング表示
+  - Instagramアイコンとパープル→ピンクのグラデーションタイトル
+  - サブタイトル: "Instagram Reelsから厳選"
+  - カルーセル形式で横スクロール表示
+  - 注目の動画セクション直後に配置
 - ✅ **Instagram動画埋め込み対応**: Instagram Reels動画を正常に埋め込み表示
   - Instagram特有のiframe属性追加（`scrolling="no"`, `frameborder="0"`）
   - Instagram Reels URLを自動的に埋め込み形式に変換

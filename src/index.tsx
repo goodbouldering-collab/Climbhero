@@ -203,7 +203,7 @@ app.get('/api/videos', async (c) => {
   }
 })
 
-// Get trending videos (いいね急増中)
+// Get trending videos (注目の動画)
 app.get('/api/videos/trending', async (c) => {
   const { env } = c
   const limit = parseInt(c.req.query('limit') || '10')
@@ -217,6 +217,28 @@ app.get('/api/videos/trending', async (c) => {
     return c.json({
       videos: trendingVideos || [],
       count: trendingVideos?.length || 0
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get Instagram videos
+app.get('/api/videos/instagram', async (c) => {
+  const { env } = c
+  const limit = parseInt(c.req.query('limit') || '10')
+  
+  try {
+    const { results: instagramVideos } = await env.DB.prepare(`
+      SELECT * FROM videos 
+      WHERE media_source = 'instagram' 
+      ORDER BY created_at DESC 
+      LIMIT ?
+    `).bind(limit).all()
+    
+    return c.json({
+      videos: instagramVideos || [],
+      count: instagramVideos?.length || 0
     })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
