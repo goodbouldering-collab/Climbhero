@@ -1447,6 +1447,26 @@ function initializeCarousels() {
       badge.classList.add('tooltip');
     }
   });
+  
+  // Auto-scroll blog carousel
+  const blogScroll = document.getElementById('blog-scroll');
+  if (blogScroll) {
+    let blogScrollPosition = 0;
+    let blogScrollDirection = 1;
+    
+    setInterval(() => {
+      const maxScroll = blogScroll.scrollWidth - blogScroll.clientWidth;
+      
+      if (blogScrollPosition >= maxScroll) {
+        blogScrollDirection = -1;
+      } else if (blogScrollPosition <= 0) {
+        blogScrollDirection = 1;
+      }
+      
+      blogScrollPosition += blogScrollDirection * 2;
+      blogScroll.scrollLeft = blogScrollPosition;
+    }, 50);
+  }
 }
 
 function scrollCarousel(carouselId, direction) {
