@@ -1063,16 +1063,16 @@ function renderFooter() {
               クライミングコミュニティのための動画共有プラットフォーム
             </p>
             <div class="flex gap-3">
-              <a href="https://twitter.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Twitter">
+              <a href="https://twitter.com/gubboru_climb" target="_blank" class="text-gray-400 hover:text-white" title="Twitter">
                 <i class="fab fa-twitter"></i>
               </a>
-              <a href="https://facebook.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Facebook">
+              <a href="https://facebook.com/gubboru.hikone" target="_blank" class="text-gray-400 hover:text-white" title="Facebook">
                 <i class="fab fa-facebook"></i>
               </a>
-              <a href="https://instagram.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Instagram">
+              <a href="https://instagram.com/gubboru_bouldering" target="_blank" class="text-gray-400 hover:text-white" title="Instagram">
                 <i class="fab fa-instagram"></i>
               </a>
-              <a href="https://youtube.com/@climbhero" target="_blank" class="text-gray-400 hover:text-white" title="YouTube">
+              <a href="https://youtube.com/@gubboru_climbing" target="_blank" class="text-gray-400 hover:text-white" title="YouTube">
                 <i class="fab fa-youtube"></i>
               </a>
             </div>
