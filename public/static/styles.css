@@ -449,8 +449,10 @@ button:disabled {
 .modal.active {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   padding: 20px;
+  overflow-y: auto;
+  padding-top: 60px;
 }
 
 .modal-content {

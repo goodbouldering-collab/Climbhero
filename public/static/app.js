@@ -1342,10 +1342,14 @@ function getMediaName(source) {
 // Get embed URL for different platforms
 function getEmbedUrl(url, mediaSource) {
   try {
-    if (mediaSource === 'youtube') {
+    if (mediaSource === 'youtube' || mediaSource === 'youtube_shorts') {
       // YouTube: https://www.youtube.com/watch?v=VIDEO_ID -> https://www.youtube.com/embed/VIDEO_ID
-      const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\/]+)/)?.[1];
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+      // YouTube Shorts: https://www.youtube.com/shorts/VIDEO_ID -> https://www.youtube.com/embed/VIDEO_ID
+      let videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\/]+)/)?.[1];
+      if (!videoId) {
+        videoId = url.match(/youtube\.com\/shorts\/([^&?\/]+)/)?.[1];
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0` : null;
     }
     
     if (mediaSource === 'instagram') {
@@ -1790,7 +1794,20 @@ async function logout() {
 }
 
 function closeModal(id) {
-  document.getElementById(id).classList.remove('active');
+  const modal = document.getElementById(id);
+  modal.classList.remove('active');
+  
+  // 元のスクロール位置を復元
+  const scrollY = document.body.style.top;
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  
+  // スクロール位置を元に戻す
+  if (scrollY) {
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+  }
 }
 
 // ============ Video Actions ============
@@ -1815,9 +1832,9 @@ async function showVideoDetail(videoId) {
           ${embedUrl ? `
             <iframe src="${embedUrl}" 
                     class="w-full h-full rounded-lg" 
+                    frameborder="0"
                     allowfullscreen
-                    ${video.media_source === 'instagram' ? 'scrolling="no" frameborder="0"' : ''}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"></iframe>
           ` : `
             <div class="w-full h-full flex items-center justify-center text-white">
               <div class="text-center">
@@ -1860,7 +1877,21 @@ async function showVideoDetail(videoId) {
         </div>
       </div>
     `;
+    // モーダルを開く前に現在のスクロール位置を記憶
+    const currentScrollY = window.scrollY;
+    
+    // bodyのスクロールをロック（背景スクロール防止）
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${currentScrollY}px`;
+    document.body.style.width = '100%';
+    
     modal.classList.add('active');
+    
+    // モーダルのスクロール位置を調整
+    setTimeout(() => {
+      modal.scrollTop = 0;
+    }, 50);
   } catch (error) {
     showToast('動画の読み込みに失敗しました', 'error');
   }
