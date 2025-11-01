@@ -15,13 +15,14 @@
 
 ## 🌐 公開URL
 
-- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
+- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2b54fc91.sandbox.novita.ai
 - **GitHub**: https://github.com/username/webapp (要設定)
 
 ## ✨ 完成済み機能
 
 ### フロントエンド機能
 - ✅ **横カルーセルUI** - ランキング、動画、ブログの全セクションに実装
+- ✅ **いいね急増中セクション** - 24時間以内にいいねが急増した動画を表示 🔥 NEW
 - ✅ **4期間ランキング** - デイリー、週間、月間、年間の切り替え
 - ✅ **インタラクティブUI** ✨ NEW
   - ホバーアニメーション（サムネイル拡大、シマーエフェクト）
@@ -33,7 +34,7 @@
 - ✅ **コンパクトカード** - サムネイル220px、情報密度最適化
 - ✅ **レスポンシブデザイン** - PC/タブレット/モバイル対応
 - ✅ **ヒーローセクション** - グラデーション背景 + CTA
-- ✅ **動画詳細モーダル** - YouTubeプレイヤー統合
+- ✅ **動画詳細モーダル** - YouTube/Instagram/TikTok/Vimeo埋め込みプレイヤー統合 📱 Instagram対応
 - ✅ **いいね・お気に入り機能**
 - ✅ **ユーザー認証** - ログイン/登録
 - ✅ **動画投稿フォーム** - モーダル形式
@@ -56,6 +57,7 @@
 - ✅ `/api/videos` - 動画CRUD操作
 - ✅ `/api/videos/:id/like` - いいね機能
 - ✅ `/api/videos/:id/favorite` - お気に入り機能
+- ✅ `/api/videos/trending` - トレンド動画（いいね急増中）✨ NEW
 - ✅ `/api/rankings/:type` - ランキング（daily, weekly, monthly, yearly, total）
 - ✅ `/api/blog` - ブログ記事CRUD操作
 - ✅ Admin権限チェック機能
@@ -204,6 +206,9 @@
 - `GET /api/videos` - 動画一覧取得
   - Query: `?page=1&limit=20&category=bouldering&search=keyword`
 - `GET /api/videos/:id` - 動画詳細取得
+- `GET /api/videos/trending` - トレンド動画取得（いいね急増中） 🔥 NEW
+  - Query: `?limit=10`
+  - 24時間以内のいいね数と前24時間のいいね数を比較してランク付け
 - `POST /api/videos` - 動画投稿（認証必須）
 - `POST /api/videos/:id/like` - いいね/いいね解除
 - `POST /api/videos/:id/favorite` - お気に入り追加/削除
@@ -329,11 +334,50 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-10-30
+**最終更新日**: 2025-11-01
 **プロジェクト状態**: ✅ 本番稼働中
 **参考サイト**: https://climbhero.info
 
-## 🎉 最新アップデート (2025-10-30)
+## 🎉 最新アップデート (2025-11-01)
+
+### 🔥 トレンド動画機能実装
+- ✅ **いいね急増中セクション**: 24時間以内にいいねが急増した動画をリアルタイム表示
+  - データベースビュー `trending_videos` を作成（最近24時間 vs 前24時間のいいね数比較）
+  - `/api/videos/trending` APIエンドポイント実装
+  - 火アイコン🔥と鮮やかなグラデーションタイトル（オレンジ→ピンク）
+  - カルーセル形式で横スクロール表示
+  - ランキングセクション直下に配置、視認性向上
+- ✅ **Instagram動画埋め込み対応**: Instagram Reels動画を正常に埋め込み表示
+  - Instagram特有のiframe属性追加（`scrolling="no"`, `frameborder="0"`）
+  - Instagram Reels URLを自動的に埋め込み形式に変換
+  - 5本のInstagram動画サンプル追加（クライミングジム、コンペ、アウトドア）
+- ✅ **カラースキーム変更**: ウォームトーン（オレンジ/パープル）からクールトーン（シアン/ブルー）へ
+  - プライマリー: #06B6D4 (Cyan)、セカンダリー: #0EA5E9 (Sky Blue)
+  - グラデーション: クール系統で統一
+  - styles.cssのCSS変数更新
+- ✅ **検索バー配置最適化**: 「最新動画」セクション直前に移動
+  - 検索アイコンの重なり問題を解消（`pl-12`でテキストを右シフト）
+  - 中央寄せレイアウト、最大幅2xl
+- ✅ **スポンサーバナー最適化**: 2つのバナーに削減、コンパクトなグリッド配置
+  - フッター直前に配置
+  - 最大高さ180px、2カラムグリッドレイアウト
+  - 動画サンプル1つ + バナー画像1つの構成
+
+### 📊 データベース構造拡張
+- ✅ **trending_videos ビュー**: いいね急増動画の自動計算
+  ```sql
+  CREATE VIEW trending_videos AS
+  SELECT v.*, 
+    COUNT(CASE WHEN l.created_at >= datetime('now', '-24 hours') THEN 1 END) as recent_likes_24h,
+    COUNT(CASE WHEN l.created_at >= datetime('now', '-48 hours') 
+      AND l.created_at < datetime('now', '-24 hours') THEN 1 END) as previous_likes_24h
+  FROM videos v LEFT JOIN likes l ON v.id = l.video_id
+  GROUP BY v.id
+  HAVING recent_likes_24h > 0
+  ORDER BY (recent_likes_24h - previous_likes_24h) DESC;
+  ```
+
+## 🎉 過去のアップデート (2025-10-30)
 
 ### 🎨 デザイン改善とレイアウト最適化
 - ✅ **ヒーロー画像刷新**: 尊厳のある岩場（ロッククライミングの岩壁）の写真に変更
@@ -401,6 +445,42 @@ MIT License
 
 ### 🗺️ ルーティングシステム
 - ✅ **ハッシュベースルーティング**: `#terms`, `#privacy`, `#about`, `#contact`
+- ✅ **統一ヘッダー**: すべての静的ページに共通ナビゲーション
+- ✅ **Markdownレンダリング**: Marked.js統合でMarkdownコンテンツを美しく表示
+- ✅ **レスポンシブデザイン**: 静的ページもモバイル最適化
+
+### 📚 コンテンツ管理
+- ✅ **APIエンドポイント**:
+  - `GET /api/pages/terms` - 利用規約
+  - `GET /api/pages/privacy` - プライバシーポリシー
+  - `GET /api/pages/about` - About
+  - `POST /api/contact` - お問い合わせ送信
+- ✅ **バージョン管理**: 各ページに最終更新日を表示
+- ✅ **SEO最適化**: 適切な見出し階層、メタ情報
+
+### 🎨 スタイル拡張
+- ✅ **静的ページ専用CSS**: `.static-page-content`クラス
+- ✅ **Markdown対応スタイル**: 見出し、リスト、コード、引用、テーブル
+- ✅ **リンク強調**: 紫色（#9333ea）で統一
+- ✅ **読みやすさ**: 行間1.8、最適な余白設定
+
+### ランキング表示の大幅改善
+- ✅ **カードデザイン統一**: ランキングカードを最新動画と同じスタイルに変更
+- ✅ **コンパクト化**: サムネイルサイズを130pxに縮小、情報密度を向上
+- ✅ **インタラクティブ性の強化**:
+  - ホバー時のサムネイル拡大 (scale 1.1)
+  - シマーエフェクト（光の流れるアニメーション）
+  - ランキングスコアのオーバーレイ表示
+  - トップ3へのパルスグローアニメーション
+- ✅ **ランキング変動インジケーター**: 1位👑、急上昇🔥、上昇📈、NEW⭐
+- ✅ **スクロール進捗バー**: カルーセルの進行状況を視覚化
+- ✅ **エントランスアニメーション**: カードが順次登場するバウンスイン効果
+- ✅ **ツールチップ**: 統計バッジにホバーで説明表示
+- ✅ **タブボタン統一**: 動画フィルターとランキング期間切り替えのデザイン統一
+- ✅ **縦スペース削減**: セクション間隔を最適化し、より多くの情報を表示
+�デザイン統一
+- ✅ **縦スペース削減**: セクション間隔を最適化し、より多くの情報を表示
+ィング**: `#terms`, `#privacy`, `#about`, `#contact`
 - ✅ **統一ヘッダー**: すべての静的ページに共通ナビゲーション
 - ✅ **Markdownレンダリング**: Marked.js統合でMarkdownコンテンツを美しく表示
 - ✅ **レスポンシブデザイン**: 静的ページもモバイル最適化

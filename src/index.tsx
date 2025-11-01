@@ -203,6 +203,26 @@ app.get('/api/videos', async (c) => {
   }
 })
 
+// Get trending videos (いいね急増中)
+app.get('/api/videos/trending', async (c) => {
+  const { env } = c
+  const limit = parseInt(c.req.query('limit') || '10')
+  
+  try {
+    // Query the trending_videos view
+    const { results: trendingVideos } = await env.DB.prepare(`
+      SELECT * FROM trending_videos LIMIT ?
+    `).bind(limit).all()
+    
+    return c.json({
+      videos: trendingVideos || [],
+      count: trendingVideos?.length || 0
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // Get single video
 app.get('/api/videos/:id', async (c) => {
   const { env } = c
@@ -564,12 +584,12 @@ app.put('/api/blog/:id', async (c) => {
 
   const id = c.req.param('id')
   const body = await c.req.json()
-  const { title, content, image_url } = body
+  const { title, content, image_url, published_date } = body
 
   try {
     await env.DB.prepare(
-      'UPDATE blog_posts SET title = ?, content = ?, image_url = ? WHERE id = ?'
-    ).bind(title, content, image_url || '', id).run()
+      'UPDATE blog_posts SET title = ?, content = ?, image_url = ?, published_date = ? WHERE id = ?'
+    ).bind(title, content, image_url || '', published_date || new Date().toISOString().split('T')[0], id).run()
 
     return c.json({ message: 'Blog post updated successfully' })
   } catch (error: any) {
@@ -650,6 +670,35 @@ app.get('/', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>ClimbHero - クライミング動画共有プラットフォーム</title>
+        
+        <!-- Favicons -->
+        <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+        <link rel="manifest" href="/static/site.webmanifest">
+        
+        <!-- Meta Tags for SEO -->
+        <meta name="description" content="ClimbHero - 世界中のクライミング動画を発見し、共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。リアルタイムランキング、多言語対応。">
+        <meta name="keywords" content="クライミング,ボルダリング,動画,共有,プラットフォーム,YouTube,Instagram,TikTok,Vimeo,ランキング">
+        <meta name="author" content="ClimbHero">
+        
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://climbhero.pages.dev/">
+        <meta property="og:title" content="ClimbHero - クライミング動画共有プラットフォーム">
+        <meta property="og:description" content="世界中のクライミング動画を発見し、共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
+        <meta property="og:image" content="/android-chrome-512x512.png">
+        
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:url" content="https://climbhero.pages.dev/">
+        <meta property="twitter:title" content="ClimbHero - クライミング動画共有プラットフォーム">
+        <meta property="twitter:description" content="世界中のクライミング動画を発見し、共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
+        <meta property="twitter:image" content="/android-chrome-512x512.png">
+        
+        <!-- Theme Color -->
+        <meta name="theme-color" content="#7c3aed">
+        
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
@@ -1088,6 +1137,167 @@ app.delete('/api/admin/announcements/:id', async (c) => {
     await env.DB.prepare(`
       DELETE FROM announcements WHERE id = ?
     `).bind(announcementId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Sponsor Banners API ============
+
+// Get active sponsor banners by position (public)
+app.get('/api/banners/:position', async (c) => {
+  const { env } = c
+  const position = c.req.param('position')
+  
+  if (!['top', 'bottom'].includes(position)) {
+    return c.json({ error: 'Invalid position. Must be "top" or "bottom"' }, 400)
+  }
+  
+  try {
+    const banners = await env.DB.prepare(`
+      SELECT * FROM sponsor_banners 
+      WHERE position = ? 
+        AND is_active = 1 
+        AND (start_date IS NULL OR start_date <= datetime('now'))
+        AND (end_date IS NULL OR end_date >= datetime('now'))
+      ORDER BY display_order ASC, created_at DESC
+    `).bind(position).all()
+    
+    return c.json(banners.results || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get all sponsor banners (admin)
+app.get('/api/admin/banners', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  try {
+    const banners = await env.DB.prepare(`
+      SELECT * FROM sponsor_banners 
+      ORDER BY position ASC, display_order ASC, created_at DESC
+    `).all()
+    
+    return c.json(banners.results || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Create sponsor banner (admin)
+app.post('/api/admin/banners', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const { title, image_url, link_url, position, is_active, display_order, start_date, end_date } = await c.req.json()
+  
+  if (!title || !image_url || !position) {
+    return c.json({ error: 'Title, image_url, and position are required' }, 400)
+  }
+  
+  if (!['top', 'bottom'].includes(position)) {
+    return c.json({ error: 'Position must be "top" or "bottom"' }, 400)
+  }
+  
+  try {
+    const result = await env.DB.prepare(`
+      INSERT INTO sponsor_banners (title, image_url, link_url, position, is_active, display_order, start_date, end_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      title, 
+      image_url, 
+      link_url || null, 
+      position, 
+      is_active !== undefined ? is_active : 1,
+      display_order || 0,
+      start_date || null,
+      end_date || null
+    ).run()
+    
+    return c.json({ 
+      success: true, 
+      banner_id: result.meta.last_row_id 
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update sponsor banner (admin)
+app.put('/api/admin/banners/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const bannerId = c.req.param('id')
+  const { title, image_url, link_url, position, is_active, display_order, start_date, end_date } = await c.req.json()
+  
+  if (!title || !image_url || !position) {
+    return c.json({ error: 'Title, image_url, and position are required' }, 400)
+  }
+  
+  if (!['top', 'bottom'].includes(position)) {
+    return c.json({ error: 'Position must be "top" or "bottom"' }, 400)
+  }
+  
+  try {
+    await env.DB.prepare(`
+      UPDATE sponsor_banners 
+      SET title = ?, image_url = ?, link_url = ?, position = ?, is_active = ?, 
+          display_order = ?, start_date = ?, end_date = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      title,
+      image_url,
+      link_url || null,
+      position,
+      is_active !== undefined ? is_active : 1,
+      display_order || 0,
+      start_date || null,
+      end_date || null,
+      bannerId
+    ).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Delete sponsor banner (admin)
+app.delete('/api/admin/banners/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const bannerId = c.req.param('id')
+  
+  try {
+    await env.DB.prepare(`
+      DELETE FROM sponsor_banners WHERE id = ?
+    `).bind(bannerId).run()
     
     return c.json({ success: true })
   } catch (error: any) {

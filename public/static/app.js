@@ -2,10 +2,13 @@
 const state = {
   currentUser: null,
   videos: [],
+  trendingVideos: [],
   favorites: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   blogPosts: [],
   announcements: [],
+  topBanners: [],
+  bottomBanners: [],
   currentView: 'home',
   currentRankingType: 'weekly',
   loading: false,
@@ -25,6 +28,38 @@ window.addEventListener('languageChanged', (e) => {
   state.currentLanguage = e.detail.language;
   renderApp();
 });
+
+// Translate announcement based on ID (DB stores Japanese)
+function translateAnnouncement(announcement) {
+  const lang = i18n.getCurrentLanguage();
+  if (lang === 'ja') return announcement; // Return original Japanese
+  
+  // For English, use i18n keys based on ID
+  const titleKey = `announcement.${announcement.id}.title`;
+  const contentKey = `announcement.${announcement.id}.content`;
+  
+  return {
+    ...announcement,
+    title: i18n.t(titleKey) !== titleKey ? i18n.t(titleKey) : announcement.title,
+    content: i18n.t(contentKey) !== contentKey ? i18n.t(contentKey) : announcement.content
+  };
+}
+
+// Translate blog post based on ID (DB stores Japanese)
+function translateBlogPost(post) {
+  const lang = i18n.getCurrentLanguage();
+  if (lang === 'ja') return post; // Return original Japanese
+  
+  // For English, use i18n keys based on ID
+  const titleKey = `blog.${post.id}.title`;
+  const contentKey = `blog.${post.id}.content`;
+  
+  return {
+    ...post,
+    title: i18n.t(titleKey) !== titleKey ? i18n.t(titleKey) : post.title,
+    content: i18n.t(contentKey) !== contentKey ? i18n.t(contentKey) : post.content
+  };
+}
 
 // ============ Initialize App ============
 document.addEventListener('DOMContentLoaded', async () => {
@@ -85,19 +120,25 @@ function updateHeroSlide() {
 // ============ Load Initial Data ============
 async function loadInitialData() {
   try {
-    const [videosRes, rankingsRes, blogRes, announcementsRes] = await Promise.all([
+    const [videosRes, trendingRes, rankingsRes, blogRes, announcementsRes, topBannersRes, bottomBannersRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
+      axios.get('/api/videos/trending?limit=10'),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get('/api/blog'),
-      axios.get('/api/announcements')
+      axios.get('/api/announcements'),
+      axios.get('/api/banners/top'),
+      axios.get('/api/banners/bottom')
     ]);
     
     // Randomize video order for diversity
     const videos = videosRes.data.videos || [];
     state.videos = shuffleArray(videos);
+    state.trendingVideos = trendingRes.data.videos || [];
     state.rankings.weekly = rankingsRes.data || [];
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
+    state.topBanners = topBannersRes.data || [];
+    state.bottomBanners = bottomBannersRes.data || [];
     
     // Load user like status and favorites for all videos
     if (state.currentUser) {
@@ -198,6 +239,13 @@ function renderApp() {
     initializeCarousels();
   } else if (state.currentView === 'admin') {
     root.innerHTML = renderAdminPage();
+    // Load all admin data
+    setTimeout(() => {
+      loadAdminVideos();
+      loadAdminAnnouncements();
+      loadAdminBanners();
+      loadAdminBlog();
+    }, 100);
   } else if (state.currentView === 'blog-detail') {
     renderBlogDetail();
   } else if (state.currentView === 'terms') {
@@ -222,10 +270,10 @@ function renderHomePage() {
         <div class="flex items-center justify-between h-16">
           <!-- Logo Section -->
           <div class="flex items-center flex-shrink-0">
-            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-              <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+            <a href="#home" class="flex items-center gap-2 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition">
+              <img src="/static/favicon-32x32.png" alt="ClimbHero Logo" class="w-6 h-6 sm:w-7 sm:h-7">
               <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
-            </div>
+            </a>
           </div>
           
           <!-- Right Section -->
@@ -323,11 +371,14 @@ function renderHomePage() {
             <i class="fas fa-info-circle text-purple-600 text-lg mt-1 flex-shrink-0"></i>
             <div class="flex-1">
               <h3 class="font-bold text-gray-900 mb-2 text-sm">${i18n.t('announcement.latest')}</h3>
-              ${state.announcements.slice(0, 3).map(a => `
-                <div class="mb-2 text-sm text-gray-700">
-                  <span class="font-medium text-purple-600">● ${a.title}:</span> ${a.content}
-                </div>
-              `).join('')}
+              ${state.announcements.slice(0, 3).map(a => {
+                const translated = translateAnnouncement(a);
+                return `
+                  <div class="mb-2 text-sm text-gray-700">
+                    <span class="font-medium text-purple-600">● ${translated.title}:</span> ${translated.content}
+                  </div>
+                `;
+              }).join('')}
               ${state.announcements.length > 3 ? `
                 <a href="#" onclick="showAnnouncementsModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800 font-medium">
                   ${i18n.t('announcement.view_all')} <i class="fas fa-chevron-right"></i>
@@ -347,13 +398,108 @@ function renderHomePage() {
             <i class="fas fa-bullhorn text-yellow-300 text-sm flex-shrink-0"></i>
             <div class="flex-1 min-w-0">
               <marquee behavior="scroll" direction="left" scrollamount="3" class="text-xs md:text-sm">
-                ${state.announcements.map(a => `【${a.title}】${a.content}`).join(' ▪ ')}
+                ${state.announcements.map(a => {
+                  const translated = translateAnnouncement(a);
+                  return `【${translated.title}】${translated.content}`;
+                }).join(' ▪ ')}
               </marquee>
             </div>
           </div>
         </div>
       </div>
       ` : ''}
+      
+      <!-- Core Features Section (Collapsible) -->
+      <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button 
+            onclick="toggleCoreFeatureSection()" 
+            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
+            <h2 class="text-lg font-bold text-gray-900">
+              <i class="fas fa-mountain text-purple-600 mr-2"></i>
+              ${i18n.t('core_features.title')}
+            </h2>
+            <i id="core-feature-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </button>
+          
+          <div id="core-feature-content" class="hidden mt-4">
+          <!-- Features Grid (3x2) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            
+            <!-- Feature 1: Multi-Platform -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-globe text-3xl text-purple-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.platform.title')}</h3>
+              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.platform.desc')}</p>
+              <p class="text-xs text-purple-600 font-medium">${i18n.t('core_features.platform.stat')}</p>
+            </div>
+            
+            <!-- Feature 2: Real-Time Ranking -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-chart-line text-3xl text-blue-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.ranking.title')}</h3>
+              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.ranking.desc')}</p>
+              <p class="text-xs text-blue-600 font-medium">${i18n.t('core_features.ranking.stat')}</p>
+            </div>
+            
+            <!-- Feature 3: Multi-Language -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-language text-3xl text-green-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.multilang.title')}</h3>
+              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.multilang.desc')}</p>
+              <p class="text-xs text-green-600 font-medium">${i18n.t('core_features.multilang.stat')}</p>
+            </div>
+            
+            <!-- Feature 4: Community -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-users text-3xl text-yellow-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.community.title')}</h3>
+              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.community.desc')}</p>
+              <p class="text-xs text-yellow-600 font-medium">${i18n.t('core_features.community.stat')}</p>
+            </div>
+            
+            <!-- Feature 5: Expert Authority -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-user-shield text-3xl text-red-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.authority.title')}</h3>
+              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.authority.desc')}</p>
+              <p class="text-xs text-red-600 font-medium">${i18n.t('core_features.authority.stat')}</p>
+            </div>
+            
+            <!-- Feature 6: AI Auto-Analysis -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-brain text-3xl text-indigo-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.ai.title')}</h3>
+              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.ai.desc')}</p>
+              <p class="text-xs text-indigo-600 font-medium">${i18n.t('core_features.ai.stat')}</p>
+            </div>
+            
+          </div>
+          
+          <div class="text-center">
+            <p class="text-sm text-green-600 font-medium mb-3">
+              <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
+            </p>
+            <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
+              <i class="fas fa-crown mr-2"></i>
+              ${i18n.t('feature.upgrade')}
+            </button>
+          </div>
+          </div>
+        </div>
+      </div>
       
       <!-- How to Use ClimbHero Section (Collapsible) -->
       <div class="bg-white border-b border-gray-200">
@@ -428,14 +574,117 @@ function renderHomePage() {
               <input 
                 type="text" 
                 placeholder="${i18n.t('search.placeholder')}"
-                class="w-full pl-14 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-base shadow-sm"
+                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-[16px] shadow-sm"
                 onkeyup="handleSearch(event)"
                 id="search-input">
-              <i class="fas fa-search absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+              <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-base"></i>
             </div>
           </div>
         </div>
       </section>
+      
+      <!-- Live Streaming Section (Collapsible) -->
+      <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button 
+            onclick="toggleLiveStreamSection()" 
+            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
+            <h2 class="text-lg font-bold text-gray-900">
+              <i class="fas fa-broadcast-tower text-red-600 mr-2"></i>
+              ライブ配信中
+            </h2>
+            <i id="live-stream-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </button>
+          
+          <div id="live-stream-content" class="hidden mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            
+            <!-- Live Stream 1 -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 relative">
+                <i class="fas fa-video text-3xl text-red-600"></i>
+                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">YouTube Live</h3>
+              <p class="text-sm text-gray-600 mb-2">YouTubeでのライブ配信をリアルタイムで視聴</p>
+              <p class="text-xs text-red-600 font-medium">🔴 LIVE配信対応</p>
+            </div>
+            
+            <!-- Live Stream 2 -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 relative">
+                <i class="fab fa-instagram text-3xl text-pink-600"></i>
+                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
+                </span>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">Instagram Live</h3>
+              <p class="text-sm text-gray-600 mb-2">インスタグラムライブ配信を埋め込み視聴</p>
+              <p class="text-xs text-pink-600 font-medium">🔴 LIVE配信対応</p>
+            </div>
+            
+            <!-- Live Stream 3 -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 relative">
+                <i class="fab fa-twitch text-3xl text-purple-600"></i>
+                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+                </span>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">Twitch</h3>
+              <p class="text-sm text-gray-600 mb-2">Twitchでのクライミング配信をチェック</p>
+              <p class="text-xs text-purple-600 font-medium">🔴 LIVE配信対応</p>
+            </div>
+            
+            <!-- Live Stream 4 -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-bell text-3xl text-blue-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">ライブ通知</h3>
+              <p class="text-sm text-gray-600 mb-2">お気に入りチャンネルのライブ配信開始を通知</p>
+              <p class="text-xs text-blue-600 font-medium">プレミアム機能</p>
+            </div>
+            
+            <!-- Live Stream 5 -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-calendar-check text-3xl text-green-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">配信スケジュール</h3>
+              <p class="text-sm text-gray-600 mb-2">予定されているライブ配信を事前チェック</p>
+              <p class="text-xs text-green-600 font-medium">カレンダー機能</p>
+            </div>
+            
+            <!-- Live Stream 6 -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-comments text-3xl text-orange-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">リアルタイムチャット</h3>
+              <p class="text-sm text-gray-600 mb-2">配信中にコミュニティとリアルタイム交流</p>
+              <p class="text-xs text-orange-600 font-medium">コミュニティ機能</p>
+            </div>
+            
+            </div>
+            
+            <div class="text-center">
+              <p class="text-sm text-green-600 font-medium mb-3">
+                <i class="fas fa-gift mr-2"></i>ライブ配信機能は開発中です
+              </p>
+              <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
+                <i class="fas fa-crown mr-2"></i>
+                ${i18n.t('feature.upgrade')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       
       <!-- Recommended Videos Section -->
       <section class="py-6 bg-gray-50">
@@ -501,6 +750,58 @@ function renderHomePage() {
           </div>
         </div>
       </section>
+
+      <!-- Trending Videos Section (いいね急増中) -->
+      ${state.trendingVideos && state.trendingVideos.length > 0 ? `
+      <section class="py-6 bg-gradient-to-r from-pink-50 to-purple-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-3">
+            <div class="section-title">
+              <i class="fas fa-fire text-orange-500"></i>
+              <span class="bg-gradient-to-r from-orange-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">いいね急増中</span>
+            </div>
+            <span class="text-xs text-gray-600">
+              <i class="fas fa-chart-line mr-1"></i>
+              24時間以内にいいねが急増した動画
+            </span>
+          </div>
+          
+          <!-- Horizontal Carousel -->
+          <div class="carousel-container" id="trending-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('trending-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="trending-scroll">
+              ${state.trendingVideos.map(video => renderVideoCardWide(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('trending-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      ` : ''}
+
+      <!-- Search Section (Above Latest Videos) -->
+      <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="max-w-2xl mx-auto">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+              </div>
+              <input 
+                type="text" 
+                id="search-input"
+                placeholder="${i18n.t('search.placeholder') || '動画を検索...'}"
+                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+                oninput="handleSearch(event)"
+              />
+            </div>
+            <div id="search-results" class="hidden"></div>
+          </div>
+        </div>
+      </div>
 
       <!-- Latest Videos Section -->
       <section class="py-6 bg-gray-50">
@@ -643,6 +944,63 @@ function renderHomePage() {
       </section>
 
     </main>
+
+    <!-- Sponsor Banners (Footer直前 - コンパクト2枠) -->
+    ${(state.topBanners && state.topBanners.length > 0) || (state.bottomBanners && state.bottomBanners.length > 0) ? `
+      <section class="bg-gradient-to-b from-gray-50 to-gray-100 border-t border-gray-200">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="text-center mb-3">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">SPONSORED</span>
+          </div>
+          
+          <!-- 2枠のスポンサー広告（動画または画像） -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 広告1: 動画サンプル -->
+            <div class="overflow-hidden rounded-lg shadow-sm bg-white">
+              <video 
+                controls 
+                poster="https://cdn1.genspark.ai/user-upload-image/video_frames/b38fe03f-d447-4ae4-9a9f-6573dfc03d14.jpeg"
+                class="w-full h-auto"
+                style="max-height: 180px; object-fit: cover;"
+              >
+                <source src="https://cdn1.genspark.ai/user-upload-image/5/33ad275f-53a3-45f6-bd1d-f1c024dbf22b.mp4" type="video/mp4">
+              </video>
+              <div class="px-3 py-2 bg-gray-50 border-t border-gray-200">
+                <p class="text-xs text-gray-600 text-center">
+                  <i class="fas fa-video mr-1"></i>
+                  広告動画サンプル - ジム無料体験
+                </p>
+              </div>
+            </div>
+            
+            <!-- 広告2: バナー画像 -->
+            ${[...state.topBanners || [], ...state.bottomBanners || []].slice(0, 1).map(banner => `
+              <div class="overflow-hidden rounded-lg shadow-sm">
+                ${banner.link_url ? `
+                  <a href="${banner.link_url}" target="_blank" rel="noopener noreferrer" class="block hover:opacity-90 transition">
+                    <img src="${banner.image_url}" alt="${banner.title}" class="w-full h-auto" style="max-height: 180px; object-fit: cover;">
+                    <div class="px-3 py-2 bg-gray-50 border-t border-gray-200">
+                      <p class="text-xs text-gray-600 text-center">
+                        <i class="fas fa-ad mr-1"></i>
+                        ${banner.title}
+                      </p>
+                    </div>
+                  </a>
+                ` : `
+                  <img src="${banner.image_url}" alt="${banner.title}" class="w-full h-auto" style="max-height: 180px; object-fit: cover;">
+                  <div class="px-3 py-2 bg-gray-50 border-t border-gray-200">
+                    <p class="text-xs text-gray-600 text-center">
+                      <i class="fas fa-ad mr-1"></i>
+                      ${banner.title}
+                    </p>
+                  </div>
+                `}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </section>
+    ` : ''}
 
     <!-- Footer -->
     ${renderFooter()}
@@ -991,22 +1349,23 @@ function getEmbedUrl(url, mediaSource) {
 
 // ============ Blog Card ============
 function renderBlogCard(post) {
+  const translated = translateBlogPost(post);
   return `
     <div class="scroll-item">
       <div class="video-card-compact" onclick="navigateTo('blog/${post.id}')">
         ${post.image_url ? `
           <div class="video-thumbnail">
-            <img src="${post.image_url}" alt="${post.title}">
+            <img src="${post.image_url}" alt="${translated.title}">
           </div>
         ` : `
           <div class="video-thumbnail" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"></div>
         `}
         <div class="video-info-compact">
-          <div class="video-title-compact line-clamp-2">${post.title}</div>
+          <div class="video-title-compact line-clamp-2">${translated.title}</div>
           <p class="text-xs text-gray-600 line-clamp-2 mb-2 leading-relaxed">${post.content.substring(0, 80)}...</p>
           <div class="video-meta-compact">
             <span><i class="fas fa-calendar"></i> ${formatDate(post.published_date)}</span>
-            <span><i class="fas fa-newspaper"></i> ニュース</span>
+            <span><i class="fas fa-newspaper"></i> ${i18n.t('section.blog')}</span>
           </div>
         </div>
       </div>
@@ -1176,6 +1535,34 @@ function navigateTo(view) {
 function toggleFeatureSection() {
   const content = document.getElementById('feature-content');
   const icon = document.getElementById('feature-toggle-icon');
+  
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    icon.classList.add('rotate-180');
+  } else {
+    content.classList.add('hidden');
+    icon.classList.remove('rotate-180');
+  }
+}
+
+// ============ Core Features Section Toggle ============
+function toggleCoreFeatureSection() {
+  const content = document.getElementById('core-feature-content');
+  const icon = document.getElementById('core-feature-toggle-icon');
+  
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    icon.classList.add('rotate-180');
+  } else {
+    content.classList.add('hidden');
+    icon.classList.remove('rotate-180');
+  }
+}
+
+// ============ Live Stream Section Toggle ============
+function toggleLiveStreamSection() {
+  const content = document.getElementById('live-stream-content');
+  const icon = document.getElementById('live-stream-toggle-icon');
   
   if (content.classList.contains('hidden')) {
     content.classList.remove('hidden');
@@ -1375,7 +1762,8 @@ async function showVideoDetail(videoId) {
             <iframe src="${embedUrl}" 
                     class="w-full h-full rounded-lg" 
                     allowfullscreen
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                    ${video.media_source === 'instagram' ? 'scrolling="no" frameborder="0"' : ''}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
           ` : `
             <div class="w-full h-full flex items-center justify-center text-white">
               <div class="text-center">
@@ -1782,27 +2170,32 @@ async function renderBlogDetail() {
   try {
     const response = await axios.get(`/api/blog/${state.currentBlogId}`);
     const post = response.data;
+    const translated = translateBlogPost(post);
     
     const root = document.getElementById('root');
     root.innerHTML = `
+      <div id="blog-top"></div>
       <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center h-16">
             <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary mr-4">
               <i class="fas fa-arrow-left"></i>
-              戻る
+              ${i18n.getCurrentLanguage() === 'ja' ? '戻る' : 'Back'}
             </button>
-            <h1 class="text-xl font-bold text-gray-900">ClimbHero Blog</h1>
+            <div class="flex items-center gap-2">
+              <img src="/static/favicon-32x32.png" alt="ClimbHero Logo" class="w-6 h-6">
+              <h1 class="text-xl font-bold text-gray-900">ClimbHero Blog</h1>
+            </div>
           </div>
         </div>
       </header>
 
       <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         ${post.image_url ? `
-          <img src="${post.image_url}" alt="${post.title}" class="w-full h-96 object-cover rounded-2xl mb-8">
+          <img src="${post.image_url}" alt="${translated.title}" class="w-full h-96 object-cover rounded-2xl mb-8">
         ` : ''}
         
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">${post.title}</h1>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">${translated.title}</h1>
         
         <div class="flex items-center gap-4 text-sm text-gray-600 mb-8">
           <span><i class="fas fa-calendar mr-2"></i>${formatDate(post.published_date)}</span>
@@ -1815,7 +2208,7 @@ async function renderBlogDetail() {
         <div class="mt-12 pt-8 border-t border-gray-200">
           <button onclick="navigateTo('home')" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i>
-            ホームに戻る
+            ${i18n.getCurrentLanguage() === 'ja' ? 'ホームに戻る' : 'Back to Home'}
           </button>
         </div>
       </article>
@@ -1823,23 +2216,24 @@ async function renderBlogDetail() {
       ${renderFooter()}
     `;
     
-    // CRITICAL: Force scroll to top with multiple methods for reliability
-    // Method 1: Immediate scroll (non-smooth)
+    // CRITICAL: Force scroll to top anchor element
+    const blogTop = document.getElementById('blog-top');
+    if (blogTop) {
+      blogTop.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+    
+    // Backup: Multiple scroll methods
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
     
-    // Method 2: requestAnimationFrame for after render
+    // Additional backup with requestAnimationFrame
     requestAnimationFrame(() => {
       window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+      if (blogTop) {
+        blogTop.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
     });
-    
-    // Method 3: Delayed smooth scroll as backup
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
   } catch (error) {
     showToast('ブログの読み込みに失敗しました', 'error');
     navigateTo('home');
@@ -1986,6 +2380,76 @@ function renderAdminPage() {
               <tbody id="admin-announcements-table">
                 <tr>
                   <td colspan="5" style="text-align: center; padding: 20px;">
+                    ${i18n.t('common.loading')}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Sponsor Banners Management Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-ad mr-2"></i>
+              スポンサーバナー管理
+            </div>
+            <button onclick="showBannerModal()" class="btn btn-primary btn-sm">
+              <i class="fas fa-plus mr-2"></i>
+              新規バナー作成
+            </button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>タイトル</th>
+                  <th>表示位置</th>
+                  <th>プレビュー</th>
+                  <th>リンクURL</th>
+                  <th>掲載期間</th>
+                  <th>状態</th>
+                  <th>編集</th>
+                </tr>
+              </thead>
+              <tbody id="admin-banners-table">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 20px;">
+                    読み込み中...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Blog Management Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-newspaper mr-2"></i>
+              ${i18n.t('admin.blog')}
+            </div>
+            <button onclick="showBlogModal()" class="btn btn-primary btn-sm">
+              <i class="fas fa-plus mr-2"></i>
+              ${i18n.t('admin.blog_new')}
+            </button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>${i18n.t('admin.blog_title')}</th>
+                  <th>${i18n.t('admin.blog_date')}</th>
+                  <th>${i18n.t('common.edit')}</th>
+                </tr>
+              </thead>
+              <tbody id="admin-blog-table">
+                <tr>
+                  <td colspan="4" style="text-align: center; padding: 20px;">
                     ${i18n.t('common.loading')}
                   </td>
                 </tr>
@@ -2524,11 +2988,360 @@ async function deleteAnnouncement(announcementId) {
   }
 }
 
+// ============ Sponsor Banner Management Functions ============
+
+// Load admin sponsor banners
+async function loadAdminBanners() {
+  try {
+    const response = await axios.get('/api/admin/banners');
+    const banners = response.data;
+    
+    const tbody = document.getElementById('admin-banners-table');
+    if (!tbody) return;
+    
+    if (banners.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; padding: 20px;">
+            バナーがありません
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = banners.map(banner => `
+      <tr>
+        <td>${banner.id}</td>
+        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${banner.title}</td>
+        <td>${banner.position === 'top' ? '上部' : '下部'}</td>
+        <td>
+          <img src="${banner.image_url}" alt="${banner.title}" style="max-width: 100px; max-height: 50px; object-fit: cover;">
+        </td>
+        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          ${banner.link_url ? `<a href="${banner.link_url}" target="_blank" class="text-purple-600 hover:underline">${banner.link_url}</a>` : '-'}
+        </td>
+        <td style="font-size: 0.75rem;">
+          ${banner.start_date ? new Date(banner.start_date).toLocaleDateString('ja-JP') : '-'}<br>
+          〜<br>
+          ${banner.end_date ? new Date(banner.end_date).toLocaleDateString('ja-JP') : '-'}
+        </td>
+        <td>
+          <span class="badge ${banner.is_active ? 'badge-success' : 'badge-warning'}">
+            ${banner.is_active ? '公開中' : '非公開'}
+          </span>
+        </td>
+        <td>
+          <div class="admin-actions">
+            <button onclick="editBanner(${banner.id})" class="btn-edit">
+              <i class="fas fa-edit"></i> 編集
+            </button>
+            <button onclick="deleteBanner(${banner.id})" class="btn-delete">
+              <i class="fas fa-trash"></i> 削除
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error('Failed to load admin banners:', error);
+  }
+}
+
+// Show banner modal
+function showBannerModal(bannerId = null) {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>${bannerId ? 'バナー編集' : '新規バナー作成'}</h3>
+        <button onclick="this.closest('.modal').remove()" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="banner-form" onsubmit="saveBanner(event, ${bannerId}); return false;">
+          <div class="form-group">
+            <label>タイトル *</label>
+            <input type="text" id="banner-title" required placeholder="例: クライミングギアセール">
+          </div>
+          
+          <div class="form-group">
+            <label>画像URL *</label>
+            <input type="url" id="banner-image-url" required placeholder="https://example.com/banner.jpg">
+            <small>推奨サイズ: 1200x200px (横長バナー)</small>
+          </div>
+          
+          <div class="form-group">
+            <label>リンクURL</label>
+            <input type="url" id="banner-link-url" placeholder="https://example.com">
+          </div>
+          
+          <div class="form-group">
+            <label>表示位置 *</label>
+            <select id="banner-position" required>
+              <option value="top">上部 (ヘッダー下)</option>
+              <option value="bottom">下部 (フッター上)</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>表示順序</label>
+            <input type="number" id="banner-display-order" value="0" min="0">
+            <small>数字が小さいほど優先的に表示されます</small>
+          </div>
+          
+          <div class="form-group">
+            <label>掲載開始日</label>
+            <input type="datetime-local" id="banner-start-date">
+          </div>
+          
+          <div class="form-group">
+            <label>掲載終了日</label>
+            <input type="datetime-local" id="banner-end-date">
+          </div>
+          
+          <div class="form-group">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" id="banner-is-active" checked>
+              <span>公開する</span>
+            </label>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+              キャンセル
+            </button>
+            <button type="submit" class="btn btn-primary">
+              ${bannerId ? '更新' : '作成'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Load existing banner data if editing
+  if (bannerId) {
+    loadBannerData(bannerId);
+  }
+}
+
+// Load banner data for editing
+async function loadBannerData(bannerId) {
+  try {
+    const response = await axios.get('/api/admin/banners');
+    const banner = response.data.find(b => b.id === bannerId);
+    
+    if (!banner) return;
+    
+    document.getElementById('banner-title').value = banner.title;
+    document.getElementById('banner-image-url').value = banner.image_url;
+    document.getElementById('banner-link-url').value = banner.link_url || '';
+    document.getElementById('banner-position').value = banner.position;
+    document.getElementById('banner-display-order').value = banner.display_order || 0;
+    document.getElementById('banner-is-active').checked = banner.is_active === 1;
+    
+    if (banner.start_date) {
+      const startDate = new Date(banner.start_date);
+      document.getElementById('banner-start-date').value = startDate.toISOString().slice(0, 16);
+    }
+    
+    if (banner.end_date) {
+      const endDate = new Date(banner.end_date);
+      document.getElementById('banner-end-date').value = endDate.toISOString().slice(0, 16);
+    }
+  } catch (error) {
+    console.error('Failed to load banner data:', error);
+  }
+}
+
+// Save banner
+async function saveBanner(event, bannerId = null) {
+  event.preventDefault();
+  
+  const data = {
+    title: document.getElementById('banner-title').value,
+    image_url: document.getElementById('banner-image-url').value,
+    link_url: document.getElementById('banner-link-url').value || null,
+    position: document.getElementById('banner-position').value,
+    display_order: parseInt(document.getElementById('banner-display-order').value) || 0,
+    is_active: document.getElementById('banner-is-active').checked ? 1 : 0,
+    start_date: document.getElementById('banner-start-date').value || null,
+    end_date: document.getElementById('banner-end-date').value || null
+  };
+  
+  try {
+    if (bannerId) {
+      await axios.put(`/api/admin/banners/${bannerId}`, data);
+      showToast('バナーを更新しました', 'success');
+    } else {
+      await axios.post('/api/admin/banners', data);
+      showToast('バナーを作成しました', 'success');
+    }
+    
+    document.querySelector('.modal').remove();
+    loadAdminBanners();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to save banner:', error);
+    showToast('バナーの保存に失敗しました', 'error');
+  }
+}
+
+// Edit banner
+function editBanner(bannerId) {
+  showBannerModal(bannerId);
+}
+
+// Delete banner
+async function deleteBanner(bannerId) {
+  if (!confirm('このバナーを削除してもよろしいですか？')) return;
+  
+  try {
+    await axios.delete(`/api/admin/banners/${bannerId}`);
+    showToast('バナーを削除しました', 'success');
+    loadAdminBanners();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to delete banner:', error);
+    showToast('バナーの削除に失敗しました', 'error');
+  }
+}
+
+// ============ Blog Management Functions ============
+
+// Load admin blog posts
+async function loadAdminBlog() {
+  try {
+    const response = await axios.get('/api/blog');
+    const posts = response.data;
+    
+    const tbody = document.getElementById('admin-blog-table');
+    if (!tbody) return;
+    
+    if (posts.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 20px;">
+            ${i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事がありません' : 'No blog posts'}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = posts.map(post => `
+      <tr>
+        <td>${post.id}</td>
+        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${post.title}</td>
+        <td>${formatDate(post.published_date)}</td>
+        <td>
+          <div class="admin-actions">
+            <button onclick="editBlog(${post.id})" class="btn-edit">
+              <i class="fas fa-edit"></i> ${i18n.t('common.edit')}
+            </button>
+            <button onclick="deleteBlog(${post.id})" class="btn-delete">
+              <i class="fas fa-trash"></i> ${i18n.t('common.delete')}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (error) {
+    console.error('Failed to load admin blog:', error);
+  }
+}
+
+// Show blog modal
+function showBlogModal(blogId = null) {
+  // Simple prompt-based implementation
+  const title = prompt(i18n.t('admin.blog_title'), '');
+  if (!title) return;
+  
+  const content = prompt(i18n.t('admin.blog_content') + ' (本文を入力してください)', '');
+  if (!content) return;
+  
+  const image_url = prompt(i18n.t('admin.blog_image') + ' (任意)', '');
+  const published_date = prompt(i18n.t('admin.blog_date') + ' (YYYY-MM-DD)', new Date().toISOString().split('T')[0]);
+  
+  if (blogId) {
+    updateBlog(blogId, { title, content, image_url, published_date });
+  } else {
+    createBlog({ title, content, image_url, published_date });
+  }
+}
+
+// Create blog post
+async function createBlog(data) {
+  try {
+    await axios.post('/api/blog', data);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事を作成しました' : 'Blog post created', 'success');
+    loadAdminBlog();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to create blog:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事の作成に失敗しました' : 'Failed to create blog post', 'error');
+  }
+}
+
+// Edit blog post
+async function editBlog(blogId) {
+  try {
+    const response = await axios.get(`/api/blog/${blogId}`);
+    const post = response.data;
+    
+    if (!post) return;
+    
+    const title = prompt(i18n.t('admin.blog_title'), post.title);
+    if (!title) return;
+    
+    const content = prompt(i18n.t('admin.blog_content'), post.content);
+    if (!content) return;
+    
+    const image_url = prompt(i18n.t('admin.blog_image'), post.image_url || '');
+    const published_date = prompt(i18n.t('admin.blog_date'), post.published_date);
+    
+    await updateBlog(blogId, { title, content, image_url, published_date });
+  } catch (error) {
+    console.error('Failed to edit blog:', error);
+  }
+}
+
+// Update blog post
+async function updateBlog(blogId, data) {
+  try {
+    await axios.put(`/api/blog/${blogId}`, data);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事を更新しました' : 'Blog post updated', 'success');
+    loadAdminBlog();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to update blog:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事の更新に失敗しました' : 'Failed to update blog post', 'error');
+  }
+}
+
+// Delete blog post
+async function deleteBlog(blogId) {
+  if (!confirm(i18n.t('admin.blog_confirm_delete'))) return;
+  
+  try {
+    await axios.delete(`/api/blog/${blogId}`);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事を削除しました' : 'Blog post deleted', 'success');
+    loadAdminBlog();
+    await loadInitialData();
+  } catch (error) {
+    console.error('Failed to delete blog:', error);
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事の削除に失敗しました' : 'Failed to delete blog post', 'error');
+  }
+}
+
 // Call load functions when admin page is rendered
 if (window.location.hash === '#admin') {
   setTimeout(() => {
     loadAdminVideos();
     loadAdminAnnouncements();
+    loadAdminBlog();
   }, 100);
 }
 
