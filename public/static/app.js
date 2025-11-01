@@ -504,7 +504,7 @@ function renderHomePage() {
         </div>
       </div>
       
-      <!-- How to Use ClimbHero Section (Collapsible) -->
+      <!-- ClimbHero Purpose Section (Collapsible) -->
       <div class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button 
@@ -519,37 +519,37 @@ function renderHomePage() {
           
           <div id="feature-content" class="hidden mt-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <!-- Step 1: Register -->
+            <!-- Purpose 1: Community Connection -->
             <div class="text-center">
               <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-user-plus text-3xl text-purple-600"></i>
+                <i class="fas fa-users text-3xl text-purple-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step1.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step1.desc')}</p>
             </div>
             
-            <!-- Step 2: Explore -->
+            <!-- Purpose 2: Culture Evolution -->
             <div class="text-center">
               <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-search text-3xl text-blue-600"></i>
+                <i class="fas fa-book-open text-3xl text-blue-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step2.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step2.desc')}</p>
             </div>
             
-            <!-- Step 3: Like -->
+            <!-- Purpose 3: Document Challenges -->
             <div class="text-center">
               <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-heart text-3xl text-red-600"></i>
+                <i class="fas fa-mountain text-3xl text-red-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step3.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step3.desc')}</p>
             </div>
             
-            <!-- Step 4: Post -->
+            <!-- Purpose 4: Authentic Value -->
             <div class="text-center">
               <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-upload text-3xl text-yellow-600"></i>
+                <i class="fas fa-award text-3xl text-yellow-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step4.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step4.desc')}</p>
