@@ -15,7 +15,10 @@
 
 ## 🌐 公開URL
 
-- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2b54fc91.sandbox.novita.ai
+- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
+- **OpenAPI仕様**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai/openapi.json
+- **AI Plugin**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai/.well-known/ai-plugin.json
+- **LLMO**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai/llmo.txt
 - **GitHub**: https://github.com/username/webapp (要設定)
 
 ## ✨ 完成済み機能
