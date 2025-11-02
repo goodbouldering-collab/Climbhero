@@ -226,7 +226,7 @@ button:disabled {
 
 .card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  /* transform: translateY(-2px); */
 }
 
 /* ==================== Video Card with Flip ==================== */
@@ -246,7 +246,7 @@ button:disabled {
 }
 
 .video-card:hover .video-card-inner {
-  transform: rotateY(180deg);
+  /* transform: rotateY(180deg); */
 }
 
 .video-card-front,
@@ -285,7 +285,7 @@ button:disabled {
 }
 
 .video-card:hover .video-thumbnail img {
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 
 /* ==================== Duration Badge ==================== */
@@ -775,13 +775,13 @@ a:hover {
 }
 
 .video-card-compact:hover {
-  transform: translateY(-4px);
+  /* transform: translateY(-4px); */
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   border-color: #667eea;
 }
 
 .video-card-compact:hover::before {
-  opacity: 1;
+  /* opacity: 1; */
 }
 
 .video-info-compact {
@@ -1041,7 +1041,7 @@ a:hover {
 }
 
 .video-card-ranking:hover .ranking-overlay {
-  opacity: 1;
+  /* opacity: 1; */
 }
 
 .ranking-score-large {
@@ -1079,11 +1079,11 @@ a:hover {
 }
 
 .video-card-compact:hover::before {
-  left: 100%;
+  /* left: 100%; */
 }
 
 .video-card-compact:hover .video-thumbnail img {
-  transform: scale(1.1);
+  /* transform: scale(1.1); */
 }
 
 .video-thumbnail img {
