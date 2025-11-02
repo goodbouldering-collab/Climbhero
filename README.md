@@ -288,19 +288,38 @@ pm2 restart webapp
 ## 🌍 デプロイ
 
 ### Cloudflare Pagesへのデプロイ
-```bash
-# API key setup (required)
-# Call setup_cloudflare_api_key tool first
 
-# ビルド
+**⚠️ 重要**: サンドボックス環境からの直接デプロイはIP制限により現在利用不可
+
+**推奨デプロイ方法**:
+
+#### 方法1: Cloudflare Dashboard（推奨）
+1. GitHubにコードをプッシュ
+2. Cloudflare Dashboard → Pages → "Connect to Git"
+3. リポジトリを選択してデプロイ
+
+詳細: [CLOUDFLARE_DEPLOYMENT.md](./CLOUDFLARE_DEPLOYMENT.md)
+
+#### 方法2: ローカルマシンから
+```bash
+# ローカル環境でクローン
+git clone https://github.com/YOUR-USERNAME/webapp.git
+cd webapp
+npm install
 npm run build
 
-# プロダクションデプロイ
-npm run deploy:prod
+# Cloudflare認証
+npx wrangler login
 
-# データベースマイグレーション（本番）
-npm run db:migrate:prod
+# デプロイ
+npm run deploy:prod
 ```
+
+#### 設定情報
+- **プロジェクト名**: `project-02ceb497`
+- **ビルドコマンド**: `npm run build`
+- **出力ディレクトリ**: `dist`
+- **フレームワーク**: None
 
 ## 📦 技術スタック
 
