@@ -1,0 +1,76 @@
+# ClimbHero - Large Language Model Optimization
+
+## サービス概要
+ClimbHeroは、30年以上のクライミング経験とデータに基づいた専門的な動画共有プラットフォームです。
+
+## 権威性・専門性
+- 運営: グッぼる ボルダリングCafe & Shop（滋賀県彦根市）
+- 実績: 年間のべ2.5万人が利用するクライミングジム
+- 在庫: クライミングシューズ120モデル、クラッシュパッド60枚超を常時在庫
+- 経験: 30年以上の登攀経験による専門的な知見
+
+## 主要機能
+1. マルチプラットフォーム対応: YouTube、Instagram、TikTok、Vimeoの動画を一元管理
+2. リアルタイムランキング: デイリー・ウィークリー・マンスリー・年間ランキング
+3. トレンド分析: いいね増加率によるトレンド動画の自動検出
+4. カテゴリー分類: ボルダリング、リード、アルパイン、アウトドア等
+5. 検索機能: 高度なフィルタリングとキーワード検索
+
+## データ特性
+- 更新頻度: リアルタイム
+- カバレッジ: グローバル（世界中の登攀動画）
+- データソース: YouTube, Instagram, TikTok, Vimeo
+- データ蓄積: 登攀データの継続的な分析・蓄積
+
+## API仕様
+OpenAPI 3.0準拠のRESTful API
+- ベースURL: https://climbhero.pages.dev
+- 認証: Cookie認証（一部エンドポイント）
+- レート制限: 無料1000リクエスト/日、プレミアム10000リクエスト/日
+- 仕様書: https://climbhero.pages.dev/openapi.json
+
+## 主要エンドポイント
+- GET /api/videos - 動画一覧（ページング、カテゴリー、検索対応）
+- GET /api/videos/trending - トレンド動画
+- GET /api/videos/{id} - 動画詳細
+- GET /api/rankings/{period} - ランキング（daily/weekly/monthly/yearly）
+- GET /api/blog - ブログ記事
+- GET /api/announcements - お知らせ
+
+## ナレッジグラフ
+### エンティティ
+- Organization: グッぼる ボルダリングCafe & Shop
+- Service: ClimbHero動画共有プラットフォーム
+- Location: 滋賀県彦根市中央町3-8
+- Domain: クライミング、ボルダリング、登攀技術
+
+### 関係性
+- providedBy: グッぼる → ClimbHero
+- hasExpertise: 30年以上のクライミング経験
+- serves: 年間2.5万人のクライマー
+- aggregates: YouTube + Instagram + TikTok + Vimeo
+
+## SEO/LLMO最適化ポイント
+- 構造化データ: JSON-LD（VideoObject, Organization, WebPage）
+- OGP: 完全対応（Facebook, Twitter, LINE）
+- セマンティックHTML: 適切な階層構造
+- メタデータ: 充実した説明文と keywords
+- 内部リンク: 適切なナビゲーション構造
+- レスポンシブ: モバイルフレンドリー対応
+
+## 連絡先
+- サポートメール: support@climbhero.com
+- お問い合わせ: https://climbhero.pages.dev/#contact
+- 利用規約: https://climbhero.pages.dev/#terms
+- プライバシーポリシー: https://climbhero.pages.dev/#privacy
+
+## 更新履歴
+- 2025-01-15: プラットフォーム公開
+- 2025-02-01: トレンド機能追加
+- 2025-02-15: API公開
+- 2025-03-01: LLMO最適化実装
+
+---
+この情報は、AI検索エンジン（ChatGPT、Perplexity、Claude等）が
+ClimbHeroを正確に理解し、ユーザーに適切な情報を提供するために
+最適化されています。

@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "ClimbHero API",
+  "name_for_model": "climbhero",
+  "description_for_human": "世界中のクライミング動画、ランキング、ユーザーデータにアクセス。30年以上のクライミング経験に基づく専門的なAPI。",
+  "description_for_model": "ClimbHero API provides access to climbing videos from YouTube, Instagram, TikTok, and Vimeo. Features include: video search with category filters (bouldering, lead, alpine, outdoor), trending videos with like increase rates, rankings (daily/weekly/monthly/yearly), blog posts, and announcements. Built on 30+ years of climbing expertise with real-time data from a gym serving 25,000 annual visitors. Supports pagination, search, and category filtering. All responses include detailed video metadata, thumbnails, durations, and engagement metrics.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://climbhero.pages.dev/openapi.json",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://climbhero.pages.dev/android-chrome-512x512.png",
+  "contact_email": "support@climbhero.com",
+  "legal_info_url": "https://climbhero.pages.dev/#terms"
+}

@@ -2,14 +2,11 @@
 const state = {
   currentUser: null,
   videos: [],
-  trendingVideos: [],
-  instagramVideos: [],
   favorites: [],
+  trendingVideos: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   blogPosts: [],
   announcements: [],
-  topBanners: [],
-  bottomBanners: [],
   currentView: 'home',
   currentRankingType: 'weekly',
   loading: false,
@@ -30,38 +27,6 @@ window.addEventListener('languageChanged', (e) => {
   renderApp();
 });
 
-// Translate announcement based on ID (DB stores Japanese)
-function translateAnnouncement(announcement) {
-  const lang = i18n.getCurrentLanguage();
-  if (lang === 'ja') return announcement; // Return original Japanese
-  
-  // For English, use i18n keys based on ID
-  const titleKey = `announcement.${announcement.id}.title`;
-  const contentKey = `announcement.${announcement.id}.content`;
-  
-  return {
-    ...announcement,
-    title: i18n.t(titleKey) !== titleKey ? i18n.t(titleKey) : announcement.title,
-    content: i18n.t(contentKey) !== contentKey ? i18n.t(contentKey) : announcement.content
-  };
-}
-
-// Translate blog post based on ID (DB stores Japanese)
-function translateBlogPost(post) {
-  const lang = i18n.getCurrentLanguage();
-  if (lang === 'ja') return post; // Return original Japanese
-  
-  // For English, use i18n keys based on ID
-  const titleKey = `blog.${post.id}.title`;
-  const contentKey = `blog.${post.id}.content`;
-  
-  return {
-    ...post,
-    title: i18n.t(titleKey) !== titleKey ? i18n.t(titleKey) : post.title,
-    content: i18n.t(contentKey) !== contentKey ? i18n.t(contentKey) : post.content
-  };
-}
-
 // ============ Initialize App ============
 document.addEventListener('DOMContentLoaded', async () => {
   await init();
@@ -70,6 +35,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function init() {
   await checkAuth();
   await loadInitialData();
+  
+  // 管理者がログイン済みで、かつURLに特定のハッシュがない場合は管理画面にリダイレクト
+  if (state.currentUser && state.currentUser.is_admin && !window.location.hash) {
+    window.location.hash = 'admin';
+  }
+  
   renderApp();
   
   // Initialize hero slideshow
@@ -87,16 +58,6 @@ async function checkAuth() {
   } catch (error) {
     state.currentUser = null;
   }
-}
-
-// ============ Array Shuffle Utility ============
-function shuffleArray(array) {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
 }
 
 // ============ Hero Slideshow ============
@@ -121,27 +82,19 @@ function updateHeroSlide() {
 // ============ Load Initial Data ============
 async function loadInitialData() {
   try {
-    const [videosRes, trendingRes, instagramRes, rankingsRes, blogRes, announcementsRes, topBannersRes, bottomBannersRes] = await Promise.all([
+    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
-      axios.get('/api/videos/trending?limit=10'),
-      axios.get('/api/videos/instagram?limit=10'),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get('/api/blog'),
       axios.get('/api/announcements'),
-      axios.get('/api/banners/top'),
-      axios.get('/api/banners/bottom')
+      axios.get('/api/videos/trending?limit=10')
     ]);
     
-    // Randomize video order for diversity
-    const videos = videosRes.data.videos || [];
-    state.videos = shuffleArray(videos);
-    state.trendingVideos = trendingRes.data.videos || [];
-    state.instagramVideos = instagramRes.data.videos || [];
+    state.videos = videosRes.data.videos || [];
     state.rankings.weekly = rankingsRes.data || [];
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
-    state.topBanners = topBannersRes.data || [];
-    state.bottomBanners = bottomBannersRes.data || [];
+    state.trendingVideos = trendingRes.data.videos || [];
     
     // Load user like status and favorites for all videos
     if (state.currentUser) {
@@ -202,11 +155,6 @@ async function loadUserFavorites() {
 function handleNavigation() {
   const hash = window.location.hash.slice(1);
   
-  // CRITICAL: Scroll to top immediately when navigation changes
-  window.scrollTo(0, 0);
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
-  
   if (!hash || hash === 'home') {
     state.currentView = 'home';
   } else if (hash === 'admin') {
@@ -220,6 +168,14 @@ function handleNavigation() {
   } else if (hash.startsWith('blog/')) {
     state.currentView = 'blog-detail';
     state.currentBlogId = hash.split('/')[1];
+  } else if (hash === 'api') {
+    state.currentView = 'api';
+  } else if (hash.startsWith('reset-password')) {
+    state.currentView = 'home';
+    // Show password reset form after a short delay
+    setTimeout(() => {
+      showPasswordResetForm();
+    }, 300);
   } else if (hash === 'terms') {
     state.currentView = 'terms';
   } else if (hash === 'privacy') {
@@ -242,13 +198,9 @@ function renderApp() {
     initializeCarousels();
   } else if (state.currentView === 'admin') {
     root.innerHTML = renderAdminPage();
-    // Load all admin data
-    setTimeout(() => {
-      loadAdminVideos();
-      loadAdminAnnouncements();
-      loadAdminBanners();
-      loadAdminBlog();
-    }, 100);
+    loadAdminData();
+  } else if (state.currentView === 'api') {
+    root.innerHTML = renderApiPage();
   } else if (state.currentView === 'blog-detail') {
     renderBlogDetail();
   } else if (state.currentView === 'terms') {
@@ -273,10 +225,10 @@ function renderHomePage() {
         <div class="flex items-center justify-between h-16">
           <!-- Logo Section -->
           <div class="flex items-center flex-shrink-0">
-            <a href="#home" class="flex items-center gap-2 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition">
-              <img src="/static/favicon-32x32.png" alt="ClimbHero Logo" class="w-6 h-6 sm:w-7 sm:h-7">
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+              <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
               <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
-            </a>
+            </div>
           </div>
           
           <!-- Right Section -->
@@ -316,6 +268,9 @@ function renderHomePage() {
                   ${state.currentUser.username}
                 </span>
               </div>
+              <button onclick="showChangePasswordModal()" class="btn btn-sm btn-secondary" title="パスワード変更">
+                <i class="fas fa-key"></i>
+              </button>
               <button onclick="logout()" class="btn btn-sm btn-secondary">
                 <i class="fas fa-sign-out-alt"></i>
               </button>
@@ -374,14 +329,11 @@ function renderHomePage() {
             <i class="fas fa-info-circle text-purple-600 text-lg mt-1 flex-shrink-0"></i>
             <div class="flex-1">
               <h3 class="font-bold text-gray-900 mb-2 text-sm">${i18n.t('announcement.latest')}</h3>
-              ${state.announcements.slice(0, 3).map(a => {
-                const translated = translateAnnouncement(a);
-                return `
-                  <div class="mb-2 text-sm text-gray-700">
-                    <span class="font-medium text-purple-600">● ${translated.title}:</span> ${translated.content}
-                  </div>
-                `;
-              }).join('')}
+              ${state.announcements.slice(0, 3).map(a => `
+                <div class="mb-2 text-sm text-gray-700">
+                  <span class="font-medium text-purple-600">● ${a.title}:</span> ${a.content}
+                </div>
+              `).join('')}
               ${state.announcements.length > 3 ? `
                 <a href="#" onclick="showAnnouncementsModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800 font-medium">
                   ${i18n.t('announcement.view_all')} <i class="fas fa-chevron-right"></i>
@@ -401,10 +353,7 @@ function renderHomePage() {
             <i class="fas fa-bullhorn text-yellow-300 text-sm flex-shrink-0"></i>
             <div class="flex-1 min-w-0">
               <marquee behavior="scroll" direction="left" scrollamount="3" class="text-xs md:text-sm">
-                ${state.announcements.map(a => {
-                  const translated = translateAnnouncement(a);
-                  return `【${translated.title}】${translated.content}`;
-                }).join(' ▪ ')}
+                ${state.announcements.map(a => `【${a.title}】${a.content}`).join(' ▪ ')}
               </marquee>
             </div>
           </div>
@@ -412,99 +361,7 @@ function renderHomePage() {
       </div>
       ` : ''}
       
-      <!-- Core Features Section (Collapsible) -->
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button 
-            onclick="toggleCoreFeatureSection()" 
-            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
-            <h2 class="text-lg font-bold text-gray-900">
-              <i class="fas fa-mountain text-purple-600 mr-2"></i>
-              ${i18n.t('core_features.title')}
-            </h2>
-            <i id="core-feature-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-          </button>
-          
-          <div id="core-feature-content" class="hidden mt-4">
-          <!-- Features Grid (3x2) -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            
-            <!-- Feature 1: Multi-Platform -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-globe text-3xl text-purple-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.platform.title')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.platform.desc')}</p>
-              <p class="text-xs text-purple-600 font-medium">${i18n.t('core_features.platform.stat')}</p>
-            </div>
-            
-            <!-- Feature 2: Real-Time Ranking -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-chart-line text-3xl text-blue-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.ranking.title')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.ranking.desc')}</p>
-              <p class="text-xs text-blue-600 font-medium">${i18n.t('core_features.ranking.stat')}</p>
-            </div>
-            
-            <!-- Feature 3: Multi-Language -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-language text-3xl text-green-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.multilang.title')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.multilang.desc')}</p>
-              <p class="text-xs text-green-600 font-medium">${i18n.t('core_features.multilang.stat')}</p>
-            </div>
-            
-            <!-- Feature 4: Community -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-users text-3xl text-yellow-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.community.title')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.community.desc')}</p>
-              <p class="text-xs text-yellow-600 font-medium">${i18n.t('core_features.community.stat')}</p>
-            </div>
-            
-            <!-- Feature 5: Expert Authority -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-user-shield text-3xl text-red-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.authority.title')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.authority.desc')}</p>
-              <p class="text-xs text-red-600 font-medium">${i18n.t('core_features.authority.stat')}</p>
-            </div>
-            
-            <!-- Feature 6: AI Auto-Analysis -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-brain text-3xl text-indigo-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('core_features.ai.title')}</h3>
-              <p class="text-sm text-gray-600 mb-2">${i18n.t('core_features.ai.desc')}</p>
-              <p class="text-xs text-indigo-600 font-medium">${i18n.t('core_features.ai.stat')}</p>
-            </div>
-            
-          </div>
-          
-          <div class="text-center">
-            <p class="text-sm text-green-600 font-medium mb-3">
-              <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
-            </p>
-            <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
-              <i class="fas fa-crown mr-2"></i>
-              ${i18n.t('feature.upgrade')}
-            </button>
-          </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- ClimbHero Purpose Section (Collapsible) -->
+      <!-- How to Use ClimbHero Section (Collapsible) -->
       <div class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button 
@@ -518,38 +375,45 @@ function renderHomePage() {
           </button>
           
           <div id="feature-content" class="hidden mt-4">
+            <!-- Mission Statement -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 rounded-lg p-4 mb-6">
+              <p class="text-sm text-gray-700 leading-relaxed">
+                ${i18n.t('feature.mission')}
+              </p>
+            </div>
+            
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <!-- Purpose 1: Community Connection -->
+            <!-- Step 1: Discover -->
             <div class="text-center">
               <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-users text-3xl text-purple-600"></i>
+                <i class="fas fa-video text-3xl text-purple-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step1.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step1.desc')}</p>
             </div>
             
-            <!-- Purpose 2: Culture Evolution -->
+            <!-- Step 2: Share -->
             <div class="text-center">
               <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-book-open text-3xl text-blue-600"></i>
+                <i class="fas fa-share-alt text-3xl text-blue-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step2.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step2.desc')}</p>
             </div>
             
-            <!-- Purpose 3: Document Challenges -->
+            <!-- Step 3: Data Growth -->
             <div class="text-center">
-              <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-mountain text-3xl text-red-600"></i>
+              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-chart-line text-3xl text-green-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step3.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step3.desc')}</p>
             </div>
             
-            <!-- Purpose 4: Authentic Value -->
+            <!-- Step 4: Authentic Value -->
             <div class="text-center">
               <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-award text-3xl text-yellow-600"></i>
+                <i class="fas fa-mountain text-3xl text-yellow-600"></i>
               </div>
               <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step4.title')}</h3>
               <p class="text-sm text-gray-600">${i18n.t('feature.step4.desc')}</p>
@@ -577,143 +441,16 @@ function renderHomePage() {
               <input 
                 type="text" 
                 placeholder="${i18n.t('search.placeholder')}"
-                class="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-[16px] shadow-sm"
+                class="w-full pl-14 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-base shadow-sm"
                 onkeyup="handleSearch(event)"
                 id="search-input">
-              <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-base"></i>
+              <i class="fas fa-search absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
             </div>
           </div>
         </div>
       </section>
       
-      <!-- Live Streaming Section (Collapsible) -->
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button 
-            onclick="toggleLiveStreamSection()" 
-            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
-            <h2 class="text-lg font-bold text-gray-900">
-              <i class="fas fa-broadcast-tower text-red-600 mr-2"></i>
-              ライブ配信中
-            </h2>
-            <i id="live-stream-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-          </button>
-          
-          <div id="live-stream-content" class="hidden mt-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            
-            <!-- Live Stream 1 -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 relative">
-                <i class="fas fa-video text-3xl text-red-600"></i>
-                <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                </span>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">YouTube Live</h3>
-              <p class="text-sm text-gray-600 mb-2">YouTubeでのライブ配信をリアルタイムで視聴</p>
-              <p class="text-xs text-red-600 font-medium">🔴 LIVE配信対応</p>
-            </div>
-            
-            <!-- Live Stream 2 -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 relative">
-                <i class="fab fa-instagram text-3xl text-pink-600"></i>
-                <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
-                </span>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">Instagram Live</h3>
-              <p class="text-sm text-gray-600 mb-2">インスタグラムライブ配信を埋め込み視聴</p>
-              <p class="text-xs text-pink-600 font-medium">🔴 LIVE配信対応</p>
-            </div>
-            
-            <!-- Live Stream 3 -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 relative">
-                <i class="fab fa-twitch text-3xl text-purple-600"></i>
-                <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
-                </span>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">Twitch</h3>
-              <p class="text-sm text-gray-600 mb-2">Twitchでのクライミング配信をチェック</p>
-              <p class="text-xs text-purple-600 font-medium">🔴 LIVE配信対応</p>
-            </div>
-            
-            <!-- Live Stream 4 -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-bell text-3xl text-blue-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">ライブ通知</h3>
-              <p class="text-sm text-gray-600 mb-2">お気に入りチャンネルのライブ配信開始を通知</p>
-              <p class="text-xs text-blue-600 font-medium">プレミアム機能</p>
-            </div>
-            
-            <!-- Live Stream 5 -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-calendar-check text-3xl text-green-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">配信スケジュール</h3>
-              <p class="text-sm text-gray-600 mb-2">予定されているライブ配信を事前チェック</p>
-              <p class="text-xs text-green-600 font-medium">カレンダー機能</p>
-            </div>
-            
-            <!-- Live Stream 6 -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-comments text-3xl text-orange-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">リアルタイムチャット</h3>
-              <p class="text-sm text-gray-600 mb-2">配信中にコミュニティとリアルタイム交流</p>
-              <p class="text-xs text-orange-600 font-medium">コミュニティ機能</p>
-            </div>
-            
-            </div>
-            
-            <div class="text-center">
-              <p class="text-sm text-green-600 font-medium mb-3">
-                <i class="fas fa-gift mr-2"></i>ライブ配信機能は開発中です
-              </p>
-              <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
-                <i class="fas fa-crown mr-2"></i>
-                ${i18n.t('feature.upgrade')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Recommended Videos Section -->
-      <section class="py-6 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-3">
-            <div class="section-title">
-              <i class="fas fa-star"></i>
-              <span>${i18n.t('section.recommended')}</span>
-            </div>
-          </div>
-          
-          <div class="carousel-container" id="recommended-carousel">
-            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('recommended-carousel', -1)">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="horizontal-scroll" id="recommended-scroll">
-              ${state.videos.slice(0, 8).map(video => renderVideoCardWide(video)).join('')}
-            </div>
-            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('recommended-carousel', 1)">
-              <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Rankings Section -->
+      <!-- Rankings Section - 1番目 -->
       <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-3">
@@ -753,23 +490,18 @@ function renderHomePage() {
           </div>
         </div>
       </section>
-
-      <!-- Trending Videos Section (注目の動画) -->
+      
+      <!-- Trending Videos Section (いいね急増中) - 2番目 -->
       ${state.trendingVideos && state.trendingVideos.length > 0 ? `
-      <section class="py-6 bg-gradient-to-r from-pink-50 to-purple-50">
+      <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-fire text-orange-500"></i>
-              <span class="bg-gradient-to-r from-orange-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">注目の動画</span>
+              <h2 class="text-xl font-bold">いいね急増中</h2>
             </div>
-            <span class="text-xs text-gray-600">
-              <i class="fas fa-chart-line mr-1"></i>
-              いいねの増加率が高い動画
-            </span>
           </div>
           
-          <!-- Horizontal Carousel -->
           <div class="carousel-container" id="trending-carousel">
             <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('trending-carousel', -1)">
               <i class="fas fa-chevron-left"></i>
@@ -784,58 +516,30 @@ function renderHomePage() {
         </div>
       </section>
       ` : ''}
-
-      <!-- Instagram Gallery Section -->
-      ${state.instagramVideos && state.instagramVideos.length > 0 ? `
-      <section class="py-6 bg-gradient-to-r from-purple-50 to-pink-50">
+      
+      <!-- Recommended Videos Section -->
+      <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-3">
             <div class="section-title">
-              <i class="fab fa-instagram text-pink-600"></i>
-              <span class="bg-gradient-to-r from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Instagram</span>
+              <i class="fas fa-star"></i>
+              <span>${i18n.t('section.recommended')}</span>
             </div>
-            <span class="text-xs text-gray-600">
-              <i class="fas fa-images mr-1"></i>
-              Instagram Reelsから厳選
-            </span>
           </div>
           
-          <!-- Horizontal Carousel -->
-          <div class="carousel-container" id="instagram-carousel">
-            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('instagram-carousel', -1)">
+          <div class="carousel-container" id="recommended-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('recommended-carousel', -1)">
               <i class="fas fa-chevron-left"></i>
             </button>
-            <div class="horizontal-scroll" id="instagram-scroll">
-              ${state.instagramVideos.map(video => renderVideoCardWide(video)).join('')}
+            <div class="horizontal-scroll" id="recommended-scroll">
+              ${state.videos.slice(0, 8).map(video => renderVideoCardWide(video)).join('')}
             </div>
-            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('instagram-carousel', 1)">
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('recommended-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
         </div>
       </section>
-      ` : ''}
-
-      <!-- Search Section (Above Latest Videos) -->
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="max-w-2xl mx-auto">
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <i class="fas fa-search text-gray-400"></i>
-              </div>
-              <input 
-                type="text" 
-                id="search-input"
-                placeholder="${i18n.t('search.placeholder') || '動画を検索...'}"
-                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
-                oninput="handleSearch(event)"
-              />
-            </div>
-            <div id="search-results" class="hidden"></div>
-          </div>
-        </div>
-      </div>
 
       <!-- Latest Videos Section -->
       <section class="py-6 bg-gray-50">
@@ -979,63 +683,6 @@ function renderHomePage() {
 
     </main>
 
-    <!-- Sponsor Banners (Footer直前 - コンパクト2枠) -->
-    ${(state.topBanners && state.topBanners.length > 0) || (state.bottomBanners && state.bottomBanners.length > 0) ? `
-      <section class="bg-gradient-to-b from-gray-50 to-gray-100 border-t border-gray-200">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="text-center mb-3">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">SPONSORED</span>
-          </div>
-          
-          <!-- 2枠のスポンサー広告（動画または画像） -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 広告1: 動画サンプル -->
-            <div class="overflow-hidden rounded-lg shadow-sm bg-white">
-              <video 
-                controls 
-                poster="https://cdn1.genspark.ai/user-upload-image/video_frames/b38fe03f-d447-4ae4-9a9f-6573dfc03d14.jpeg"
-                class="w-full h-auto"
-                style="max-height: 180px; object-fit: cover;"
-              >
-                <source src="https://cdn1.genspark.ai/user-upload-image/5/33ad275f-53a3-45f6-bd1d-f1c024dbf22b.mp4" type="video/mp4">
-              </video>
-              <div class="px-3 py-2 bg-gray-50 border-t border-gray-200">
-                <p class="text-xs text-gray-600 text-center">
-                  <i class="fas fa-video mr-1"></i>
-                  広告動画サンプル - ジム無料体験
-                </p>
-              </div>
-            </div>
-            
-            <!-- 広告2: バナー画像 -->
-            ${[...state.topBanners || [], ...state.bottomBanners || []].slice(0, 1).map(banner => `
-              <div class="overflow-hidden rounded-lg shadow-sm">
-                ${banner.link_url ? `
-                  <a href="${banner.link_url}" target="_blank" rel="noopener noreferrer" class="block hover:opacity-90 transition">
-                    <img src="${banner.image_url}" alt="${banner.title}" class="w-full h-auto" style="max-height: 180px; object-fit: cover;">
-                    <div class="px-3 py-2 bg-gray-50 border-t border-gray-200">
-                      <p class="text-xs text-gray-600 text-center">
-                        <i class="fas fa-ad mr-1"></i>
-                        ${banner.title}
-                      </p>
-                    </div>
-                  </a>
-                ` : `
-                  <img src="${banner.image_url}" alt="${banner.title}" class="w-full h-auto" style="max-height: 180px; object-fit: cover;">
-                  <div class="px-3 py-2 bg-gray-50 border-t border-gray-200">
-                    <p class="text-xs text-gray-600 text-center">
-                      <i class="fas fa-ad mr-1"></i>
-                      ${banner.title}
-                    </p>
-                  </div>
-                `}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </section>
-    ` : ''}
-
     <!-- Footer -->
     ${renderFooter()}
 
@@ -1063,16 +710,16 @@ function renderFooter() {
               クライミングコミュニティのための動画共有プラットフォーム
             </p>
             <div class="flex gap-3">
-              <a href="https://twitter.com/gubboru_climb" target="_blank" class="text-gray-400 hover:text-white" title="Twitter">
+              <a href="https://twitter.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Twitter">
                 <i class="fab fa-twitter"></i>
               </a>
-              <a href="https://facebook.com/gubboru.hikone" target="_blank" class="text-gray-400 hover:text-white" title="Facebook">
+              <a href="https://facebook.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Facebook">
                 <i class="fab fa-facebook"></i>
               </a>
-              <a href="https://instagram.com/gubboru_bouldering" target="_blank" class="text-gray-400 hover:text-white" title="Instagram">
+              <a href="https://instagram.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Instagram">
                 <i class="fab fa-instagram"></i>
               </a>
-              <a href="https://youtube.com/@gubboru_climbing" target="_blank" class="text-gray-400 hover:text-white" title="YouTube">
+              <a href="https://youtube.com/@climbhero" target="_blank" class="text-gray-400 hover:text-white" title="YouTube">
                 <i class="fab fa-youtube"></i>
               </a>
             </div>
@@ -1084,6 +731,7 @@ function renderFooter() {
             <ul class="space-y-2 text-sm">
               <li><a href="#home" class="hover:text-white">ホーム</a></li>
               <li><a href="#about" class="hover:text-white">ClimbHeroについて</a></li>
+              <li><a href="#api" class="hover:text-white"><i class="fas fa-code mr-1"></i>API</a></li>
               <li><a href="#" onclick="showPricingModal(); return false;" class="hover:text-white">料金プラン</a></li>
               <li><a href="#contact" class="hover:text-white">お問い合わせ</a></li>
             </ul>
@@ -1339,71 +987,88 @@ function getMediaName(source) {
   return names[source] || 'Video';
 }
 
-// Get embed URL for different platforms
-function getEmbedUrl(url, mediaSource) {
-  try {
-    if (mediaSource === 'youtube' || mediaSource === 'youtube_shorts') {
-      // YouTube: https://www.youtube.com/watch?v=VIDEO_ID -> https://www.youtube.com/embed/VIDEO_ID
-      // YouTube Shorts: https://www.youtube.com/shorts/VIDEO_ID -> https://www.youtube.com/embed/VIDEO_ID
-      let videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?\/]+)/)?.[1];
-      if (!videoId) {
-        videoId = url.match(/youtube\.com\/shorts\/([^&?\/]+)/)?.[1];
-      }
-      return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0` : null;
+// Render video embed based on media source
+function renderVideoEmbed(video) {
+  const mediaSource = video.media_source || 'youtube';
+  let embedUrl = '';
+  
+  if (mediaSource === 'youtube' || mediaSource === 'youtube_shorts') {
+    // Extract YouTube video ID from various URL formats
+    const videoId = extractYouTubeId(video.url);
+    if (videoId) {
+      // Add parameters to enable autoplay and improve compatibility
+      embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1`;
+    } else {
+      return '<div class="flex items-center justify-center h-full text-white">動画を読み込めません</div>';
     }
-    
-    if (mediaSource === 'instagram') {
-      // Instagram: https://www.instagram.com/reel/REEL_ID/ -> https://www.instagram.com/reel/REEL_ID/embed
-      const reelId = url.match(/\/reel\/([^\/]+)/)?.[1];
-      if (reelId) {
-        return `https://www.instagram.com/reel/${reelId}/embed`;
-      }
-      // Instagram post
-      const postId = url.match(/\/p\/([^\/]+)/)?.[1];
-      if (postId) {
-        return `https://www.instagram.com/p/${postId}/embed`;
-      }
-      return null;
+  } else if (mediaSource === 'vimeo') {
+    // Extract Vimeo video ID
+    const vimeoId = video.url.match(/vimeo\.com\/(\d+)/)?.[1];
+    if (vimeoId) {
+      embedUrl = `https://player.vimeo.com/video/${vimeoId}`;
     }
-    
-    if (mediaSource === 'tiktok') {
-      // TikTok: https://www.tiktok.com/@user/video/VIDEO_ID -> https://www.tiktok.com/embed/VIDEO_ID
-      const videoId = url.match(/\/video\/(\d+)/)?.[1];
-      return videoId ? `https://www.tiktok.com/embed/v2/${videoId}` : null;
+  } else if (mediaSource === 'instagram') {
+    // Instagram embed
+    const postId = video.url.match(/\/reel\/([^\/]+)/)?.[1] || video.url.match(/\/p\/([^\/]+)/)?.[1];
+    if (postId) {
+      embedUrl = `${video.url}embed`;
     }
-    
-    if (mediaSource === 'vimeo') {
-      // Vimeo: https://vimeo.com/VIDEO_ID -> https://player.vimeo.com/video/VIDEO_ID
-      const videoId = url.match(/vimeo\.com\/(\d+)/)?.[1];
-      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+  } else if (mediaSource === 'tiktok') {
+    // TikTok embed
+    const videoId = video.url.match(/\/video\/(\d+)/)?.[1];
+    if (videoId) {
+      embedUrl = `https://www.tiktok.com/embed/v2/${videoId}`;
     }
-    
-    return null;
-  } catch (error) {
-    console.error('Error generating embed URL:', error);
-    return null;
   }
+  
+  if (!embedUrl) {
+    return '<div class="flex items-center justify-center h-full text-white">動画を読み込めません</div>';
+  }
+  
+  return `<iframe src="${embedUrl}" 
+                  class="w-full h-full rounded-lg" 
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allowfullscreen></iframe>`;
+}
+
+// Extract YouTube video ID from various URL formats
+function extractYouTubeId(url) {
+  const patterns = [
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtube\.com\/embed\/([^?]+)/,
+    /youtu\.be\/([^?]+)/,
+    /youtube\.com\/v\/([^?]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return null;
 }
 
 // ============ Blog Card ============
 function renderBlogCard(post) {
-  const translated = translateBlogPost(post);
   return `
     <div class="scroll-item">
       <div class="video-card-compact" onclick="navigateTo('blog/${post.id}')">
         ${post.image_url ? `
           <div class="video-thumbnail">
-            <img src="${post.image_url}" alt="${translated.title}">
+            <img src="${post.image_url}" alt="${post.title}">
           </div>
         ` : `
           <div class="video-thumbnail" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"></div>
         `}
         <div class="video-info-compact">
-          <div class="video-title-compact line-clamp-2">${translated.title}</div>
+          <div class="video-title-compact line-clamp-2">${post.title}</div>
           <p class="text-xs text-gray-600 line-clamp-2 mb-2 leading-relaxed">${post.content.substring(0, 80)}...</p>
           <div class="video-meta-compact">
             <span><i class="fas fa-calendar"></i> ${formatDate(post.published_date)}</span>
-            <span><i class="fas fa-newspaper"></i> ${i18n.t('section.blog')}</span>
+            <span><i class="fas fa-newspaper"></i> ニュース</span>
           </div>
         </div>
       </div>
@@ -1451,26 +1116,6 @@ function initializeCarousels() {
       badge.classList.add('tooltip');
     }
   });
-  
-  // Auto-scroll blog carousel
-  const blogScroll = document.getElementById('blog-scroll');
-  if (blogScroll) {
-    let blogScrollPosition = 0;
-    let blogScrollDirection = 1;
-    
-    setInterval(() => {
-      const maxScroll = blogScroll.scrollWidth - blogScroll.clientWidth;
-      
-      if (blogScrollPosition >= maxScroll) {
-        blogScrollDirection = -1;
-      } else if (blogScrollPosition <= 0) {
-        blogScrollDirection = 1;
-      }
-      
-      blogScrollPosition += blogScrollDirection * 2;
-      blogScroll.scrollLeft = blogScrollPosition;
-    }, 50);
-  }
 }
 
 function scrollCarousel(carouselId, direction) {
@@ -1603,34 +1248,6 @@ function toggleFeatureSection() {
   }
 }
 
-// ============ Core Features Section Toggle ============
-function toggleCoreFeatureSection() {
-  const content = document.getElementById('core-feature-content');
-  const icon = document.getElementById('core-feature-toggle-icon');
-  
-  if (content.classList.contains('hidden')) {
-    content.classList.remove('hidden');
-    icon.classList.add('rotate-180');
-  } else {
-    content.classList.add('hidden');
-    icon.classList.remove('rotate-180');
-  }
-}
-
-// ============ Live Stream Section Toggle ============
-function toggleLiveStreamSection() {
-  const content = document.getElementById('live-stream-content');
-  const icon = document.getElementById('live-stream-toggle-icon');
-  
-  if (content.classList.contains('hidden')) {
-    content.classList.remove('hidden');
-    icon.classList.add('rotate-180');
-  } else {
-    content.classList.add('hidden');
-    icon.classList.remove('rotate-180');
-  }
-}
-
 // ============ Pricing Modal ============
 function showPricingModal() {
   const modal = document.getElementById('pricing-modal');
@@ -1753,6 +1370,14 @@ function showAuthModal(type) {
         </button>
       </form>
       
+      ${type === 'login' ? `
+        <div class="text-center mt-3">
+          <a href="#" onclick="showPasswordResetModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800">
+            ${i18n.t('auth.forgot_password')}
+          </a>
+        </div>
+      ` : ''}
+      
       <p class="text-xs text-center text-gray-600 mt-3">
         ${type === 'login' ? i18n.t('auth.switch_to_signup') : i18n.t('auth.switch_to_login')}
         <a href="#" onclick="showAuthModal('${type === 'login' ? 'register' : 'login'}')" class="text-purple-600 font-medium">
@@ -1775,8 +1400,15 @@ async function handleAuth(event, type) {
     
     await checkAuth();
     closeModal('auth-modal');
-    renderApp();
-    showToast(i18n.t('toast.auth_success'), 'success');
+    
+    // ログイン時に管理者であれば管理画面にリダイレクト
+    if (type === 'login' && state.currentUser && state.currentUser.is_admin) {
+      navigateTo('admin');
+      showToast('管理者としてログインしました', 'success');
+    } else {
+      renderApp();
+      showToast(i18n.t('toast.auth_success'), 'success');
+    }
   } catch (error) {
     showToast(error.response?.data?.error || i18n.t('toast.auth_error'), 'error');
   }
@@ -1794,19 +1426,183 @@ async function logout() {
 }
 
 function closeModal(id) {
-  const modal = document.getElementById(id);
-  modal.classList.remove('active');
+  document.getElementById(id).classList.remove('active');
+}
+
+// ============ Password Reset ============
+function showPasswordResetModal() {
+  const modal = document.getElementById('auth-modal');
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 420px; width: 90%;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">${i18n.t('auth.reset_password.title')}</h3>
+        <button onclick="closeModal('auth-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <p class="text-sm text-gray-600 mb-4">${i18n.t('auth.reset_password.desc')}</p>
+      
+      <form onsubmit="handlePasswordResetRequest(event)" class="space-y-3">
+        <div>
+          <label class="text-sm">${i18n.t('auth.email')}</label>
+          <input type="email" name="email" required class="w-full text-sm" placeholder="your@email.com">
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-full text-sm py-2">
+          ${i18n.t('auth.reset_password.send_btn')}
+        </button>
+      </form>
+      
+      <div class="text-center mt-3">
+        <a href="#" onclick="showAuthModal('login'); return false;" class="text-xs text-purple-600 hover:text-purple-800">
+          ${i18n.t('auth.reset_password.back_to_login')}
+        </a>
+      </div>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+async function handlePasswordResetRequest(event) {
+  event.preventDefault();
+  const formData = new FormData(event.target);
+  const email = formData.get('email');
   
-  // 元のスクロール位置を復元
-  const scrollY = document.body.style.top;
-  document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.width = '';
+  try {
+    await axios.post('/api/auth/password-reset/request', { email });
+    showToast(i18n.t('auth.reset_password.success'), 'success');
+    closeModal('auth-modal');
+    
+    // Show info modal with reset instructions
+    setTimeout(() => {
+      showPasswordResetInfoModal(email);
+    }, 500);
+  } catch (error) {
+    showToast(error.response?.data?.error || i18n.t('auth.reset_password.error'), 'error');
+  }
+}
+
+function showPasswordResetInfoModal(email) {
+  const modal = document.getElementById('auth-modal');
+  const resetUrl = `${window.location.origin}#reset-password`;
   
-  // スクロール位置を元に戻す
-  if (scrollY) {
-    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 480px; width: 90%;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold"><i class="fas fa-envelope text-purple-600"></i> ${i18n.t('auth.reset_password.success')}</h3>
+        <button onclick="closeModal('auth-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <p class="text-sm text-gray-700 mb-3">
+          ${i18n.getCurrentLanguage() === 'ja' 
+            ? `<strong>${email}</strong> にパスワードリセット用のリンクを送信しました。` 
+            : `Password reset link has been sent to <strong>${email}</strong>.`}
+        </p>
+        <p class="text-xs text-gray-600">
+          ${i18n.getCurrentLanguage() === 'ja' 
+            ? 'メールが届かない場合は、迷惑メールフォルダをご確認ください。' 
+            : 'If you don\'t see the email, please check your spam folder.'}
+        </p>
+      </div>
+      
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+        <p class="text-xs text-gray-700 mb-2">
+          <i class="fas fa-info-circle text-yellow-600"></i>
+          ${i18n.getCurrentLanguage() === 'ja' 
+            ? '<strong>開発環境のため</strong>、以下のリンクから直接パスワードをリセットできます：' 
+            : '<strong>In development mode</strong>, you can reset your password directly using the link below:'}
+        </p>
+        <div class="bg-white rounded p-2 border border-yellow-300 font-mono text-xs break-all">
+          ${resetUrl}?email=${encodeURIComponent(email)}
+        </div>
+        <button onclick="navigator.clipboard.writeText('${resetUrl}?email=${encodeURIComponent(email)}'); showToast('コピーしました', 'success')" 
+                class="mt-2 text-xs text-purple-600 hover:text-purple-800">
+          <i class="fas fa-copy"></i> URLをコピー
+        </button>
+      </div>
+      
+      <button onclick="closeModal('auth-modal')" class="btn btn-primary w-full text-sm py-2">
+        ${i18n.t('common.close')}
+      </button>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+function showPasswordResetForm(email = '') {
+  const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
+  const emailFromUrl = urlParams.get('email') || email;
+  
+  const modal = document.getElementById('auth-modal');
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 420px; width: 90%;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">${i18n.t('auth.reset_password.title')}</h3>
+        <button onclick="closeModal('auth-modal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <form onsubmit="handlePasswordReset(event)" class="space-y-3">
+        <input type="hidden" name="email" value="${emailFromUrl}">
+        
+        <div>
+          <label class="text-sm">${i18n.t('auth.email')}</label>
+          <input type="email" value="${emailFromUrl}" disabled class="w-full text-sm bg-gray-100">
+        </div>
+        
+        <div>
+          <label class="text-sm">${i18n.t('auth.reset_password.new_password')}</label>
+          <input type="password" name="password" required minlength="6" class="w-full text-sm">
+        </div>
+        
+        <div>
+          <label class="text-sm">${i18n.t('auth.reset_password.confirm_password')}</label>
+          <input type="password" name="confirmPassword" required minlength="6" class="w-full text-sm">
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-full text-sm py-2">
+          ${i18n.t('auth.reset_password.submit_btn')}
+        </button>
+      </form>
+      
+      <div class="text-center mt-3">
+        <a href="#" onclick="showAuthModal('login'); return false;" class="text-xs text-purple-600 hover:text-purple-800">
+          ${i18n.t('auth.reset_password.back_to_login')}
+        </a>
+      </div>
+    </div>
+  `;
+  modal.classList.add('active');
+}
+
+async function handlePasswordReset(event) {
+  event.preventDefault();
+  const formData = new FormData(event.target);
+  const email = formData.get('email');
+  const password = formData.get('password');
+  const confirmPassword = formData.get('confirmPassword');
+  
+  if (password !== confirmPassword) {
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'パスワードが一致しません' : 'Passwords do not match', 'error');
+    return;
+  }
+  
+  try {
+    await axios.post('/api/auth/password-reset/confirm', { email, password });
+    showToast(i18n.t('auth.reset_password.token_success'), 'success');
+    closeModal('auth-modal');
+    
+    // Auto login after password reset
+    setTimeout(() => {
+      showAuthModal('login');
+    }, 1000);
+  } catch (error) {
+    showToast(error.response?.data?.error || i18n.t('auth.reset_password.token_invalid'), 'error');
   }
 }
 
@@ -1815,8 +1611,6 @@ async function showVideoDetail(videoId) {
   try {
     const response = await axios.get(`/api/videos/${videoId}`);
     const video = response.data;
-    
-    const embedUrl = getEmbedUrl(video.url, video.media_source);
     
     const modal = document.getElementById('video-modal');
     modal.innerHTML = `
@@ -1829,23 +1623,7 @@ async function showVideoDetail(videoId) {
         </div>
         
         <div class="aspect-video bg-gray-900 rounded-lg mb-4">
-          ${embedUrl ? `
-            <iframe src="${embedUrl}" 
-                    class="w-full h-full rounded-lg" 
-                    frameborder="0"
-                    allowfullscreen
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"></iframe>
-          ` : `
-            <div class="w-full h-full flex items-center justify-center text-white">
-              <div class="text-center">
-                <i class="fas fa-external-link-alt text-4xl mb-4"></i>
-                <p class="mb-4">この動画は外部サイトで視聴できます</p>
-                <a href="${video.url}" target="_blank" class="btn btn-primary">
-                  <i class="fas fa-play mr-2"></i>動画を見る
-                </a>
-              </div>
-            </div>
-          `}
+          ${renderVideoEmbed(video)}
         </div>
         
         <div class="flex items-center justify-between mb-4">
@@ -1877,21 +1655,7 @@ async function showVideoDetail(videoId) {
         </div>
       </div>
     `;
-    // モーダルを開く前に現在のスクロール位置を記憶
-    const currentScrollY = window.scrollY;
-    
-    // bodyのスクロールをロック（背景スクロール防止）
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${currentScrollY}px`;
-    document.body.style.width = '100%';
-    
     modal.classList.add('active');
-    
-    // モーダルのスクロール位置を調整
-    setTimeout(() => {
-      modal.scrollTop = 0;
-    }, 50);
   } catch (error) {
     showToast('動画の読み込みに失敗しました', 'error');
   }
@@ -2255,32 +2019,27 @@ async function renderBlogDetail() {
   try {
     const response = await axios.get(`/api/blog/${state.currentBlogId}`);
     const post = response.data;
-    const translated = translateBlogPost(post);
     
     const root = document.getElementById('root');
     root.innerHTML = `
-      <div id="blog-top"></div>
       <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center h-16">
             <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary mr-4">
               <i class="fas fa-arrow-left"></i>
-              ${i18n.getCurrentLanguage() === 'ja' ? '戻る' : 'Back'}
+              戻る
             </button>
-            <div class="flex items-center gap-2">
-              <img src="/static/favicon-32x32.png" alt="ClimbHero Logo" class="w-6 h-6">
-              <h1 class="text-xl font-bold text-gray-900">ClimbHero Blog</h1>
-            </div>
+            <h1 class="text-xl font-bold text-gray-900">ClimbHero Blog</h1>
           </div>
         </div>
       </header>
 
       <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         ${post.image_url ? `
-          <img src="${post.image_url}" alt="${translated.title}" class="w-full h-96 object-cover rounded-2xl mb-8">
+          <img src="${post.image_url}" alt="${post.title}" class="w-full h-96 object-cover rounded-2xl mb-8">
         ` : ''}
         
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">${translated.title}</h1>
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">${post.title}</h1>
         
         <div class="flex items-center gap-4 text-sm text-gray-600 mb-8">
           <span><i class="fas fa-calendar mr-2"></i>${formatDate(post.published_date)}</span>
@@ -2293,7 +2052,7 @@ async function renderBlogDetail() {
         <div class="mt-12 pt-8 border-t border-gray-200">
           <button onclick="navigateTo('home')" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i>
-            ${i18n.getCurrentLanguage() === 'ja' ? 'ホームに戻る' : 'Back to Home'}
+            ホームに戻る
           </button>
         </div>
       </article>
@@ -2301,24 +2060,8 @@ async function renderBlogDetail() {
       ${renderFooter()}
     `;
     
-    // CRITICAL: Force scroll to top anchor element
-    const blogTop = document.getElementById('blog-top');
-    if (blogTop) {
-      blogTop.scrollIntoView({ behavior: 'instant', block: 'start' });
-    }
-    
-    // Backup: Multiple scroll methods
+    // スクロール位置を初期化（ページトップへ）
     window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    
-    // Additional backup with requestAnimationFrame
-    requestAnimationFrame(() => {
-      window.scrollTo(0, 0);
-      if (blogTop) {
-        blogTop.scrollIntoView({ behavior: 'instant', block: 'start' });
-      }
-    });
   } catch (error) {
     showToast('ブログの読み込みに失敗しました', 'error');
     navigateTo('home');
@@ -2345,6 +2088,19 @@ function renderAdminPage() {
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- User Management Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-users mr-2"></i>
+              会員管理
+            </div>
+          </div>
+          <div class="horizontal-scroll" id="admin-users-scroll" style="gap: 16px; padding: 8px 0;">
+            ${renderLoadingSkeleton(3)}
+          </div>
+        </div>
+        
         <!-- Video Management Section -->
         <div class="admin-section">
           <div class="admin-section-header">
@@ -2353,26 +2109,8 @@ function renderAdminPage() {
               ${i18n.t('admin.videos')}
             </div>
           </div>
-          <div style="overflow-x: auto;">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>${i18n.t('admin.video_title')}</th>
-                  <th>${i18n.t('admin.video_category')}</th>
-                  <th>${i18n.t('admin.video_likes')}</th>
-                  <th>${i18n.t('admin.video_views')}</th>
-                  <th>${i18n.t('common.edit')}</th>
-                </tr>
-              </thead>
-              <tbody id="admin-videos-table">
-                <tr>
-                  <td colspan="6" style="text-align: center; padding: 20px;">
-                    ${i18n.t('common.loading')}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="horizontal-scroll" id="admin-videos-scroll" style="gap: 16px; padding: 8px 0;">
+            ${renderLoadingSkeleton(3)}
           </div>
         </div>
         
@@ -2416,26 +2154,10 @@ function renderAdminPage() {
               ${i18n.t('email.new_campaign')}
             </button>
           </div>
-          <div style="overflow-x: auto;">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>${i18n.t('email.subject')}</th>
-                  <th>${i18n.t('email.recipient_count')}</th>
-                  <th>${i18n.t('email.status')}</th>
-                  <th>${i18n.t('email.sent_at')}</th>
-                  <th>${i18n.t('common.edit')}</th>
-                </tr>
-              </thead>
-              <tbody id="admin-email-campaigns-table">
-                <tr>
-                  <td colspan="6" style="text-align: center; padding: 20px;">
-                    ${i18n.t('common.loading')}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="horizontal-scroll" id="admin-email-campaigns-scroll" style="gap: 16px; padding: 8px 0;">
+            <div style="text-align: center; padding: 40px; color: #666;">
+              ${i18n.t('common.loading')}
+            </div>
           </div>
         </div>
         
@@ -2451,95 +2173,8 @@ function renderAdminPage() {
               ${i18n.t('admin.announcement_new')}
             </button>
           </div>
-          <div style="overflow-x: auto;">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>${i18n.t('admin.announcement_title')}</th>
-                  <th>${i18n.t('admin.announcement_content')}</th>
-                  <th>${i18n.t('admin.announcement_priority')}</th>
-                  <th>${i18n.t('common.edit')}</th>
-                </tr>
-              </thead>
-              <tbody id="admin-announcements-table">
-                <tr>
-                  <td colspan="5" style="text-align: center; padding: 20px;">
-                    ${i18n.t('common.loading')}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        
-        <!-- Sponsor Banners Management Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-ad mr-2"></i>
-              スポンサーバナー管理
-            </div>
-            <button onclick="showBannerModal()" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus mr-2"></i>
-              新規バナー作成
-            </button>
-          </div>
-          <div style="overflow-x: auto;">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>タイトル</th>
-                  <th>表示位置</th>
-                  <th>プレビュー</th>
-                  <th>リンクURL</th>
-                  <th>掲載期間</th>
-                  <th>状態</th>
-                  <th>編集</th>
-                </tr>
-              </thead>
-              <tbody id="admin-banners-table">
-                <tr>
-                  <td colspan="8" style="text-align: center; padding: 20px;">
-                    読み込み中...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        
-        <!-- Blog Management Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-newspaper mr-2"></i>
-              ${i18n.t('admin.blog')}
-            </div>
-            <button onclick="showBlogModal()" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus mr-2"></i>
-              ${i18n.t('admin.blog_new')}
-            </button>
-          </div>
-          <div style="overflow-x: auto;">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>${i18n.t('admin.blog_title')}</th>
-                  <th>${i18n.t('admin.blog_date')}</th>
-                  <th>${i18n.t('common.edit')}</th>
-                </tr>
-              </thead>
-              <tbody id="admin-blog-table">
-                <tr>
-                  <td colspan="4" style="text-align: center; padding: 20px;">
-                    ${i18n.t('common.loading')}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="horizontal-scroll" id="admin-announcements-scroll" style="gap: 16px; padding: 8px 0;">
+            ${renderLoadingSkeleton(3)}
           </div>
         </div>
       </main>
@@ -3073,360 +2708,11 @@ async function deleteAnnouncement(announcementId) {
   }
 }
 
-// ============ Sponsor Banner Management Functions ============
-
-// Load admin sponsor banners
-async function loadAdminBanners() {
-  try {
-    const response = await axios.get('/api/admin/banners');
-    const banners = response.data;
-    
-    const tbody = document.getElementById('admin-banners-table');
-    if (!tbody) return;
-    
-    if (banners.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" style="text-align: center; padding: 20px;">
-            バナーがありません
-          </td>
-        </tr>
-      `;
-      return;
-    }
-    
-    tbody.innerHTML = banners.map(banner => `
-      <tr>
-        <td>${banner.id}</td>
-        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${banner.title}</td>
-        <td>${banner.position === 'top' ? '上部' : '下部'}</td>
-        <td>
-          <img src="${banner.image_url}" alt="${banner.title}" style="max-width: 100px; max-height: 50px; object-fit: cover;">
-        </td>
-        <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          ${banner.link_url ? `<a href="${banner.link_url}" target="_blank" class="text-purple-600 hover:underline">${banner.link_url}</a>` : '-'}
-        </td>
-        <td style="font-size: 0.75rem;">
-          ${banner.start_date ? new Date(banner.start_date).toLocaleDateString('ja-JP') : '-'}<br>
-          〜<br>
-          ${banner.end_date ? new Date(banner.end_date).toLocaleDateString('ja-JP') : '-'}
-        </td>
-        <td>
-          <span class="badge ${banner.is_active ? 'badge-success' : 'badge-warning'}">
-            ${banner.is_active ? '公開中' : '非公開'}
-          </span>
-        </td>
-        <td>
-          <div class="admin-actions">
-            <button onclick="editBanner(${banner.id})" class="btn-edit">
-              <i class="fas fa-edit"></i> 編集
-            </button>
-            <button onclick="deleteBanner(${banner.id})" class="btn-delete">
-              <i class="fas fa-trash"></i> 削除
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  } catch (error) {
-    console.error('Failed to load admin banners:', error);
-  }
-}
-
-// Show banner modal
-function showBannerModal(bannerId = null) {
-  const modal = document.createElement('div');
-  modal.className = 'modal active';
-  modal.innerHTML = `
-    <div class="modal-content" style="max-width: 600px;">
-      <div class="modal-header">
-        <h3>${bannerId ? 'バナー編集' : '新規バナー作成'}</h3>
-        <button onclick="this.closest('.modal').remove()" class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="banner-form" onsubmit="saveBanner(event, ${bannerId}); return false;">
-          <div class="form-group">
-            <label>タイトル *</label>
-            <input type="text" id="banner-title" required placeholder="例: クライミングギアセール">
-          </div>
-          
-          <div class="form-group">
-            <label>画像URL *</label>
-            <input type="url" id="banner-image-url" required placeholder="https://example.com/banner.jpg">
-            <small>推奨サイズ: 1200x200px (横長バナー)</small>
-          </div>
-          
-          <div class="form-group">
-            <label>リンクURL</label>
-            <input type="url" id="banner-link-url" placeholder="https://example.com">
-          </div>
-          
-          <div class="form-group">
-            <label>表示位置 *</label>
-            <select id="banner-position" required>
-              <option value="top">上部 (ヘッダー下)</option>
-              <option value="bottom">下部 (フッター上)</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>表示順序</label>
-            <input type="number" id="banner-display-order" value="0" min="0">
-            <small>数字が小さいほど優先的に表示されます</small>
-          </div>
-          
-          <div class="form-group">
-            <label>掲載開始日</label>
-            <input type="datetime-local" id="banner-start-date">
-          </div>
-          
-          <div class="form-group">
-            <label>掲載終了日</label>
-            <input type="datetime-local" id="banner-end-date">
-          </div>
-          
-          <div class="form-group">
-            <label class="flex items-center gap-2">
-              <input type="checkbox" id="banner-is-active" checked>
-              <span>公開する</span>
-            </label>
-          </div>
-          
-          <div class="modal-footer">
-            <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
-              キャンセル
-            </button>
-            <button type="submit" class="btn btn-primary">
-              ${bannerId ? '更新' : '作成'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-  
-  // Load existing banner data if editing
-  if (bannerId) {
-    loadBannerData(bannerId);
-  }
-}
-
-// Load banner data for editing
-async function loadBannerData(bannerId) {
-  try {
-    const response = await axios.get('/api/admin/banners');
-    const banner = response.data.find(b => b.id === bannerId);
-    
-    if (!banner) return;
-    
-    document.getElementById('banner-title').value = banner.title;
-    document.getElementById('banner-image-url').value = banner.image_url;
-    document.getElementById('banner-link-url').value = banner.link_url || '';
-    document.getElementById('banner-position').value = banner.position;
-    document.getElementById('banner-display-order').value = banner.display_order || 0;
-    document.getElementById('banner-is-active').checked = banner.is_active === 1;
-    
-    if (banner.start_date) {
-      const startDate = new Date(banner.start_date);
-      document.getElementById('banner-start-date').value = startDate.toISOString().slice(0, 16);
-    }
-    
-    if (banner.end_date) {
-      const endDate = new Date(banner.end_date);
-      document.getElementById('banner-end-date').value = endDate.toISOString().slice(0, 16);
-    }
-  } catch (error) {
-    console.error('Failed to load banner data:', error);
-  }
-}
-
-// Save banner
-async function saveBanner(event, bannerId = null) {
-  event.preventDefault();
-  
-  const data = {
-    title: document.getElementById('banner-title').value,
-    image_url: document.getElementById('banner-image-url').value,
-    link_url: document.getElementById('banner-link-url').value || null,
-    position: document.getElementById('banner-position').value,
-    display_order: parseInt(document.getElementById('banner-display-order').value) || 0,
-    is_active: document.getElementById('banner-is-active').checked ? 1 : 0,
-    start_date: document.getElementById('banner-start-date').value || null,
-    end_date: document.getElementById('banner-end-date').value || null
-  };
-  
-  try {
-    if (bannerId) {
-      await axios.put(`/api/admin/banners/${bannerId}`, data);
-      showToast('バナーを更新しました', 'success');
-    } else {
-      await axios.post('/api/admin/banners', data);
-      showToast('バナーを作成しました', 'success');
-    }
-    
-    document.querySelector('.modal').remove();
-    loadAdminBanners();
-    await loadInitialData();
-  } catch (error) {
-    console.error('Failed to save banner:', error);
-    showToast('バナーの保存に失敗しました', 'error');
-  }
-}
-
-// Edit banner
-function editBanner(bannerId) {
-  showBannerModal(bannerId);
-}
-
-// Delete banner
-async function deleteBanner(bannerId) {
-  if (!confirm('このバナーを削除してもよろしいですか？')) return;
-  
-  try {
-    await axios.delete(`/api/admin/banners/${bannerId}`);
-    showToast('バナーを削除しました', 'success');
-    loadAdminBanners();
-    await loadInitialData();
-  } catch (error) {
-    console.error('Failed to delete banner:', error);
-    showToast('バナーの削除に失敗しました', 'error');
-  }
-}
-
-// ============ Blog Management Functions ============
-
-// Load admin blog posts
-async function loadAdminBlog() {
-  try {
-    const response = await axios.get('/api/blog');
-    const posts = response.data;
-    
-    const tbody = document.getElementById('admin-blog-table');
-    if (!tbody) return;
-    
-    if (posts.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="4" style="text-align: center; padding: 20px;">
-            ${i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事がありません' : 'No blog posts'}
-          </td>
-        </tr>
-      `;
-      return;
-    }
-    
-    tbody.innerHTML = posts.map(post => `
-      <tr>
-        <td>${post.id}</td>
-        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${post.title}</td>
-        <td>${formatDate(post.published_date)}</td>
-        <td>
-          <div class="admin-actions">
-            <button onclick="editBlog(${post.id})" class="btn-edit">
-              <i class="fas fa-edit"></i> ${i18n.t('common.edit')}
-            </button>
-            <button onclick="deleteBlog(${post.id})" class="btn-delete">
-              <i class="fas fa-trash"></i> ${i18n.t('common.delete')}
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  } catch (error) {
-    console.error('Failed to load admin blog:', error);
-  }
-}
-
-// Show blog modal
-function showBlogModal(blogId = null) {
-  // Simple prompt-based implementation
-  const title = prompt(i18n.t('admin.blog_title'), '');
-  if (!title) return;
-  
-  const content = prompt(i18n.t('admin.blog_content') + ' (本文を入力してください)', '');
-  if (!content) return;
-  
-  const image_url = prompt(i18n.t('admin.blog_image') + ' (任意)', '');
-  const published_date = prompt(i18n.t('admin.blog_date') + ' (YYYY-MM-DD)', new Date().toISOString().split('T')[0]);
-  
-  if (blogId) {
-    updateBlog(blogId, { title, content, image_url, published_date });
-  } else {
-    createBlog({ title, content, image_url, published_date });
-  }
-}
-
-// Create blog post
-async function createBlog(data) {
-  try {
-    await axios.post('/api/blog', data);
-    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事を作成しました' : 'Blog post created', 'success');
-    loadAdminBlog();
-    await loadInitialData();
-  } catch (error) {
-    console.error('Failed to create blog:', error);
-    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事の作成に失敗しました' : 'Failed to create blog post', 'error');
-  }
-}
-
-// Edit blog post
-async function editBlog(blogId) {
-  try {
-    const response = await axios.get(`/api/blog/${blogId}`);
-    const post = response.data;
-    
-    if (!post) return;
-    
-    const title = prompt(i18n.t('admin.blog_title'), post.title);
-    if (!title) return;
-    
-    const content = prompt(i18n.t('admin.blog_content'), post.content);
-    if (!content) return;
-    
-    const image_url = prompt(i18n.t('admin.blog_image'), post.image_url || '');
-    const published_date = prompt(i18n.t('admin.blog_date'), post.published_date);
-    
-    await updateBlog(blogId, { title, content, image_url, published_date });
-  } catch (error) {
-    console.error('Failed to edit blog:', error);
-  }
-}
-
-// Update blog post
-async function updateBlog(blogId, data) {
-  try {
-    await axios.put(`/api/blog/${blogId}`, data);
-    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事を更新しました' : 'Blog post updated', 'success');
-    loadAdminBlog();
-    await loadInitialData();
-  } catch (error) {
-    console.error('Failed to update blog:', error);
-    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事の更新に失敗しました' : 'Failed to update blog post', 'error');
-  }
-}
-
-// Delete blog post
-async function deleteBlog(blogId) {
-  if (!confirm(i18n.t('admin.blog_confirm_delete'))) return;
-  
-  try {
-    await axios.delete(`/api/blog/${blogId}`);
-    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事を削除しました' : 'Blog post deleted', 'success');
-    loadAdminBlog();
-    await loadInitialData();
-  } catch (error) {
-    console.error('Failed to delete blog:', error);
-    showToast(i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事の削除に失敗しました' : 'Failed to delete blog post', 'error');
-  }
-}
-
 // Call load functions when admin page is rendered
 if (window.location.hash === '#admin') {
   setTimeout(() => {
     loadAdminVideos();
     loadAdminAnnouncements();
-    loadAdminBlog();
   }, 100);
 }
 
@@ -3817,6 +3103,270 @@ function renderContactPage() {
   }, 100);
 }
 
+// ============ API Documentation Page ============
+function renderApiPage() {
+  const baseUrl = window.location.origin;
+  
+  const apiEndpoints = [
+    {
+      endpoint: '/api/videos',
+      method: 'GET',
+      description: i18n.getCurrentLanguage() === 'ja' ? '動画一覧を取得' : 'Get list of videos',
+      params: 'page, limit, category, search',
+      example: `${baseUrl}/api/videos?limit=10&category=bouldering`
+    },
+    {
+      endpoint: '/api/videos/trending',
+      method: 'GET',
+      description: i18n.getCurrentLanguage() === 'ja' ? 'トレンド動画を取得' : 'Get trending videos',
+      params: 'limit',
+      example: `${baseUrl}/api/videos/trending?limit=10`
+    },
+    {
+      endpoint: '/api/rankings/{period}',
+      method: 'GET',
+      description: i18n.getCurrentLanguage() === 'ja' ? 'ランキングを取得 (daily/weekly/monthly/yearly)' : 'Get rankings (daily/weekly/monthly/yearly)',
+      params: 'limit',
+      example: `${baseUrl}/api/rankings/weekly?limit=20`
+    },
+    {
+      endpoint: '/api/videos/{id}',
+      method: 'GET',
+      description: i18n.getCurrentLanguage() === 'ja' ? '動画詳細を取得' : 'Get video details',
+      params: 'id',
+      example: `${baseUrl}/api/videos/1`
+    },
+    {
+      endpoint: '/api/blog',
+      method: 'GET',
+      description: i18n.getCurrentLanguage() === 'ja' ? 'ブログ記事一覧を取得' : 'Get blog posts',
+      params: '',
+      example: `${baseUrl}/api/blog`
+    },
+    {
+      endpoint: '/api/announcements',
+      method: 'GET',
+      description: i18n.getCurrentLanguage() === 'ja' ? 'お知らせ一覧を取得' : 'Get announcements',
+      params: '',
+      example: `${baseUrl}/api/announcements`
+    }
+  ];
+  
+  return `
+    <div class="min-h-screen bg-gray-50">
+      <!-- Header -->
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-3">
+              <a href="#home" class="flex items-center gap-3 hover:opacity-80 transition">
+                <i class="fas fa-mountain text-purple-600 text-2xl"></i>
+                <h1 class="text-xl font-bold text-gray-900">ClimbHero</h1>
+              </a>
+            </div>
+            <a href="#home" class="text-gray-600 hover:text-gray-900">
+              <i class="fas fa-times text-xl"></i>
+            </a>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Content -->
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Title -->
+        <div class="mb-8">
+          <h1 class="text-4xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-code mr-3 text-purple-600"></i>
+            ${i18n.t('api.title')}
+          </h1>
+          <p class="text-xl text-gray-600 mb-2">${i18n.t('api.subtitle')}</p>
+          <p class="text-gray-600">${i18n.t('api.intro')}</p>
+        </div>
+        
+        <!-- Base URL -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-globe mr-2 text-purple-600"></i>
+            ${i18n.t('api.base_url')}
+          </h2>
+          <div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm">
+            ${baseUrl}
+          </div>
+        </div>
+        
+        <!-- Authentication -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-lock mr-2 text-purple-600"></i>
+            ${i18n.t('api.authentication')}
+          </h2>
+          <p class="text-gray-600">${i18n.t('api.auth_desc')}</p>
+        </div>
+        
+        <!-- Endpoints -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-list mr-2 text-purple-600"></i>
+            ${i18n.t('api.endpoints')}
+          </h2>
+          
+          <div class="space-y-6">
+            ${apiEndpoints.map((api, index) => `
+              <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">
+                        ${api.method}
+                      </span>
+                      <code class="text-lg font-mono text-gray-900">${api.endpoint}</code>
+                    </div>
+                    <p class="text-gray-600">${api.description}</p>
+                    ${api.params ? `
+                      <p class="text-sm text-gray-500 mt-2">
+                        <i class="fas fa-cog mr-1"></i>
+                        ${i18n.t('api.parameters')}: <code>${api.params}</code>
+                      </p>
+                    ` : ''}
+                  </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                  <p class="text-xs text-gray-600 mb-2">${i18n.t('api.request')}:</p>
+                  <code class="text-sm text-gray-900 break-all">${api.example}</code>
+                </div>
+                
+                <button 
+                  onclick="testApi('${api.example}')" 
+                  class="btn btn-sm btn-secondary">
+                  <i class="fas fa-play mr-2"></i>
+                  ${i18n.t('api.try_it')}
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <!-- Data Schema -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-database mr-2 text-purple-600"></i>
+            ${i18n.t('api.schema.title')}
+          </h2>
+          
+          <!-- Video Object -->
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-3">${i18n.t('api.schema.video')}</h3>
+            <div class="bg-gray-900 text-gray-300 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+<pre>{
+  "id": 1,
+  "title": "Alex Honnold Free Solo El Capitan",
+  "description": "Watch the incredible story...",
+  "url": "https://www.youtube.com/watch?v=...",
+  "thumbnail_url": "https://i.ytimg.com/vi/.../maxresdefault.jpg",
+  "duration": "8:52",
+  "channel_name": "National Geographic",
+  "category": "outdoor",
+  "views": 15420000,
+  "likes": 245000,
+  "media_source": "youtube",
+  "created_at": "2024-01-15T10:30:00Z"
+}</pre>
+            </div>
+          </div>
+          
+          <!-- User Object -->
+          <div class="mb-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-3">${i18n.t('api.schema.user')}</h3>
+            <div class="bg-gray-900 text-gray-300 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+<pre>{
+  "id": 1,
+  "email": "climber@example.com",
+  "username": "ProClimber",
+  "membership_type": "premium",
+  "is_admin": 0,
+  "created_at": "2024-01-01T00:00:00Z"
+}</pre>
+            </div>
+          </div>
+          
+          <!-- Ranking Object -->
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 mb-3">${i18n.t('api.schema.ranking')}</h3>
+            <div class="bg-gray-900 text-gray-300 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+<pre>{
+  "rank": 1,
+  "video_id": 5,
+  "title": "V17 Boulder Problem",
+  "likes": 1250,
+  "views": 45000,
+  "change": "+3"
+}</pre>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Rate Limit -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg mb-8">
+          <h3 class="text-lg font-bold text-gray-900 mb-2">
+            <i class="fas fa-exclamation-triangle mr-2 text-yellow-600"></i>
+            ${i18n.t('api.rate_limit')}
+          </h3>
+          <p class="text-gray-700">${i18n.t('api.rate_limit_desc')}</p>
+        </div>
+        
+        <!-- Support -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-question-circle mr-2 text-purple-600"></i>
+            ${i18n.t('api.support')}
+          </h2>
+          <p class="text-gray-600 mb-4">${i18n.t('api.support_desc')}</p>
+          <a href="#contact" class="btn btn-primary">
+            <i class="fas fa-envelope mr-2"></i>
+            ${i18n.getCurrentLanguage() === 'ja' ? 'お問い合わせ' : 'Contact Us'}
+          </a>
+        </div>
+        
+        <div class="text-center">
+          <a href="#home" class="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium">
+            <i class="fas fa-arrow-left"></i>
+            ${i18n.getCurrentLanguage() === 'ja' ? 'ホームに戻る' : 'Back to Home'}
+          </a>
+        </div>
+      </div>
+      
+      <!-- API Test Result Modal -->
+      <div id="api-test-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold">${i18n.t('api.response_data')}</h3>
+            <button onclick="closeModal('api-test-modal')" class="text-gray-400 hover:text-gray-600">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div id="api-test-result" class="bg-gray-900 text-gray-300 p-4 rounded-lg font-mono text-sm overflow-x-auto max-h-96 overflow-y-auto">
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function testApi(url) {
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const modal = document.getElementById('api-test-modal');
+    const resultDiv = document.getElementById('api-test-result');
+    resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    modal.classList.add('active');
+  } catch (error) {
+    showToast(i18n.getCurrentLanguage() === 'ja' ? 'APIテストに失敗しました' : 'API test failed', 'error');
+  }
+}
+
 async function handleContactSubmit(e) {
   e.preventDefault();
   
@@ -3883,5 +3433,382 @@ function showAnnouncementsModal() {
   `;
   
   document.body.appendChild(modal);
+}
+
+// ============ Admin User Management ============
+
+async function loadAdminData() {
+  if (!state.currentUser || !state.currentUser.is_admin) return;
+  
+  try {
+    // Load users
+    const usersRes = await axios.get('/api/admin/users');
+    renderUsersTable(usersRes.data);
+    
+    // Load videos (existing)
+    const videosRes = await axios.get('/api/admin/videos');
+    renderVideosCarousel(videosRes.data);
+    
+    // Load announcements (existing)
+    const announcementsRes = await axios.get('/api/admin/announcements');
+    renderAnnouncementsCarousel(announcementsRes.data);
+  } catch (error) {
+    console.error('Failed to load admin data:', error);
+  }
+}
+
+// Loading Skeleton Component
+function renderLoadingSkeleton(count = 3) {
+  return Array(count).fill(0).map(() => `
+    <div class="admin-card-skeleton" style="min-width: 320px; max-width: 320px;">
+      <div class="skeleton-line" style="width: 60%; margin-bottom: 12px;"></div>
+      <div class="skeleton-line" style="width: 80%; margin-bottom: 8px;"></div>
+      <div class="skeleton-line" style="width: 90%; margin-bottom: 8px;"></div>
+      <div class="skeleton-line" style="width: 70%;"></div>
+    </div>
+  `).join('');
+}
+
+function renderUsersTable(users) {
+  const container = document.getElementById('admin-users-scroll');
+  if (!container) return;
+  
+  if (users.length === 0) {
+    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">ユーザーがいません</div>';
+    return;
+  }
+  
+  container.innerHTML = users.map(user => `
+    <div class="admin-card" style="min-width: 320px; max-width: 320px; animation: fadeInUp 0.4s ease-out;">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs text-gray-500">#${user.id}</span>
+            ${user.is_admin ? '<span class="px-2 py-0.5 text-xs font-bold rounded" style="background: #fbbf24; color: #78350f;"><i class="fas fa-shield-alt mr-1"></i>管理者</span>' : ''}
+          </div>
+          <h4 class="font-bold text-gray-900 text-sm mb-1">${user.username}</h4>
+          <p class="text-xs text-gray-600 break-all">${user.email}</p>
+        </div>
+      </div>
+      
+      <div class="space-y-2 mb-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gray-500">プラン:</span>
+          <span class="category-badge ${user.membership_type === 'premium' ? 'category-competition' : 'category-bouldering'}">
+            ${user.membership_type === 'premium' ? 'プレミアム' : '無料'}
+          </span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-gray-500">登録日:</span>
+          <span class="text-gray-700">${formatDate(user.created_at)}</span>
+        </div>
+        ${user.notes ? `
+        <div class="text-xs">
+          <span class="text-gray-500 block mb-1">備考:</span>
+          <p class="text-gray-700 line-clamp-2" title="${user.notes}">${user.notes}</p>
+        </div>
+        ` : ''}
+      </div>
+      
+      <div class="flex gap-2">
+        <button onclick="editUser(${user.id})" class="btn btn-sm btn-secondary flex-1" title="編集">
+          <i class="fas fa-edit mr-1"></i>編集
+        </button>
+        <button onclick="deleteUser(${user.id}, '${user.email}')" class="btn btn-sm flex-1" style="background: #ef4444; color: white;" title="削除">
+          <i class="fas fa-trash mr-1"></i>削除
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderVideosCarousel(videos) {
+  const container = document.getElementById('admin-videos-scroll');
+  if (!container) return;
+  
+  if (videos.length === 0) {
+    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">動画がありません</div>';
+    return;
+  }
+  
+  container.innerHTML = videos.map((video, index) => `
+    <div class="admin-card" style="min-width: 280px; max-width: 280px; animation: fadeInUp 0.4s ease-out ${index * 0.05}s;">
+      <div class="relative mb-3">
+        <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-40 object-cover rounded-lg" />
+        <span class="absolute top-2 right-2 px-2 py-1 text-xs font-bold rounded" style="background: rgba(0,0,0,0.7); color: white;">
+          ${video.duration || 'N/A'}
+        </span>
+      </div>
+      
+      <div class="mb-3">
+        <h4 class="font-bold text-sm text-gray-900 mb-2 line-clamp-2" title="${video.title}">${video.title}</h4>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="category-badge category-${video.category}">${video.category}</span>
+          <span class="text-xs text-gray-500">#${video.id}</span>
+        </div>
+      </div>
+      
+      <div class="space-y-1 mb-3 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-gray-500"><i class="fas fa-eye mr-1"></i>視聴</span>
+          <span class="text-gray-700">${video.views.toLocaleString()}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-gray-500"><i class="fas fa-heart mr-1"></i>いいね</span>
+          <span class="text-gray-700">${video.likes}</span>
+        </div>
+      </div>
+      
+      <div class="flex gap-2">
+        <button onclick="editVideo(${video.id})" class="btn btn-sm btn-secondary flex-1">
+          <i class="fas fa-edit mr-1"></i>編集
+        </button>
+        <button onclick="deleteVideo(${video.id})" class="btn btn-sm flex-1" style="background: #ef4444; color: white;">
+          <i class="fas fa-trash mr-1"></i>削除
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAnnouncementsCarousel(announcements) {
+  const container = document.getElementById('admin-announcements-scroll');
+  if (!container) return;
+  
+  if (announcements.length === 0) {
+    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">お知らせがありません</div>';
+    return;
+  }
+  
+  container.innerHTML = announcements.map((ann, index) => `
+    <div class="admin-card" style="min-width: 320px; max-width: 320px; animation: fadeInUp 0.4s ease-out ${index * 0.05}s;">
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs text-gray-500">#${ann.id}</span>
+            <span class="px-2 py-0.5 text-xs font-bold rounded ${
+              ann.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+              ann.type === 'success' ? 'bg-green-100 text-green-800' : 
+              'bg-blue-100 text-blue-800'
+            }">
+              ${ann.type}
+            </span>
+          </div>
+          <h4 class="font-bold text-sm text-gray-900 mb-2">${ann.title}</h4>
+          <p class="text-xs text-gray-600 line-clamp-3">${ann.content}</p>
+        </div>
+      </div>
+      
+      <div class="text-xs text-gray-500 mb-3">
+        ${formatDate(ann.created_at)}
+      </div>
+      
+      <div class="flex gap-2">
+        <button onclick="editAnnouncement(${ann.id})" class="btn btn-sm btn-secondary flex-1">
+          <i class="fas fa-edit mr-1"></i>編集
+        </button>
+        <button onclick="deleteAnnouncement(${ann.id})" class="btn btn-sm flex-1" style="background: #ef4444; color: white;">
+          <i class="fas fa-trash mr-1"></i>削除
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function editUser(userId) {
+  try {
+    const response = await axios.get('/api/admin/users');
+    const user = response.data.find(u => u.id === userId);
+    if (!user) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="modal-content max-w-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-2xl font-bold">会員編集</h3>
+          <button onclick="this.closest('.modal').remove()" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">メールアドレス</label>
+            <input type="email" id="edit-user-email" value="${user.email}" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">ユーザー名</label>
+            <input type="text" id="edit-user-username" value="${user.username}" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">プラン</label>
+            <select id="edit-user-membership" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+              <option value="free" ${user.membership_type === 'free' ? 'selected' : ''}>無料</option>
+              <option value="premium" ${user.membership_type === 'premium' ? 'selected' : ''}>プレミアム</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+            <textarea id="edit-user-notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg">${user.notes || ''}</textarea>
+          </div>
+          
+          <div class="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <input type="checkbox" id="edit-user-is-admin" ${user.is_admin ? 'checked' : ''} class="w-5 h-5 text-purple-600 rounded" />
+            <label for="edit-user-is-admin" class="text-sm font-medium text-gray-700">
+              <i class="fas fa-shield-alt text-yellow-600 mr-2"></i>
+              管理者権限を付与する
+            </label>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              新しいパスワード（変更する場合のみ）
+            </label>
+            <input type="password" id="edit-user-password" placeholder="空欄の場合は変更しません" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+          </div>
+          
+          <div class="flex gap-3 pt-4">
+            <button onclick="saveUser(${userId})" class="btn btn-primary flex-1">
+              <i class="fas fa-save mr-2"></i>
+              保存
+            </button>
+            <button onclick="this.closest('.modal').remove()" class="btn btn-secondary flex-1">
+              キャンセル
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+  } catch (error) {
+    showToast('ユーザー情報の取得に失敗しました', 'error');
+  }
+}
+
+async function saveUser(userId) {
+  const email = document.getElementById('edit-user-email').value;
+  const username = document.getElementById('edit-user-username').value;
+  const membership_type = document.getElementById('edit-user-membership').value;
+  const notes = document.getElementById('edit-user-notes').value;
+  const password = document.getElementById('edit-user-password').value;
+  const is_admin = document.getElementById('edit-user-is-admin').checked ? 1 : 0;
+  
+  if (!email || !username) {
+    showToast('メールアドレスとユーザー名は必須です', 'error');
+    return;
+  }
+  
+  try {
+    const data = { email, username, membership_type, notes, is_admin };
+    if (password) {
+      data.password = password;
+    }
+    
+    await axios.put(`/api/admin/users/${userId}`, data);
+    showToast('ユーザー情報を更新しました', 'success');
+    
+    document.querySelector('.modal').remove();
+    loadAdminData();
+  } catch (error) {
+    showToast('ユーザー情報の更新に失敗しました', 'error');
+  }
+}
+
+async function deleteUser(userId, email) {
+  if (!confirm(`本当に ${email} を削除しますか？\nこの操作は取り消せません。`)) {
+    return;
+  }
+  
+  try {
+    await axios.delete(`/api/admin/users/${userId}`);
+    showToast('ユーザーを削除しました', 'success');
+    loadAdminData();
+  } catch (error) {
+    showToast(error.response?.data?.error || 'ユーザーの削除に失敗しました', 'error');
+  }
+}
+
+// ============ User Password Change ============
+
+function showChangePasswordModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.innerHTML = `
+    <div class="modal-content max-w-lg">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-2xl font-bold">パスワード変更</h3>
+        <button onclick="this.closest('.modal').remove()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">現在のパスワード</label>
+          <input type="password" id="current-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">新しいパスワード（6文字以上）</label>
+          <input type="password" id="new-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">新しいパスワード（確認）</label>
+          <input type="password" id="confirm-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+        </div>
+        
+        <div class="flex gap-3 pt-4">
+          <button onclick="changePassword()" class="btn btn-primary flex-1">
+            <i class="fas fa-key mr-2"></i>
+            変更
+          </button>
+          <button onclick="this.closest('.modal').remove()" class="btn btn-secondary flex-1">
+            キャンセル
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+async function changePassword() {
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showToast('すべてのフィールドを入力してください', 'error');
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    showToast('新しいパスワードは6文字以上である必要があります', 'error');
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    showToast('新しいパスワードが一致しません', 'error');
+    return;
+  }
+  
+  try {
+    await axios.post('/api/user/change-password', {
+      currentPassword,
+      newPassword
+    });
+    
+    showToast('パスワードを変更しました', 'success');
+    document.querySelector('.modal').remove();
+  } catch (error) {
+    showToast(error.response?.data?.error || 'パスワードの変更に失敗しました', 'error');
+  }
 }
 

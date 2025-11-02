@@ -1,0 +1,487 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ClimbHero API",
+    "version": "1.0.0",
+    "description": "クライミング動画共有プラットフォーム - 世界中の登攀動画、ランキング、ユーザーデータにアクセス。30年以上のクライミング経験とデータに基づく専門的なAPI。",
+    "contact": {
+      "name": "ClimbHero Support",
+      "email": "support@climbhero.com",
+      "url": "https://climbhero.pages.dev/contact"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://climbhero.pages.dev",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "videos",
+      "description": "動画情報の取得・管理"
+    },
+    {
+      "name": "rankings",
+      "description": "ランキング情報"
+    },
+    {
+      "name": "blog",
+      "description": "ブログ記事"
+    },
+    {
+      "name": "announcements",
+      "description": "お知らせ"
+    }
+  ],
+  "paths": {
+    "/api/videos": {
+      "get": {
+        "tags": ["videos"],
+        "summary": "動画一覧を取得",
+        "description": "クライミング動画の一覧を取得します。ページング、カテゴリーフィルター、検索機能をサポート。",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "ページ番号（デフォルト: 1）",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "1ページあたりの件数（デフォルト: 12、最大: 100）",
+            "schema": {
+              "type": "integer",
+              "default": 12,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "カテゴリーフィルター",
+            "schema": {
+              "type": "string",
+              "enum": ["all", "bouldering", "lead", "alpine", "outdoor", "other"]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "検索キーワード（タイトル・説明文を検索）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "videos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Video"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/trending": {
+      "get": {
+        "tags": ["videos"],
+        "summary": "トレンド動画を取得",
+        "description": "いいねが急増している動画を取得します。過去24時間と前24時間を比較した増加率でソート。",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "取得件数（デフォルト: 10）",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "videos": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TrendingVideo"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/videos/{id}": {
+      "get": {
+        "tags": ["videos"],
+        "summary": "動画詳細を取得",
+        "description": "指定されたIDの動画詳細情報を取得します。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "動画ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Video"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "動画が見つかりません"
+          }
+        }
+      }
+    },
+    "/api/rankings/{period}": {
+      "get": {
+        "tags": ["rankings"],
+        "summary": "ランキングを取得",
+        "description": "指定期間のランキングを取得します。いいね数でソート。",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "path",
+            "required": true,
+            "description": "集計期間",
+            "schema": {
+              "type": "string",
+              "enum": ["daily", "weekly", "monthly", "yearly"]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "取得件数（デフォルト: 20）",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RankingVideo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/blog": {
+      "get": {
+        "tags": ["blog"],
+        "summary": "ブログ記事一覧を取得",
+        "description": "公開されているブログ記事の一覧を取得します。",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BlogPost"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcements": {
+      "get": {
+        "tags": ["announcements"],
+        "summary": "お知らせ一覧を取得",
+        "description": "最新のお知らせを取得します。",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Announcement"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Video": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "動画ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "動画タイトル"
+          },
+          "description": {
+            "type": "string",
+            "description": "動画説明文"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "動画URL"
+          },
+          "thumbnail_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "サムネイルURL"
+          },
+          "duration": {
+            "type": "string",
+            "description": "動画長さ（MM:SS形式）"
+          },
+          "channel_name": {
+            "type": "string",
+            "description": "チャンネル名"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["bouldering", "lead", "alpine", "outdoor", "other"],
+            "description": "カテゴリー"
+          },
+          "views": {
+            "type": "integer",
+            "description": "視聴回数"
+          },
+          "likes": {
+            "type": "integer",
+            "description": "いいね数"
+          },
+          "media_source": {
+            "type": "string",
+            "enum": ["youtube", "youtube_shorts", "instagram", "tiktok", "vimeo"],
+            "description": "メディアソース"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "作成日時"
+          }
+        }
+      },
+      "TrendingVideo": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Video"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "recent_likes_24h": {
+                "type": "integer",
+                "description": "過去24時間のいいね数"
+              },
+              "previous_likes_24h": {
+                "type": "integer",
+                "description": "前24時間のいいね数"
+              },
+              "increase_rate": {
+                "type": "number",
+                "format": "float",
+                "description": "増加率（%）"
+              }
+            }
+          }
+        ]
+      },
+      "RankingVideo": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Video"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "rank": {
+                "type": "integer",
+                "description": "順位"
+              },
+              "change": {
+                "type": "string",
+                "description": "順位変動（例: +3, -2, NEW）"
+              }
+            }
+          }
+        ]
+      },
+      "BlogPost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "記事ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "記事タイトル"
+          },
+          "content": {
+            "type": "string",
+            "description": "記事本文（HTML）"
+          },
+          "image_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "アイキャッチ画像URL"
+          },
+          "published_date": {
+            "type": "string",
+            "format": "date",
+            "description": "公開日"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "作成日時"
+          }
+        }
+      },
+      "Announcement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "お知らせID"
+          },
+          "title": {
+            "type": "string",
+            "description": "タイトル"
+          },
+          "content": {
+            "type": "string",
+            "description": "内容"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["info", "warning", "success"],
+            "description": "タイプ"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "作成日時"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "現在のページ番号"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "1ページあたりの件数"
+          },
+          "total": {
+            "type": "integer",
+            "description": "総件数"
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "総ページ数"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session_token",
+        "description": "セッションベースのCookie認証"
+      }
+    }
+  },
+  "x-llmo": {
+    "authority": {
+      "name": "グッぼる ボルダリングCafe & Shop",
+      "experience": "30年以上のクライミング経験",
+      "expertise": "年間のべ2.5万人が利用するジム運営、クライミングシューズ120モデル常時在庫",
+      "location": "滋賀県彦根市"
+    },
+    "dataQuality": {
+      "updateFrequency": "リアルタイム",
+      "coverage": "グローバル（YouTube, Instagram, TikTok, Vimeo）",
+      "accuracy": "登攀データ蓄積・分析による高精度"
+    }
+  }
+}

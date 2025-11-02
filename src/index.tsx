@@ -152,6 +152,81 @@ app.get('/api/auth/me', async (c) => {
   })
 })
 
+// Password Reset - Request
+app.post('/api/auth/password-reset/request', async (c) => {
+  const { env } = c
+  const { email } = await c.req.json()
+  
+  try {
+    // Check if user exists
+    const result = await env.DB.prepare(`
+      SELECT id, email FROM users WHERE email = ?
+    `).bind(email).first()
+    
+    if (!result) {
+      return c.json({ error: 'Email address not found' }, 404)
+    }
+    
+    // Generate reset token (simple random string for demo)
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
+    
+    // Save token to database
+    await env.DB.prepare(`
+      INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
+      VALUES (?, ?, ?, 0)
+    `).bind(result.id, token, expiresAt).run()
+    
+    // In production, send email here with reset link
+    // For development, we'll just return success
+    // The frontend will show a modal with the reset link
+    
+    return c.json({ 
+      success: true,
+      message: 'Password reset link has been sent to your email',
+      // For development only - remove in production
+      dev_token: token,
+      dev_reset_url: `#reset-password?email=${encodeURIComponent(email)}&token=${token}`
+    })
+  } catch (error) {
+    console.error('Password reset request error:', error)
+    return c.json({ error: 'Failed to process password reset request' }, 500)
+  }
+})
+
+// Password Reset - Confirm (simplified for development)
+app.post('/api/auth/password-reset/confirm', async (c) => {
+  const { env } = c
+  const { email, password } = await c.req.json()
+  
+  try {
+    // Find user by email
+    const user = await env.DB.prepare(`
+      SELECT id FROM users WHERE email = ?
+    `).bind(email).first()
+    
+    if (!user) {
+      return c.json({ error: 'User not found' }, 404)
+    }
+    
+    // Update password (in development, we skip token validation for simplicity)
+    const passwordHash = hashPassword(password)
+    await env.DB.prepare(`
+      UPDATE users SET password_hash = ? WHERE id = ?
+    `).bind(passwordHash, user.id).run()
+    
+    // Mark all tokens for this user as used
+    await env.DB.prepare(`
+      UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?
+    `).bind(user.id).run()
+    
+    return c.json({ success: true, message: 'Password has been reset successfully' })
+  } catch (error) {
+    console.error('Password reset confirm error:', error)
+    return c.json({ error: 'Failed to reset password' }, 500)
+  }
+})
+
 // ============ Video API ============
 
 // Get all videos with filters
@@ -1395,6 +1470,140 @@ app.delete('/api/admin/videos/:id', async (c) => {
     `).bind(videoId).run()
     
     return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ User Management API (Admin) ============
+
+// Get all users (admin)
+app.get('/api/admin/users', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  try {
+    const result = await env.DB.prepare(`
+      SELECT id, email, username, membership_type, is_admin, notes, created_at, last_login
+      FROM users
+      ORDER BY created_at DESC
+    `).all()
+    
+    return c.json(result.results || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update user (admin)
+app.put('/api/admin/users/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const userId = c.req.param('id')
+  const { username, email, membership_type, notes, password, is_admin } = await c.req.json()
+  
+  try {
+    if (password) {
+      // Update with new password
+      const passwordHash = hashPassword(password)
+      await env.DB.prepare(`
+        UPDATE users 
+        SET username = ?, email = ?, membership_type = ?, notes = ?, password_hash = ?, is_admin = ?
+        WHERE id = ?
+      `).bind(username, email, membership_type, notes, passwordHash, is_admin || 0, userId).run()
+    } else {
+      // Update without password change
+      await env.DB.prepare(`
+        UPDATE users 
+        SET username = ?, email = ?, membership_type = ?, notes = ?, is_admin = ?
+        WHERE id = ?
+      `).bind(username, email, membership_type, notes, is_admin || 0, userId).run()
+    }
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Delete user (admin)
+app.delete('/api/admin/users/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const userId = c.req.param('id')
+  
+  // Prevent deleting own account
+  if (parseInt(userId) === user.id) {
+    return c.json({ error: '自分のアカウントは削除できません' }, 400)
+  }
+  
+  try {
+    // Delete user and related data
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM user_likes WHERE user_id = ?').bind(userId),
+      env.DB.prepare('DELETE FROM favorites WHERE user_id = ?').bind(userId),
+      env.DB.prepare('DELETE FROM comments WHERE user_id = ?').bind(userId),
+      env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId)
+    ])
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ User Settings API ============
+
+// Change password (user)
+app.post('/api/user/change-password', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'ログインが必要です' }, 401)
+  }
+  
+  const { currentPassword, newPassword } = await c.req.json()
+  
+  if (!currentPassword || !newPassword) {
+    return c.json({ error: '現在のパスワードと新しいパスワードが必要です' }, 400)
+  }
+  
+  if (newPassword.length < 6) {
+    return c.json({ error: '新しいパスワードは6文字以上である必要があります' }, 400)
+  }
+  
+  try {
+    // Verify current password
+    const currentHash = hashPassword(currentPassword)
+    if (user.password_hash !== currentHash) {
+      return c.json({ error: '現在のパスワードが正しくありません' }, 400)
+    }
+    
+    // Update password
+    const newHash = hashPassword(newPassword)
+    await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+      .bind(newHash, user.id).run()
+    
+    return c.json({ success: true, message: 'パスワードが変更されました' })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }

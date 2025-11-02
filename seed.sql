@@ -3,17 +3,17 @@ INSERT OR IGNORE INTO users (email, username, membership_type) VALUES
   ('demo@example.com', 'Demo User', 'free'),
   ('premium@example.com', 'Premium Member', 'premium');
 
--- Insert expanded sample videos (20+ videos) with MULTIPLE MEDIA SOURCES - REAL CLIMBING VIDEOS
+-- Insert expanded sample videos (20+ videos) with MULTIPLE MEDIA SOURCES - REAL CLIMBING VIDEOS (NO REGION RESTRICTIONS)
 INSERT OR IGNORE INTO videos (title, description, url, thumbnail_url, duration, channel_name, category, views, likes, media_source) VALUES 
-  -- YouTube Videos (8)
-  ('Lead finals | Grand Finale Fukuoka 2025', 'IFSC Climbing Nations Grand Finale in Fukuoka featuring lead climbing finals with brand-new team format.', 'https://www.youtube.com/watch?v=JWPkWeAxm-c', 'https://i.ytimg.com/vi/JWPkWeAxm-c/maxresdefault.jpg', '45:23', 'IFSC Climbing', 'competition', 35420, 0, 'youtube'),
-  ('Boulder finals | Nations Grand Finale Fukuoka 2025', 'IFSC Nations Grand Finale Boulder finals showcasing top climbers in new team format competition.', 'https://www.youtube.com/watch?v=oBxtF11EuHY', 'https://i.ytimg.com/vi/oBxtF11EuHY/maxresdefault.jpg', '52:18', 'IFSC Climbing', 'competition', 42890, 0, 'youtube'),
-  ('ROCKMASTER 2025 | KO BOULDER', 'Knock-out boulder competition at Climbing Stadium in Arco featuring world-class climbers in exciting format.', 'https://www.youtube.com/watch?v=FxxksZe9pQc', 'https://i.ytimg.com/vi/FxxksZe9pQc/maxresdefault.jpg', '28:45', 'Bouldering TV', 'competition', 23450, 0, 'youtube'),
-  ('Women''s Boulder final | Seoul 2025', 'IFSC World Cup Seoul 2025 women''s boulder final showcasing top female climbers in thrilling competition.', 'https://www.youtube.com/watch?v=wxiMreMe-Ds', 'https://i.ytimg.com/vi/wxiMreMe-Ds/maxresdefault.jpg', '38:12', 'IFSC Climbing', 'competition', 31670, 0, 'youtube'),
-  ('Men''s Boulder final | Prague 2025', 'IFSC World Cup Prague 2025 men''s boulder final with incredible performances from top athletes.', 'https://www.youtube.com/watch?v=J5QtctB5Bpg', 'https://i.ytimg.com/vi/J5QtctB5Bpg/maxresdefault.jpg', '41:22', 'IFSC Climbing', 'bouldering', 28340, 0, 'youtube'),
-  ('U17 Boulder finals | Helsinki 2025', 'The 34th edition of the IFSC Youth World Championships in Helsinki featuring Boulder competition with young talents.', 'https://www.youtube.com/watch?v=BSiltlmRYfI', 'https://i.ytimg.com/vi/BSiltlmRYfI/maxresdefault.jpg', '35:47', 'IFSC Climbing', 'competition', 8120, 0, 'youtube'),
-  ('Potentially World''s Hardest Trad Route - Bon Voyage E12', 'Influenced by Hard Grit, this is bold and committing trad climbing at its finest - attempting Bon Voyage E12.', 'https://www.youtube.com/watch?v=ji4At78H5Ys', 'https://i.ytimg.com/vi/ji4At78H5Ys/maxresdefault.jpg', '28:47', 'Adventure Climbing', 'outdoor', 24230, 0, 'youtube'),
-  ('Biggest Adventure Climb of 2024!', 'Jackie and I set off to climb Birdland (5.7+) in Red Rocks - our longest and highest rated trad multi pitch climb in 2024!', 'https://www.youtube.com/watch?v=No_ZzP8RI1U', 'https://i.ytimg.com/vi/No_ZzP8RI1U/maxresdefault.jpg', '22:15', 'Adventure Climbers', 'outdoor', 13290, 0, 'youtube'),
+  -- YouTube Videos (8) - GLOBALLY AVAILABLE CLIMBING CONTENT
+  ('Alex Honnold Free Solo El Capitan', 'Watch the incredible story of Alex Honnold''s historic free solo climb of El Capitan''s Freerider route in Yosemite.', 'https://www.youtube.com/watch?v=3-wjmIFlnNo', 'https://i.ytimg.com/vi/3-wjmIFlnNo/maxresdefault.jpg', '8:52', 'National Geographic', 'outdoor', 15420000, 0, 'youtube'),
+  ('Magnus Midtbø vs Professional Climbers', 'Professional climber Magnus Midtbø challenges other pro climbers in an epic bouldering session.', 'https://www.youtube.com/watch?v=Y2cBJC49o4s', 'https://i.ytimg.com/vi/Y2cBJC49o4s/maxresdefault.jpg', '18:34', 'Magnus Midtbø', 'bouldering', 2890000, 0, 'youtube'),
+  ('First Ascent: The Impossible Climb', 'Tommy Caldwell and Kevin Jorgeson attempt the first free climb of the Dawn Wall on El Capitan.', 'https://www.youtube.com/watch?v=gP27xR8GFPY', 'https://i.ytimg.com/vi/gP27xR8GFPY/maxresdefault.jpg', '42:15', 'Discovery', 'outdoor', 5450000, 0, 'youtube'),
+  ('Adam Ondra Climbing Silence 9c', 'Adam Ondra becomes the first person to climb a 9c graded route with his historic ascent of Silence in Norway.', 'https://www.youtube.com/watch?v=ZRTNHDd0gL8', 'https://i.ytimg.com/vi/ZRTNHDd0gL8/maxresdefault.jpg', '5:34', 'Adam Ondra', 'outdoor', 8920000, 0, 'youtube'),
+  ('Bouldering Basics: Techniques for Beginners', 'Learn essential bouldering techniques including footwork, body positioning, and dynamic moves from professional coaches.', 'https://www.youtube.com/watch?v=5Dv0x1u-x58', 'https://i.ytimg.com/vi/5Dv0x1u-x58/maxresdefault.jpg', '12:47', 'REI', 'tutorial', 1340000, 0, 'youtube'),
+  ('Chris Sharma Deep Water Soloing', 'Watch Chris Sharma tackle incredible deep water solo routes in Mallorca, Spain - climbing without ropes over water.', 'https://www.youtube.com/watch?v=gah7dJ_0w7U', 'https://i.ytimg.com/vi/gah7dJ_0w7U/maxresdefault.jpg', '8:23', 'Petzl Sport', 'outdoor', 3120000, 0, 'youtube'),
+  ('Climbing Gym Training Routine', 'Professional climbers share their training routines including campus board, hangboard, and core exercises.', 'https://www.youtube.com/watch?v=ctzCVQ70MTE', 'https://i.ytimg.com/vi/ctzCVQ70MTE/maxresdefault.jpg', '15:28', 'EpicTV', 'training', 890000, 0, 'youtube'),
+  ('Yosemite Valley Rock Climbing Adventure', 'Explore the world''s most famous climbing destination with stunning big wall routes and classic crack climbs.', 'https://www.youtube.com/watch?v=o86HmuXokUk', 'https://i.ytimg.com/vi/o86HmuXokUk/maxresdefault.jpg', '22:45', 'Outside TV', 'outdoor', 1230000, 0, 'youtube'),
   
   -- Instagram Videos (5) - VERIFIED EMBEDDABLE REELS - ALL CLIMBING THUMBNAILS
   ('Climbing Lab Community Connection', 'At The Climbing Lab, we believe climbing isn''t just about strength – it''s about support, connection, and the moments that help us feel like we belong.', 'https://www.instagram.com/reel/DOtQh5SCHdb/', 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=600&h=400&fit=crop&q=80', '0:45', 'The Climbing Lab', 'bouldering', 15640, 0, 'instagram'),
@@ -50,6 +50,60 @@ INSERT OR IGNORE INTO announcements (title, content, priority, is_active) VALUES
   ('🏆 コンテスト開催', '賞金総額$10,000の動画コンテスト - 12月31日まで最高のクライミングを投稿しよう', 'high', 1),
   ('📍 提携ジム拡大', '全国200箇所以上の提携ジムで撮影が可能になりました', 'medium', 1),
   ('🔔 コミュニティマイルストーン', 'ClimbHeroの動画投稿数が10,000本を突破！クライマーの皆様ありがとうございます！', 'medium', 1);
+
+-- Insert sample user_likes for trending calculation
+-- Adding likes with different timestamps to simulate trending videos
+INSERT OR IGNORE INTO user_likes (user_id, video_id, created_at) VALUES
+  -- Video 1: High recent activity (24h: 5 likes, 24-48h: 2 likes) - 150% increase
+  (1, 1, datetime('now', '-2 hours')),
+  (2, 1, datetime('now', '-5 hours')),
+  (1, 1, datetime('now', '-8 hours')),
+  (2, 1, datetime('now', '-12 hours')),
+  (1, 1, datetime('now', '-20 hours')),
+  (2, 1, datetime('now', '-30 hours')),
+  (1, 1, datetime('now', '-40 hours')),
+  
+  -- Video 2: Moderate increase (24h: 4 likes, 24-48h: 3 likes) - 33% increase
+  (1, 2, datetime('now', '-3 hours')),
+  (2, 2, datetime('now', '-7 hours')),
+  (1, 2, datetime('now', '-15 hours')),
+  (2, 2, datetime('now', '-22 hours')),
+  (1, 2, datetime('now', '-28 hours')),
+  (2, 2, datetime('now', '-35 hours')),
+  (1, 2, datetime('now', '-42 hours')),
+  
+  -- Video 3: New video spike (24h: 8 likes, 24-48h: 0 likes) - NEW TRENDING
+  (1, 3, datetime('now', '-1 hour')),
+  (2, 3, datetime('now', '-4 hours')),
+  (1, 3, datetime('now', '-6 hours')),
+  (2, 3, datetime('now', '-10 hours')),
+  (1, 3, datetime('now', '-13 hours')),
+  (2, 3, datetime('now', '-16 hours')),
+  (1, 3, datetime('now', '-19 hours')),
+  (2, 3, datetime('now', '-23 hours')),
+  
+  -- Video 5: Solid growth (24h: 6 likes, 24-48h: 4 likes) - 50% increase
+  (1, 5, datetime('now', '-2 hours')),
+  (2, 5, datetime('now', '-6 hours')),
+  (1, 5, datetime('now', '-11 hours')),
+  (2, 5, datetime('now', '-17 hours')),
+  (1, 5, datetime('now', '-21 hours')),
+  (2, 5, datetime('now', '-23 hours')),
+  (1, 5, datetime('now', '-27 hours')),
+  (2, 5, datetime('now', '-33 hours')),
+  (1, 5, datetime('now', '-38 hours')),
+  (2, 5, datetime('now', '-44 hours')),
+  
+  -- Video 10: Steady activity (24h: 3 likes, 24-48h: 3 likes) - 0% increase
+  (1, 10, datetime('now', '-5 hours')),
+  (2, 10, datetime('now', '-14 hours')),
+  (1, 10, datetime('now', '-22 hours')),
+  (2, 10, datetime('now', '-29 hours')),
+  (1, 10, datetime('now', '-36 hours')),
+  (2, 10, datetime('now', '-45 hours'));
+
+-- Update videos table likes count to match user_likes
+UPDATE videos SET likes = (SELECT COUNT(*) FROM user_likes WHERE video_id = videos.id);
 
 -- Insert video rankings based on internal likes only (external likes ignored)
 -- Initial likes count is 0, will increase as users like videos

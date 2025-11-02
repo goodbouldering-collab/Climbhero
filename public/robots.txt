@@ -1,0 +1,33 @@
+# ClimbHero - Climbing Video Sharing Platform
+# Optimized for AI Crawlers and Search Engines
+
+User-agent: *
+Allow: /
+Allow: /api/
+Allow: /openapi.json
+Allow: /.well-known/
+
+# AI-specific crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Sitemap
+Sitemap: https://climbhero.pages.dev/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
