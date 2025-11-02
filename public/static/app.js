@@ -1140,6 +1140,10 @@ function scrollCarousel(carouselId, direction) {
 
 // ============ Switch Ranking Period ============
 async function switchRankingPeriod(period) {
+  // Disabled: No action on ranking period switch
+  return;
+  
+  /* Original code disabled
   state.currentRankingType = period;
   
   // Show loading skeleton
@@ -1159,6 +1163,8 @@ async function switchRankingPeriod(period) {
       }
       return;
     }
+  */
+  /*
   }
   
   // Update tab active state
@@ -1180,6 +1186,7 @@ async function switchRankingPeriod(period) {
       });
     }, 150);
   }
+  */
 }
 
 // ============ Helper Functions ============
