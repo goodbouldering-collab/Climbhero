@@ -38,20 +38,109 @@ INSERT OR IGNORE INTO videos (title, description, url, thumbnail_url, duration, 
   ('Sport Climbing in Kalymnos', 'Experience the limestone paradise of Kalymnos, Greece. Perfect pockets, tufas, and stunning Aegean Sea views.', 'https://vimeo.com/1095144635', 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=600&h=400&fit=crop&q=80', '15:20', 'Climbing Nomads', 'lead', 10340, 0, 'vimeo'),
   ('Ice Climbing in Canadian Rockies', 'Vertical ice climbing adventure in the frozen waterfalls of Banff. Technical mixed climbing at its finest.', 'https://vimeo.com/1105144635', 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=400&fit=crop&q=80', '10:15', 'Ice Warriors', 'ice', 7890, 0, 'vimeo');
 
--- Insert sample blog posts - IN JAPANESE (i18n handled by frontend)
-INSERT OR IGNORE INTO blog_posts (title, content, image_url, published_date) VALUES 
-  ('クライミングジム10施設と新規提携！全国200箇所以上で動画撮影が可能に', 'クライミング動画共有プラットフォームとして、さらに多くの撮影機会を提供するため、新たに10のクライミングジムとの提携を発表いたします。この拡大により、クライマーの皆様は全国200箇所以上の施設で自由に動画撮影を行えるようになりました。提携ジムでは撮影許可が不要となり、いつでも気軽にあなたのクライミング動画をアップロードできます。', 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=600&fit=crop&q=80', '2025-10-25'),
-  ('第1回クライミング動画コンテスト開催！賞金総額$10,000', 'あなたの最高のクライミングシーンをシェアしませんか！プロ・アマチュア問わず参加できる動画コンテストを開催します。グレード別の部門があるので、誰でも気軽に参加可能。グランプリ賞金は$5,000！応募期間は11月1日〜12月31日。あなたの驚異的なセンドとクリエイティブなクライミングコンテンツをお待ちしています。', 'https://cdn1.genspark.ai/user-upload-image/3_generated/4d1e55c2-3ca4-459a-be07-5f5f1e0450d6.png', '2025-10-20'),
-  ('クライマー向け安全な撮影ガイドラインを公開', 'クライミング中の撮影は危険を伴う場合があります。安全な撮影方法と重要な注意事項をまとめた包括的なガイドラインを作成しました。三脚の配置、クラッシュパッドの位置、スポッターの配置など、詳しく解説しています。安全第一で楽しくクライミングしましょう。', 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=600&fit=crop&q=80', '2025-10-15'),
-  ('プレミアム会員限定：AI自動グレード検出機能をリリース', 'プレミアム会員向けに、AIによる自動グレード検出機能をリリースしました。AIがあなたのクライミング動画を解析し、ルートの難易度を推定して適切なカテゴリに分類します。85%以上の精度を実現しており、あなたのクライミング進捗の整理に役立ちます。', 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&h=600&fit=crop&q=80', '2025-10-10'),
-  ('ClimbHero、動画投稿数10,000本を突破！', 'ローンチからわずか1年で、プラットフォームの動画投稿数が10,000本を突破しました！ClimbHeroを究極のクライミング動画プラットフォームにしてくださった素晴らしいコミュニティの皆様に感謝いたします。世界中のクライマーにサービスを提供できるよう、今後も改善を続けてまいります。', 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=600&fit=crop&q=80', '2025-10-05');
+-- Insert sample blog posts - MULTILINGUAL (Japanese + English + Chinese + Korean)
+INSERT OR IGNORE INTO blog_posts (title, content, image_url, published_date, slug, title_en, content_en, title_zh, content_zh, title_ko, content_ko) VALUES 
+  ('クライミングジム10施設と新規提携！全国200箇所以上で動画撮影が可能に', 
+   'クライミング動画共有プラットフォームとして、さらに多くの撮影機会を提供するため、新たに10のクライミングジムとの提携を発表いたします。この拡大により、クライマーの皆様は全国200箇所以上の施設で自由に動画撮影を行えるようになりました。提携ジムでは撮影許可が不要となり、いつでも気軽にあなたのクライミング動画をアップロードできます。', 
+   'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=600&fit=crop&q=80', 
+   '2025-10-25',
+   '10-new-gym-partners-200-locations',
+   '10 New Climbing Gym Partners Join ClimbHero! 200+ Locations Now Available for Video Filming',
+   'As a climbing video sharing platform, we are excited to announce partnerships with 10 new climbing gyms to provide more filming opportunities. With this expansion, climbers can now freely film at over 200 locations nationwide. Partner gyms do not require filming permits, making it easy to upload your climbing videos anytime.',
+   'ClimbHero新增10家攀岩馆合作伙伴！全国200多个场馆可拍摄视频',
+   '作为攀岩视频分享平台，我们很高兴宣布与10家新的攀岩馆建立合作关系，为您提供更多拍摄机会。通过此次扩展，攀岩者现在可以在全国200多个场馆自由拍摄。合作伙伴馆不需要拍摄许可，您可以随时轻松上传攀岩视频。',
+   'ClimbHero 10개 클라이밍 체육관 파트너 추가! 전국 200개 이상 장소에서 비디오 촬영 가능',
+   '클라이밍 비디오 공유 플랫폼으로서 더 많은 촬영 기회를 제공하기 위해 10개의 새로운 클라이밍 체육관과의 파트너십을 발표하게 되어 기쁩니다. 이번 확장을 통해 클라이머들은 이제 전국 200개 이상의 장소에서 자유롭게 촬영할 수 있습니다. 파트너 체육관에서는 촬영 허가가 필요 없으므로 언제든지 쉽게 클라이밍 비디오를 업로드할 수 있습니다.'),
+  
+  ('第1回クライミング動画コンテスト開催！賞金総額$10,000', 
+   'あなたの最高のクライミングシーンをシェアしませんか！プロ・アマチュア問わず参加できる動画コンテストを開催します。グレード別の部門があるので、誰でも気軽に参加可能。グランプリ賞金は$5,000！応募期間は11月1日〜12月31日。あなたの驚異的なセンドとクリエイティブなクライミングコンテンツをお待ちしています。', 
+   'https://cdn1.genspark.ai/user-upload-image/3_generated/4d1e55c2-3ca4-459a-be07-5f5f1e0450d6.png', 
+   '2025-10-20',
+   'first-climbing-video-contest-10000-prize',
+   '1st Climbing Video Contest Announced! $10,000 Total Prize Pool',
+   'Share your best climbing moments! We are hosting a video contest open to both professionals and amateurs. With grade-based categories, everyone can participate easily. Grand prize: $5,000! Entry period: November 1st - December 31st. Show us your incredible sends and creative climbing content.',
+   '首届攀岩视频大赛开幕！总奖金$10,000',
+   '分享您最精彩的攀岩时刻！我们正在举办一场面向专业和业余选手的视频大赛。设有按难度分级的类别，每个人都可以轻松参与。大奖$5,000！参赛期间为11月1日至12月31日。展示您惊人的攀登和创意攀岩内容。',
+   '제1회 클라이밍 비디오 콘테스트 개최! 총 상금 $10,000',
+   '최고의 클라이밍 순간을 공유하세요! 프로와 아마추어 모두 참여할 수 있는 비디오 콘테스트를 개최합니다. 등급별 부문이 있어 누구나 쉽게 참여할 수 있습니다. 대상 상금 $5,000! 참가 기간은 11월 1일부터 12월 31일까지입니다. 놀라운 등반과 창의적인 클라이밍 콘텐츠를 보여주세요.'),
+  
+  ('クライマー向け安全な撮影ガイドラインを公開', 
+   'クライミング中の撮影は危険を伴う場合があります。安全な撮影方法と重要な注意事項をまとめた包括的なガイドラインを作成しました。三脚の配置、クラッシュパッドの位置、スポッターの配置など、詳しく解説しています。安全第一で楽しくクライミングしましょう。', 
+   'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=600&fit=crop&q=80', 
+   '2025-10-15',
+   'safe-filming-guidelines-for-climbers',
+   'Safe Filming Guidelines for Climbers Now Published',
+   'Filming while climbing can be dangerous. We have created comprehensive guidelines covering safe filming methods and important precautions. Topics include tripod placement, crash pad positioning, spotter arrangements, and more. Safety first, always.',
+   '攀岩者安全拍摄指南发布',
+   '攀岩时拍摄可能存在危险。我们制定了涵盖安全拍摄方法和重要注意事项的综合指南。主题包括三脚架放置、抱石垫位置、保护者安排等。安全第一，始终如一。',
+   '클라이머를 위한 안전 촬영 가이드라인 발표',
+   '클라이밍 중 촬영은 위험할 수 있습니다. 안전한 촬영 방법과 중요한 주의사항을 다루는 포괄적인 가이드라인을 만들었습니다. 삼각대 배치, 크래시 패드 위치, 스포터 배치 등이 포함됩니다. 안전이 최우선입니다.'),
+  
+  ('プレミアム会員限定：AI自動グレード検出機能をリリース', 
+   'プレミアム会員向けに、AIによる自動グレード検出機能をリリースしました。AIがあなたのクライミング動画を解析し、ルートの難易度を推定して適切なカテゴリに分類します。85%以上の精度を実現しており、あなたのクライミング進捗の整理に役立ちます。', 
+   'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&h=600&fit=crop&q=80', 
+   '2025-10-10',
+   'premium-ai-auto-grade-detection',
+   'Premium Members: AI Auto-Grade Detection Feature Released',
+   'We have released an AI-powered automatic grade detection feature for Premium members. The AI analyzes your climbing videos to estimate route difficulty and categorize them appropriately. Achieving over 85% accuracy, this feature helps organize your climbing progression.',
+   '高级会员专属：AI自动难度检测功能发布',
+   '我们为高级会员发布了AI驱动的自动难度检测功能。AI会分析您的攀岩视频，估计路线难度并适当分类。实现了85%以上的准确度，有助于整理您的攀岩进度。',
+   '프리미엄 회원 전용: AI 자동 등급 감지 기능 출시',
+   '프리미엄 회원을 위한 AI 기반 자동 등급 감지 기능을 출시했습니다. AI가 클라이밍 비디오를 분석하여 루트 난이도를 추정하고 적절하게 분류합니다. 85% 이상의 정확도를 달성하여 클라이밍 진행 상황을 정리하는 데 도움이 됩니다.'),
+  
+  ('ClimbHero、動画投稿数10,000本を突破！', 
+   'ローンチからわずか1年で、プラットフォームの動画投稿数が10,000本を突破しました！ClimbHeroを究極のクライミング動画プラットフォームにしてくださった素晴らしいコミュニティの皆様に感謝いたします。世界中のクライマーにサービスを提供できるよう、今後も改善を続けてまいります。', 
+   'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=600&fit=crop&q=80', 
+   '2025-10-05',
+   'climbhero-surpasses-10000-uploads',
+   'ClimbHero Surpasses 10,000 Video Uploads!',
+   'Just one year after launch, our platform has surpassed 10,000 video uploads! Thank you to our amazing community for making ClimbHero the ultimate climbing video platform. We will continue improving to serve climbers worldwide.',
+   'ClimbHero突破10,000个视频上传！',
+   '上线仅一年，我们的平台视频上传量就突破了10,000个！感谢我们出色的社区让ClimbHero成为终极攀岩视频平台。我们将继续改进，为全球攀岩者提供服务。',
+   'ClimbHero 비디오 업로드 10,000개 돌파!',
+   '출시 후 불과 1년 만에 플랫폼의 비디오 업로드 수가 10,000개를 돌파했습니다! ClimbHero를 최고의 클라이밍 비디오 플랫폼으로 만들어주신 놀라운 커뮤니티에 감사드립니다. 전 세계 클라이머들에게 서비스를 제공하기 위해 계속 개선해 나가겠습니다.');
 
--- Insert sample announcements - IN JAPANESE (i18n handled by frontend)
-INSERT OR IGNORE INTO announcements (title, content, priority, is_active) VALUES 
-  ('🎉 新機能リリース', 'プレミアム会員向けにAI自動グレード検出機能が利用可能になりました！', 'high', 1),
-  ('🏆 コンテスト開催', '賞金総額$10,000の動画コンテスト - 12月31日まで最高のクライミングを投稿しよう', 'high', 1),
-  ('📍 提携ジム拡大', '全国200箇所以上の提携ジムで撮影が可能になりました', 'medium', 1),
-  ('🔔 コミュニティマイルストーン', 'ClimbHeroの動画投稿数が10,000本を突破！クライマーの皆様ありがとうございます！', 'medium', 1);
+-- Insert sample announcements - MULTILINGUAL (Japanese + English + Chinese + Korean)
+INSERT OR IGNORE INTO announcements (title, content, priority, is_active, title_en, content_en, title_zh, content_zh, title_ko, content_ko) VALUES 
+  ('🎉 新機能リリース', 
+   'プレミアム会員向けにAI自動グレード検出機能が利用可能になりました！', 
+   'high', 1,
+   '🎉 New Feature',
+   'AI-powered auto-grade detection now available for Premium members!',
+   '🎉 新功能发布',
+   '高级会员现可使用AI驱动的自动难度检测！',
+   '🎉 신기능 출시',
+   '프리미엄 회원을 위한 AI 기반 자동 등급 감지 기능을 이제 사용할 수 있습니다!'),
+  
+  ('🏆 コンテスト開催', 
+   '賞金総額$10,000の動画コンテスト - 12月31日まで最高のクライミングを投稿しよう', 
+   'high', 1,
+   '🏆 Contest Alert',
+   '$10,000 Video Contest - Submit your best climbs by Dec 31st',
+   '🏆 大赛通知',
+   '总奖金$10,000的视频大赛 - 12月31日前提交您最佳的攀登',
+   '🏆 콘테스트 알림',
+   '총 상금 $10,000 비디오 콘테스트 - 12월 31일까지 최고의 등반을 제출하세요'),
+  
+  ('📍 提携ジム拡大', 
+   '全国200箇所以上の提携ジムで撮影が可能になりました', 
+   'medium', 1,
+   '📍 Partner Gyms',
+   '200+ partner gyms now available for filming nationwide',
+   '📍 合作场馆扩展',
+   '全国200多家合作场馆现可拍摄',
+   '📍 파트너 체육관 확대',
+   '전국 200개 이상의 파트너 체육관에서 촬영 가능'),
+  
+  ('🔔 コミュニティマイルストーン', 
+   'ClimbHeroの動画投稿数が10,000本を突破！クライマーの皆様ありがとうございます！', 
+   'medium', 1,
+   '🔔 Community Milestone',
+   'ClimbHero surpassed 10,000 video uploads! Thank you climbers!',
+   '🔔 社区里程碑',
+   'ClimbHero视频上传量突破10,000个！感谢所有攀岩者！',
+   '🔔 커뮤니티 이정표',
+   'ClimbHero 비디오 업로드 10,000개 돌파! 클라이머 여러분 감사합니다!');
 
 -- Insert sample user_likes for trending calculation
 -- Adding likes with different timestamps to simulate trending videos

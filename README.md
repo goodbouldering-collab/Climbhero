@@ -227,11 +227,17 @@
   - Query: `?limit=20`
 
 ### ブログAPI
-- `GET /api/blog` - ブログ記事一覧
-- `GET /api/blog/:id` - ブログ記事詳細
+- `GET /api/blog?lang={ja|en|zh|ko}` - ブログ記事一覧（多言語対応） 🌐 NEW
+- `GET /api/blog/:id?lang={ja|en|zh|ko}` - ブログ記事詳細（IDまたはslug対応） 🌐 NEW
 - `POST /api/blog` - ブログ投稿（認証必須）
 - `PUT /api/blog/:id` - ブログ更新（認証必須）
 - `DELETE /api/blog/:id` - ブログ削除（認証必須）
+
+### Genspark AI連携API 🤖 NEW
+- `POST /api/genspark/blog-url` - ブログURL生成（4言語対応）
+  - 入力: `title_ja`（必須）、`title_en`, `title_zh`, `title_ko`, `custom_slug`（任意）
+  - 出力: 4言語分のURL、slug、SEOプレビュー
+  - 詳細: [GENSPARK_INTEGRATION.md](./GENSPARK_INTEGRATION.md)
 
 ## 💻 ローカル開発
 
@@ -302,6 +308,8 @@ npm run db:migrate:prod
 - **デプロイ**: Cloudflare Pages
 - **プロセス管理**: PM2
 - **HTTP クライアント**: Axios
+- **AI連携**: OpenAPI 3.0, AI Plugin, LLMO最適化 🤖 NEW
+- **多言語対応**: 日本語・英語・中国語・韓国語（ja/en/zh/ko） 🌐 NEW
 
 ## 🎯 参考サイト
 
@@ -339,9 +347,59 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-01
+**最終更新日**: 2025-11-02
 **プロジェクト状態**: ✅ 本番稼働中
 **参考サイト**: https://climbhero.info
+
+## 🎉 最新アップデート (2025-11-02)
+
+### 🤖 Genspark AI連携機能実装
+- ✅ **ブログURL自動生成API**: `/api/genspark/blog-url`
+  - 日本語タイトルから4言語対応のSEO最適化URLを生成
+  - 入力: title_ja（必須）、title_en/zh/ko（任意）、custom_slug（任意）
+  - 出力: slug、4言語URL、SEOプレビュー（Open Graph、hreflang）
+  - AI Pluginからの呼び出しに最適化
+- ✅ **OpenAPI 3.0仕様拡張**: Genspark APIエンドポイント追加
+  - タグ追加: `genspark` - "Genspark AI連携機能"
+  - 詳細なリクエスト/レスポンススキーマ
+  - 使用例とエラーハンドリング
+- ✅ **AI Plugin設定更新**: 
+  - description_for_modelにGenspark機能を追加
+  - URL生成機能の説明を含む
+- ✅ **LLMO最適化**: 
+  - llmo.txtにGenspark AI連携セクション追加
+  - エンドポイント詳細、入出力仕様、用途を記載
+- ✅ **Sitemap更新**: 
+  - `/api/genspark/blog-url`エンドポイントを追加
+  - llmo.txtへのリンク追加
+- ✅ **ドキュメント作成**: 
+  - [GENSPARK_INTEGRATION.md](./GENSPARK_INTEGRATION.md) - 完全な使用ガイド
+  - curl使用例、パラメータ説明、レスポンス形式
+  - AI Pluginでの使用方法
+
+### 🎨 価格表示の微調整
+- ✅ **プレミアムタイトル変更**: 
+  - 旧: "プレミアムで動画投稿といいね❤️"
+  - 新: "プレミアムで、動画投稿❤️"（読点追加で読みやすく）
+- ✅ **無料プランいいね制限変更**: 
+  - 旧: 各言語でバラバラ（1回、3回など）
+  - 新: **全言語で2回まで**に統一
+  - 日本語: （2回まで）
+  - English: (Up to 2)
+  - 中文: （最多2次）
+  - 한국어: （최대 2회）
+
+### 📚 API仕様の整備
+- ✅ **BlogPost スキーマ拡張**: 
+  - 多言語フィールド: title_ja/en/zh/ko
+  - URL slug フィールド追加
+  - URL フィールド追加（完全なURL）
+  - Tags配列追加
+- ✅ **Blog APIエンドポイント詳細化**: 
+  - `?lang=` パラメータの明示
+  - ID/slug両対応の説明追加
+
+---
 
 ## 🎉 最新アップデート (2025-11-01)
 

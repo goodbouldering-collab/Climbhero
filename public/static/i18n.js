@@ -48,7 +48,7 @@ const translations = {
     'video.liked': 'いいね済み',
     
     // Pricing Section
-    'pricing.title': 'プレミアムで動画投稿といいね❤️',
+    'pricing.title': 'プレミアムで、動画投稿❤️',
     'pricing.trial': '15日間無料トライアル実施中',
     'pricing.free.title': '無料プラン',
     'pricing.free.price': '$0',
@@ -56,7 +56,7 @@ const translations = {
     'pricing.free.upload': '動画投稿',
     'pricing.free.upload_status': '（不可）',
     'pricing.free.likes': 'いいね',
-    'pricing.free.likes_status': '（1回まで）',
+    'pricing.free.likes_status': '（2回まで）',
     'pricing.premium.title': 'プレミアムプラン',
     'pricing.premium.price': '$20',
     'pricing.premium.month': '/月',
@@ -528,7 +528,7 @@ const translations = {
     'video.liked': 'Liked',
     
     // Pricing Section
-    'pricing.title': 'Premium: Video Posts & ❤️ Likes',
+    'pricing.title': 'Premium: Video Posts❤️',
     'pricing.trial': '15-day free trial available',
     'pricing.free.title': 'Free Plan',
     'pricing.free.price': '$0',
@@ -536,7 +536,7 @@ const translations = {
     'pricing.free.upload': 'Video Upload',
     'pricing.free.upload_status': '(Not available)',
     'pricing.free.likes': 'Likes',
-    'pricing.free.likes_status': '(Up to 3)',
+    'pricing.free.likes_status': '(Up to 2)',
     'pricing.premium.title': 'Premium Plan',
     'pricing.premium.price': '$20',
     'pricing.premium.month': '/month',
@@ -961,6 +961,322 @@ const translations = {
     'blog.4.content': 'We have released an AI-powered automatic grade detection feature for Premium members. The AI analyzes your climbing videos to estimate route difficulty and categorize them appropriately. Achieving over 85% accuracy, this feature helps organize your climbing progression.',
     'blog.5.title': 'ClimbHero Surpasses 10,000 Video Uploads!',
     'blog.5.content': 'Just one year after launch, our platform has surpassed 10,000 video uploads! Thank you to our amazing community for making ClimbHero the ultimate climbing video platform. We will continue improving to serve climbers worldwide.',
+  },
+  
+  zh: {
+    // Navigation & Header
+    'nav.home': '首页',
+    'nav.rankings': '排行榜',
+    'nav.blog': '博客',
+    'nav.api': 'API',
+    'nav.admin': '管理后台',
+    'nav.login': '登录',
+    'nav.signup': '注册',
+    'nav.logout': '退出登录',
+    'nav.profile': '个人资料',
+    
+    // Hero Section
+    'hero.title': '攀岩视频分享平台',
+    'hero.subtitle': 'ClimbHero - 发现并分享来自世界各地的攀岩视频',
+    'hero.upload': '上传视频',
+    'hero.premium_badge': '高级',
+    
+    // Section Headers
+    'section.latest': '最新视频',
+    'section.bouldering': '抱石攀岩',
+    'section.lead': '先锋攀岩',
+    'section.alpine': '高山攀岩',
+    'section.other': '其他',
+    'section.tutorial': '教程',
+    'section.competition': '比赛',
+    'section.gear': '装备',
+    'section.rankings': '排行榜',
+    'section.blog': '博客文章',
+    
+    // Rankings Tab
+    'ranking.daily': '每日',
+    'ranking.weekly': '每周',
+    'ranking.monthly': '每月',
+    'ranking.yearly': '每年',
+    
+    // Video Card
+    'video.views': '次观看',
+    'video.views_count': '{count}次观看',
+    'video.likes': '点赞',
+    'video.likes_count': '{count}',
+    'video.channel': '频道',
+    'video.duration': '时长',
+    'video.like_btn': '点赞',
+    'video.liked': '已点赞',
+    
+    // Pricing Section
+    'pricing.title': '高级会员，上传视频❤️',
+    'pricing.trial': '15天免费试用',
+    'pricing.free.title': '免费计划',
+    'pricing.free.price': '$0',
+    'pricing.free.month': '/月',
+    'pricing.free.upload': '视频上传',
+    'pricing.free.upload_status': '（不可用）',
+    'pricing.free.likes': '点赞',
+    'pricing.free.likes_status': '（最多2次）',
+    'pricing.premium.title': '高级计划',
+    'pricing.premium.price': '$20',
+    'pricing.premium.month': '/月',
+    'pricing.premium.feature1': '上传您的视频',
+    'pricing.premium.feature2': '无限点赞',
+    'pricing.premium.feature3': '支持排名提升',
+    'pricing.cta': '开始使用',
+    
+    // Auth Modal
+    'auth.login.title': '登录',
+    'auth.signup.title': '注册',
+    'auth.email': '电子邮件',
+    'auth.password': '密码',
+    'auth.name': '姓名',
+    'auth.login_btn': '登录',
+    'auth.signup_btn': '注册',
+    'auth.switch_to_signup': '还没有账户？',
+    'auth.switch_to_login': '已有账户？',
+    'auth.forgot_password': '忘记密码？',
+    'auth.close': '关闭',
+    
+    // Upload Modal
+    'upload.title': '上传视频',
+    'upload.premium_only': '高级专属',
+    'upload.url': '视频URL',
+    'upload.url_placeholder': 'YouTube、Vimeo、Instagram、TikTok URL',
+    'upload.video_title': '视频标题',
+    'upload.description': '描述',
+    'upload.category': '类别',
+    'upload.analyze': '分析URL',
+    'upload.submit': '上传',
+    'upload.cancel': '取消',
+    'upload.analyzing': '分析中...',
+    'upload.uploading': '上传中...',
+    
+    // Toast Messages
+    'toast.like_success': '已点赞！',
+    'toast.like_remaining': '剩余{count}次点赞',
+    'toast.like_limit': '达到免费计划限制',
+    'toast.already_liked': '已经点赞',
+    'toast.login_required': '需要登录',
+    'toast.upload_success': '视频上传成功',
+    'toast.upload_error': '上传失败',
+    'toast.data_load_error': '数据加载失败',
+    'toast.admin_only': '需要管理员权限',
+    'toast.auth_success': '登录成功',
+    'toast.auth_error': '认证失败',
+    'toast.logout_success': '已退出登录',
+    
+    // Footer
+    'footer.about': '关于ClimbHero',
+    'footer.terms': '服务条款',
+    'footer.privacy': '隐私政策',
+    'footer.contact': '联系我们',
+    'footer.copyright': '© 2024 ClimbHero. 保留所有权利。',
+    
+    // Admin Panel
+    'admin.title': '管理后台',
+    'admin.videos': '视频管理',
+    'admin.announcements': '公告管理',
+    'admin.blog': '博客管理',
+    'admin.users': '用户管理',
+    'admin.stats': '统计信息',
+    'admin.video_title': '标题',
+    'admin.video_category': '类别',
+    'admin.video_likes': '点赞数',
+    'admin.video_views': '观看次数',
+    'admin.video_edit': '编辑',
+    'admin.video_delete': '删除',
+    'admin.announcement_title': '标题',
+    'admin.announcement_content': '内容',
+    'admin.announcement_priority': '优先级',
+    'admin.announcement_active': '活动中',
+    'admin.announcement_inactive': '未活动',
+    'admin.announcement_new': '新公告',
+    'admin.announcement_edit': '编辑公告',
+    'admin.blog_title': '博客标题',
+    'admin.blog_content': '内容',
+    'admin.blog_image': '图片URL',
+    'admin.blog_date': '发布日期',
+    'admin.blog_new': '新博客文章',
+    'admin.blog_edit': '编辑博客',
+    'admin.csv_export': '导出CSV',
+    'admin.csv_import': '导入CSV',
+    
+    // Common
+    'common.loading': '加载中...',
+    'common.cancel': '取消',
+    'common.close': '关闭',
+    'common.save': '保存',
+    'common.delete': '删除',
+    'common.edit': '编辑',
+    'common.search': '搜索',
+    'common.submit': '提交',
+    
+    // Feature Explanation
+    'feature.title': '什么是ClimbHero？',
+    'feature.toggle_show': '显示详情',
+    'feature.toggle_hide': '隐藏详情',
+    'feature.mission': '基于30多年的攀岩经验和数据驱动的见解，ClimbHero是一个记录和分享每个攀岩者挑战和成长的平台。统一来自YouTube、Instagram、TikTok和Vimeo的视频，通过实时排名发现热门内容。'
+  },
+  
+  ko: {
+    // Navigation & Header
+    'nav.home': '홈',
+    'nav.rankings': '랭킹',
+    'nav.blog': '블로그',
+    'nav.api': 'API',
+    'nav.admin': '관리자',
+    'nav.login': '로그인',
+    'nav.signup': '회원가입',
+    'nav.logout': '로그아웃',
+    'nav.profile': '프로필',
+    
+    // Hero Section
+    'hero.title': '클라이밍 비디오 공유 플랫폼',
+    'hero.subtitle': 'ClimbHero - 전 세계의 클라이밍 비디오를 발견하고 공유하세요',
+    'hero.upload': '비디오 업로드',
+    'hero.premium_badge': '프리미엄',
+    
+    // Section Headers
+    'section.latest': '최신 비디오',
+    'section.bouldering': '볼더링',
+    'section.lead': '리드 클라이밍',
+    'section.alpine': '알파인 클라이밍',
+    'section.other': '기타',
+    'section.tutorial': '튜토리얼',
+    'section.competition': '대회',
+    'section.gear': '장비',
+    'section.rankings': '랭킹',
+    'section.blog': '블로그 게시물',
+    
+    // Rankings Tab
+    'ranking.daily': '일간',
+    'ranking.weekly': '주간',
+    'ranking.monthly': '월간',
+    'ranking.yearly': '연간',
+    
+    // Video Card
+    'video.views': '회 조회',
+    'video.views_count': '{count}회 조회',
+    'video.likes': '좋아요',
+    'video.likes_count': '{count}',
+    'video.channel': '채널',
+    'video.duration': '재생 시간',
+    'video.like_btn': '좋아요',
+    'video.liked': '좋아요 완료',
+    
+    // Pricing Section
+    'pricing.title': '프리미엄으로, 비디오 업로드❤️',
+    'pricing.trial': '15일 무료 체험',
+    'pricing.free.title': '무료 플랜',
+    'pricing.free.price': '$0',
+    'pricing.free.month': '/월',
+    'pricing.free.upload': '비디오 업로드',
+    'pricing.free.upload_status': '（불가）',
+    'pricing.free.likes': '좋아요',
+    'pricing.free.likes_status': '（최대 2회）',
+    'pricing.premium.title': '프리미엄 플랜',
+    'pricing.premium.price': '$20',
+    'pricing.premium.month': '/월',
+    'pricing.premium.feature1': '나의 비디오 업로드',
+    'pricing.premium.feature2': '무제한 좋아요',
+    'pricing.premium.feature3': '랭킹 상승 지원',
+    'pricing.cta': '시작하기',
+    
+    // Auth Modal
+    'auth.login.title': '로그인',
+    'auth.signup.title': '회원가입',
+    'auth.email': '이메일',
+    'auth.password': '비밀번호',
+    'auth.name': '이름',
+    'auth.login_btn': '로그인',
+    'auth.signup_btn': '가입',
+    'auth.switch_to_signup': '계정이 없으신가요？',
+    'auth.switch_to_login': '이미 계정이 있으신가요？',
+    'auth.forgot_password': '비밀번호를 잊으셨나요？',
+    'auth.close': '닫기',
+    
+    // Upload Modal
+    'upload.title': '비디오 업로드',
+    'upload.premium_only': '프리미엄 전용',
+    'upload.url': '비디오 URL',
+    'upload.url_placeholder': 'YouTube, Vimeo, Instagram, TikTok URL',
+    'upload.video_title': '비디오 제목',
+    'upload.description': '설명',
+    'upload.category': '카테고리',
+    'upload.analyze': 'URL 분석',
+    'upload.submit': '업로드',
+    'upload.cancel': '취소',
+    'upload.analyzing': '분석 중...',
+    'upload.uploading': '업로드 중...',
+    
+    // Toast Messages
+    'toast.like_success': '좋아요 완료！',
+    'toast.like_remaining': '남은 좋아요 {count}회',
+    'toast.like_limit': '무료 플랜 한도 도달',
+    'toast.already_liked': '이미 좋아요 완료',
+    'toast.login_required': '로그인이 필요합니다',
+    'toast.upload_success': '비디오 업로드 성공',
+    'toast.upload_error': '업로드 실패',
+    'toast.data_load_error': '데이터 로드 실패',
+    'toast.admin_only': '관리자 권한 필요',
+    'toast.auth_success': '로그인 성공',
+    'toast.auth_error': '인증 실패',
+    'toast.logout_success': '로그아웃 완료',
+    
+    // Footer
+    'footer.about': 'ClimbHero 소개',
+    'footer.terms': '이용 약관',
+    'footer.privacy': '개인정보 보호정책',
+    'footer.contact': '문의하기',
+    'footer.copyright': '© 2024 ClimbHero. All rights reserved.',
+    
+    // Admin Panel
+    'admin.title': '관리자 패널',
+    'admin.videos': '비디오 관리',
+    'admin.announcements': '공지사항 관리',
+    'admin.blog': '블로그 관리',
+    'admin.users': '사용자 관리',
+    'admin.stats': '통계',
+    'admin.video_title': '제목',
+    'admin.video_category': '카테고리',
+    'admin.video_likes': '좋아요 수',
+    'admin.video_views': '조회수',
+    'admin.video_edit': '편집',
+    'admin.video_delete': '삭제',
+    'admin.announcement_title': '제목',
+    'admin.announcement_content': '내용',
+    'admin.announcement_priority': '우선순위',
+    'admin.announcement_active': '활성',
+    'admin.announcement_inactive': '비활성',
+    'admin.announcement_new': '새 공지사항',
+    'admin.announcement_edit': '공지사항 편집',
+    'admin.blog_title': '블로그 제목',
+    'admin.blog_content': '내용',
+    'admin.blog_image': '이미지 URL',
+    'admin.blog_date': '발행일',
+    'admin.blog_new': '새 블로그 게시물',
+    'admin.blog_edit': '블로그 편집',
+    'admin.csv_export': 'CSV 내보내기',
+    'admin.csv_import': 'CSV 가져오기',
+    
+    // Common
+    'common.loading': '로딩 중...',
+    'common.cancel': '취소',
+    'common.close': '닫기',
+    'common.save': '저장',
+    'common.delete': '삭제',
+    'common.edit': '편집',
+    'common.search': '검색',
+    'common.submit': '제출',
+    
+    // Feature Explanation
+    'feature.title': 'ClimbHero란？',
+    'feature.toggle_show': '자세히 보기',
+    'feature.toggle_hide': '숨기기',
+    'feature.mission': '30년 이상의 클라이밍 경험과 데이터 기반 통찰력을 바탕으로 구축된 ClimbHero는 모든 클라이머의 도전과 성장을 기록하고 공유하는 플랫폼입니다. YouTube, Instagram, TikTok, Vimeo의 비디오를 통합하고 실시간 랭킹을 통해 인기 콘텐츠를 발견하세요.'
   }
 };
 
@@ -1002,7 +1318,9 @@ function getCurrentLanguage() {
 function getAvailableLanguages() {
   return [
     { code: 'ja', name: '日本語', flag: '🇯🇵' },
-    { code: 'en', name: 'English', flag: '🇺🇸' }
+    { code: 'en', name: 'English', flag: '🇺🇸' },
+    { code: 'zh', name: '中文', flag: '🇨🇳' },
+    { code: 'ko', name: '한국어', flag: '🇰🇷' }
   ];
 }
 

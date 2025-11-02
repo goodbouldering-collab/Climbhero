@@ -34,8 +34,22 @@ OpenAPI 3.0準拠のRESTful API
 - GET /api/videos/trending - トレンド動画
 - GET /api/videos/{id} - 動画詳細
 - GET /api/rankings/{period} - ランキング（daily/weekly/monthly/yearly）
-- GET /api/blog - ブログ記事
+- GET /api/blog?lang={ja|en|zh|ko} - ブログ記事一覧（多言語対応）
+- GET /api/blog/{id}?lang={ja|en|zh|ko} - ブログ記事詳細（IDまたはslug対応）
+- POST /api/genspark/blog-url - ブログURL生成（Genspark AI用）
 - GET /api/announcements - お知らせ
+
+## Genspark AI連携機能
+### ブログURL自動生成API
+- エンドポイント: POST /api/genspark/blog-url
+- 機能: 日本語タイトルから4言語対応のSEO最適化URLを生成
+- 入力: title_ja（必須）、title_en, title_zh, title_ko, custom_slug（任意）
+- 出力: 
+  - slug: SEO対応URL slug（例: 10-new-gym-partners）
+  - urls: 4言語分のURL（ja/en/zh/ko）
+  - titles: 4言語分のタイトル
+  - seo_preview: Open Graph用メタデータ、canonical URL、hreflang設定
+- 用途: AI Pluginからブログ記事URLを動的生成し、多言語SEO対応を自動化
 
 ## ナレッジグラフ
 ### エンティティ

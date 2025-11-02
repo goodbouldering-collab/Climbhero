@@ -656,28 +656,60 @@ app.get('/api/blog/posts/tag/:tagName', async (c) => {
 })
 
 // Get all blog posts
+// Helper function to get localized field
+function getLocalizedField(obj: any, fieldName: string, lang: string): string {
+  if (lang === 'en' && obj[`${fieldName}_en`]) return obj[`${fieldName}_en`]
+  if (lang === 'zh' && obj[`${fieldName}_zh`]) return obj[`${fieldName}_zh`]
+  if (lang === 'ko' && obj[`${fieldName}_ko`]) return obj[`${fieldName}_ko`]
+  return obj[fieldName] // Default to Japanese
+}
+
 app.get('/api/blog', async (c) => {
   const { env } = c
+  const lang = c.req.query('lang') || 'ja'
 
   try {
     const { results: posts } = await env.DB.prepare('SELECT * FROM blog_posts ORDER BY published_date DESC').all()
-    return c.json(posts)
+    
+    // Return language-specific fields based on lang parameter (supports ja/en/zh/ko)
+    const localizedPosts = (posts as any[]).map((post: any) => ({
+      ...post,
+      title: getLocalizedField(post, 'title', lang),
+      content: getLocalizedField(post, 'content', lang)
+    }))
+    
+    return c.json(localizedPosts)
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
 })
 
-// Get single blog post
+// Get single blog post (supports slug or ID)
 app.get('/api/blog/:id', async (c) => {
   const { env } = c
   const id = c.req.param('id')
+  const lang = c.req.query('lang') || 'ja'
 
   try {
-    const post = await env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(id).first()
+    // Check if id is a slug (contains hyphens) or numeric ID
+    const isSlug = id.includes('-')
+    const query = isSlug 
+      ? 'SELECT * FROM blog_posts WHERE slug = ?'
+      : 'SELECT * FROM blog_posts WHERE id = ?'
+    
+    const post = await env.DB.prepare(query).bind(id).first() as any
     if (!post) {
       return c.json({ error: 'Blog post not found' }, 404)
     }
-    return c.json(post)
+    
+    // Return language-specific fields (supports ja/en/zh/ko)
+    const localizedPost = {
+      ...post,
+      title: getLocalizedField(post, 'title', lang),
+      content: getLocalizedField(post, 'content', lang)
+    }
+    
+    return c.json(localizedPost)
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -694,7 +726,7 @@ app.post('/api/blog', async (c) => {
   }
 
   const body = await c.req.json()
-  const { title, content, image_url, published_date } = body
+  const { title, title_en, content, content_en, image_url, published_date } = body
 
   if (!title || !content) {
     return c.json({ error: 'Title and content are required' }, 400)
@@ -702,8 +734,8 @@ app.post('/api/blog', async (c) => {
 
   try {
     const result = await env.DB.prepare(
-      'INSERT INTO blog_posts (title, content, image_url, published_date) VALUES (?, ?, ?, ?)'
-    ).bind(title, content, image_url || '', published_date || new Date().toISOString().split('T')[0]).run()
+      'INSERT INTO blog_posts (title, title_en, content, content_en, image_url, published_date) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(title, title_en || null, content, content_en || null, image_url || '', published_date || new Date().toISOString().split('T')[0]).run()
 
     return c.json({ id: result.meta.last_row_id, message: 'Blog post created successfully' }, 201)
   } catch (error: any) {
@@ -723,12 +755,12 @@ app.put('/api/blog/:id', async (c) => {
 
   const id = c.req.param('id')
   const body = await c.req.json()
-  const { title, content, image_url, published_date } = body
+  const { title, title_en, content, content_en, image_url, published_date } = body
 
   try {
     await env.DB.prepare(
-      'UPDATE blog_posts SET title = ?, content = ?, image_url = ?, published_date = ? WHERE id = ?'
-    ).bind(title, content, image_url || '', published_date || new Date().toISOString().split('T')[0], id).run()
+      'UPDATE blog_posts SET title = ?, title_en = ?, content = ?, content_en = ?, image_url = ?, published_date = ? WHERE id = ?'
+    ).bind(title, title_en || null, content, content_en || null, image_url || '', published_date || new Date().toISOString().split('T')[0], id).run()
 
     return c.json({ message: 'Blog post updated successfully' })
   } catch (error: any) {
@@ -751,6 +783,79 @@ app.delete('/api/blog/:id', async (c) => {
   try {
     await env.DB.prepare('DELETE FROM blog_posts WHERE id = ?').bind(id).run()
     return c.json({ message: 'Blog post deleted successfully' })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Genspark AI Integration API ============
+
+// Generate blog URL for Genspark AI
+app.post('/api/genspark/blog-url', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { title_ja, title_en, title_zh, title_ko, custom_slug } = body
+
+    if (!title_ja) {
+      return c.json({ error: 'title_ja is required' }, 400)
+    }
+
+    // Generate slug from English title or custom slug
+    let slug = custom_slug
+    if (!slug && title_en) {
+      slug = title_en
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-')          // Replace spaces with hyphens
+        .replace(/-+/g, '-')           // Replace multiple hyphens with single
+        .replace(/^-|-$/g, '')         // Remove leading/trailing hyphens
+    }
+    
+    // If still no slug, generate from timestamp
+    if (!slug) {
+      slug = `blog-post-${Date.now()}`
+    }
+
+    // Base URL (use environment variable or default)
+    const baseUrl = 'https://climbhero.pages.dev'
+
+    // Generate URLs for all 4 languages
+    const urls = {
+      ja: `${baseUrl}/blog/${slug}?lang=ja`,
+      en: `${baseUrl}/blog/${slug}?lang=en`,
+      zh: `${baseUrl}/blog/${slug}?lang=zh`,
+      ko: `${baseUrl}/blog/${slug}?lang=ko`
+    }
+
+    // Collect titles
+    const titles = {
+      ja: title_ja,
+      en: title_en || title_ja,
+      zh: title_zh || title_ja,
+      ko: title_ko || title_ja
+    }
+
+    // SEO preview data
+    const seo_preview = {
+      og_url: `${baseUrl}/blog/${slug}`,
+      canonical: `${baseUrl}/blog/${slug}`,
+      alternate_langs: [
+        `<link rel="alternate" hreflang="ja" href="${urls.ja}" />`,
+        `<link rel="alternate" hreflang="en" href="${urls.en}" />`,
+        `<link rel="alternate" hreflang="zh" href="${urls.zh}" />`,
+        `<link rel="alternate" hreflang="ko" href="${urls.ko}" />`
+      ]
+    }
+
+    return c.json({
+      slug,
+      urls,
+      titles,
+      seo_preview,
+      message: 'Blog URLs generated successfully for 4 languages (ja/en/zh/ko)',
+      usage_note: 'Use these URLs in your blog posts. The slug is SEO-optimized and supports multilingual content.'
+    })
+
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -1167,6 +1272,7 @@ app.post('/api/users/:id/follow', async (c) => {
 // Get all active announcements
 app.get('/api/announcements', async (c) => {
   const { env } = c
+  const lang = c.req.query('lang') || 'ja'
   
   try {
     const announcements = await env.DB.prepare(`
@@ -1175,7 +1281,14 @@ app.get('/api/announcements', async (c) => {
       ORDER BY priority DESC, created_at DESC
     `).all()
     
-    return c.json(announcements.results || [])
+    // Return language-specific fields (supports ja/en/zh/ko)
+    const localizedAnnouncements = (announcements.results as any[] || []).map((announcement: any) => ({
+      ...announcement,
+      title: getLocalizedField(announcement, 'title', lang),
+      content: getLocalizedField(announcement, 'content', lang)
+    }))
+    
+    return c.json(localizedAnnouncements)
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -1213,7 +1326,7 @@ app.post('/api/admin/announcements', async (c) => {
     return c.json({ error: 'Admin access required' }, 403)
   }
   
-  const { title, content, priority, is_active } = await c.req.json()
+  const { title, title_en, title_zh, title_ko, content, content_en, content_zh, content_ko, priority, is_active } = await c.req.json()
   
   if (!title || !content) {
     return c.json({ error: 'Title and content are required' }, 400)
@@ -1221,9 +1334,11 @@ app.post('/api/admin/announcements', async (c) => {
   
   try {
     const result = await env.DB.prepare(`
-      INSERT INTO announcements (title, content, priority, is_active)
-      VALUES (?, ?, ?, ?)
-    `).bind(title, content, priority || 0, is_active !== undefined ? is_active : 1).run()
+      INSERT INTO announcements (title, title_en, title_zh, title_ko, content, content_en, content_zh, content_ko, priority, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(title, title_en || null, title_zh || null, title_ko || null,
+            content, content_en || null, content_zh || null, content_ko || null,
+            priority || 0, is_active !== undefined ? is_active : 1).run()
     
     return c.json({ 
       success: true, 
@@ -1245,14 +1360,18 @@ app.put('/api/admin/announcements/:id', async (c) => {
   }
   
   const announcementId = c.req.param('id')
-  const { title, content, priority, is_active } = await c.req.json()
+  const { title, title_en, title_zh, title_ko, content, content_en, content_zh, content_ko, priority, is_active } = await c.req.json()
   
   try {
     await env.DB.prepare(`
       UPDATE announcements 
-      SET title = ?, content = ?, priority = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+      SET title = ?, title_en = ?, title_zh = ?, title_ko = ?,
+          content = ?, content_en = ?, content_zh = ?, content_ko = ?,
+          priority = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).bind(title, content, priority || 0, is_active !== undefined ? is_active : 1, announcementId).run()
+    `).bind(title, title_en || null, title_zh || null, title_ko || null,
+            content, content_en || null, content_zh || null, content_ko || null,
+            priority || 0, is_active !== undefined ? is_active : 1, announcementId).run()
     
     return c.json({ success: true })
   } catch (error: any) {
@@ -3231,14 +3350,18 @@ app.put('/api/admin/blog/posts/:id', async (c) => {
 
   try {
     const postId = parseInt(c.req.param('id'))
-    const { title, content, image_url, published_date, tagIds } = await c.req.json()
+    const { title, title_en, title_zh, title_ko, content, content_en, content_zh, content_ko, image_url, published_date, slug, tagIds } = await c.req.json()
 
-    // Update blog post
+    // Update blog post with 4-language support
     await env.DB.prepare(`
       UPDATE blog_posts 
-      SET title = ?, content = ?, image_url = ?, published_date = ?
+      SET title = ?, title_en = ?, title_zh = ?, title_ko = ?, 
+          content = ?, content_en = ?, content_zh = ?, content_ko = ?,
+          image_url = ?, published_date = ?, slug = ?
       WHERE id = ?
-    `).bind(title, content, image_url, published_date, postId).run()
+    `).bind(title, title_en || null, title_zh || null, title_ko || null, 
+            content, content_en || null, content_zh || null, content_ko || null,
+            image_url, published_date, slug || null, postId).run()
 
     // Update tags if provided
     if (tagIds) {
@@ -3265,13 +3388,18 @@ app.post('/api/admin/blog/posts', async (c) => {
   }
 
   try {
-    const { title, content, image_url, published_date, tagIds } = await c.req.json()
+    const { title, title_en, title_zh, title_ko, content, content_en, content_zh, content_ko, image_url, published_date, slug, tagIds } = await c.req.json()
 
-    // Create blog post
+    // Generate slug if not provided
+    const finalSlug = slug || title_en?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `post-${Date.now()}`
+
+    // Create blog post with 4-language support
     const result = await env.DB.prepare(`
-      INSERT INTO blog_posts (title, content, image_url, published_date)
-      VALUES (?, ?, ?, ?)
-    `).bind(title, content, image_url, published_date).run()
+      INSERT INTO blog_posts (title, title_en, title_zh, title_ko, content, content_en, content_zh, content_ko, image_url, published_date, slug)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(title, title_en || null, title_zh || null, title_ko || null,
+            content, content_en || null, content_zh || null, content_ko || null,
+            image_url, published_date, finalSlug).run()
 
     const postId = result.meta.last_row_id
 

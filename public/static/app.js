@@ -23,8 +23,20 @@ const state = {
 };
 
 // ============ Language Support ============
-window.addEventListener('languageChanged', (e) => {
+window.addEventListener('languageChanged', async (e) => {
   state.currentLanguage = e.detail.language;
+  // Reload blog posts and announcements with new language
+  try {
+    const lang = state.currentLanguage || 'ja'
+    const [blogRes, announcementsRes] = await Promise.all([
+      axios.get(`/api/blog?lang=${lang}`),
+      axios.get(`/api/announcements?lang=${lang}`)
+    ]);
+    state.blogPosts = blogRes.data || [];
+    state.announcements = announcementsRes.data || [];
+  } catch (error) {
+    console.error('Error reloading data for language change:', error);
+  }
   renderApp();
 });
 
@@ -83,11 +95,12 @@ function updateHeroSlide() {
 // ============ Load Initial Data ============
 async function loadInitialData() {
   try {
+    const lang = state.currentLanguage || 'ja'
     const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
       axios.get('/api/rankings/weekly?limit=20'),
-      axios.get('/api/blog'),
-      axios.get('/api/announcements'),
+      axios.get(`/api/blog?lang=${lang}`),
+      axios.get(`/api/announcements?lang=${lang}`),
       axios.get('/api/videos/trending?limit=10')
     ]);
     
@@ -2662,20 +2675,131 @@ async function loadAdminAnnouncements() {
 
 // Show announcement modal
 function showAnnouncementModal(announcementId = null) {
-  // Simple prompt-based implementation
-  const title = prompt(i18n.t('admin.announcement_title'), '');
-  if (!title) return;
+  const isEdit = announcementId !== null;
+  const announcement = isEdit ? state.announcements.find(a => a.id === announcementId) : null;
   
-  const content = prompt(i18n.t('admin.announcement_content'), '');
-  if (!content) return;
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
   
-  const priority = parseInt(prompt(i18n.t('admin.announcement_priority') + ' (0-10)', '0') || '0');
-  const is_active = confirm(i18n.getCurrentLanguage() === 'ja' ? '公開しますか？' : 'Make it active?') ? 1 : 0;
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 700px;" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold">
+          <i class="fas fa-bullhorn mr-2"></i>
+          ${isEdit ? i18n.t('admin.announcement_edit') : i18n.t('admin.announcement_new')}
+        </h3>
+        <button onclick="this.closest('.modal').remove()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <form onsubmit="handleAnnouncementSubmit(event, ${announcementId})" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_title')} (日本語)</label>
+          <input type="text" name="title" value="${announcement?.title || ''}" required class="w-full px-4 py-2 border rounded-lg" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_title')} (English)</label>
+          <input type="text" name="title_en" value="${announcement?.title_en || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="English title" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_title')} (中文)</label>
+          <input type="text" name="title_zh" value="${announcement?.title_zh || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="Chinese title" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_title')} (한국어)</label>
+          <input type="text" name="title_ko" value="${announcement?.title_ko || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="Korean title" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_content')} (日本語)</label>
+          <textarea name="content" rows="2" required class="w-full px-4 py-2 border rounded-lg">${announcement?.content || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_content')} (English)</label>
+          <textarea name="content_en" rows="2" class="w-full px-4 py-2 border rounded-lg" placeholder="English content">${announcement?.content_en || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_content')} (中文)</label>
+          <textarea name="content_zh" rows="2" class="w-full px-4 py-2 border rounded-lg" placeholder="Chinese content">${announcement?.content_zh || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_content')} (한국어)</label>
+          <textarea name="content_ko" rows="2" class="w-full px-4 py-2 border rounded-lg" placeholder="Korean content">${announcement?.content_ko || ''}</textarea>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">${i18n.t('admin.announcement_priority')} (0-10)</label>
+            <input type="number" name="priority" value="${announcement?.priority || 0}" min="0" max="10" class="w-full px-4 py-2 border rounded-lg" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">Status</label>
+            <select name="is_active" class="w-full px-4 py-2 border rounded-lg">
+              <option value="1" ${!announcement || announcement.is_active ? 'selected' : ''}>${i18n.t('admin.announcement_active')}</option>
+              <option value="0" ${announcement && !announcement.is_active ? 'selected' : ''}>${i18n.t('admin.announcement_inactive')}</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+            ${i18n.t('common.cancel')}
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>
+            ${i18n.t('common.save')}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
   
-  if (announcementId) {
-    updateAnnouncement(announcementId, { title, content, priority, is_active });
-  } else {
-    createAnnouncement({ title, content, priority, is_active });
+  document.body.appendChild(modal);
+}
+
+async function handleAnnouncementSubmit(event, announcementId) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  const data = {
+    title: formData.get('title'),
+    title_en: formData.get('title_en') || null,
+    title_zh: formData.get('title_zh') || null,
+    title_ko: formData.get('title_ko') || null,
+    content: formData.get('content'),
+    content_en: formData.get('content_en') || null,
+    content_zh: formData.get('content_zh') || null,
+    content_ko: formData.get('content_ko') || null,
+    priority: parseInt(formData.get('priority') || '0'),
+    is_active: parseInt(formData.get('is_active'))
+  };
+  
+  try {
+    if (announcementId) {
+      await axios.put(`/api/admin/announcements/${announcementId}`, data);
+      showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせを更新しました' : 'Announcement updated', 'success');
+    } else {
+      await axios.post('/api/admin/announcements', data);
+      showToast(i18n.getCurrentLanguage() === 'ja' ? 'お知らせを作成しました' : 'Announcement created', 'success');
+    }
+    
+    document.querySelector('.modal').remove();
+    loadAdminAnnouncements();
+    await loadInitialData();
+  } catch (error) {
+    showToast(error.response?.data?.error || 'Failed to save announcement', 'error');
   }
 }
 
@@ -2696,23 +2820,11 @@ async function createAnnouncement(data) {
 async function editAnnouncement(announcementId) {
   try {
     const response = await axios.get('/api/admin/announcements');
-    const announcements = response.data;
-    const announcement = announcements.find(a => a.id === announcementId);
-    
-    if (!announcement) return;
-    
-    const title = prompt(i18n.t('admin.announcement_title'), announcement.title);
-    if (!title) return;
-    
-    const content = prompt(i18n.t('admin.announcement_content'), announcement.content);
-    if (!content) return;
-    
-    const priority = parseInt(prompt(i18n.t('admin.announcement_priority') + ' (0-10)', announcement.priority) || '0');
-    const is_active = confirm(i18n.getCurrentLanguage() === 'ja' ? '公開しますか？' : 'Make it active?') ? 1 : 0;
-    
-    await updateAnnouncement(announcementId, { title, content, priority, is_active });
+    state.announcements = response.data;
+    showAnnouncementModal(announcementId);
   } catch (error) {
     console.error('Failed to edit announcement:', error);
+    showToast('Failed to load announcement data', 'error');
   }
 }
 
@@ -4099,13 +4211,49 @@ function showBlogModal(blogId = null) {
       
       <form onsubmit="handleBlogSubmit(event, ${blogId})" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_title')}</label>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_title')} (日本語)</label>
           <input type="text" name="title" value="${blog?.title || ''}" required class="w-full px-4 py-2 border rounded-lg" />
         </div>
         
         <div>
-          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_content')}</label>
-          <textarea name="content" rows="10" required class="w-full px-4 py-2 border rounded-lg">${blog?.content || ''}</textarea>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_title')} (English)</label>
+          <input type="text" name="title_en" value="${blog?.title_en || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="English title" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_title')} (中文)</label>
+          <input type="text" name="title_zh" value="${blog?.title_zh || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="Chinese title" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_title')} (한국어)</label>
+          <input type="text" name="title_ko" value="${blog?.title_ko || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="Korean title" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">URL Slug (for SEO)</label>
+          <input type="text" name="slug" value="${blog?.slug || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="my-blog-post-url" pattern="[a-z0-9-]+" />
+          <small class="text-gray-500">Example: /blog/my-blog-post-url (lowercase, hyphens only)</small>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_content')} (日本語)</label>
+          <textarea name="content" rows="4" required class="w-full px-4 py-2 border rounded-lg">${blog?.content || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_content')} (English)</label>
+          <textarea name="content_en" rows="4" class="w-full px-4 py-2 border rounded-lg" placeholder="English content">${blog?.content_en || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_content')} (中文)</label>
+          <textarea name="content_zh" rows="4" class="w-full px-4 py-2 border rounded-lg" placeholder="Chinese content">${blog?.content_zh || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_content')} (한국어)</label>
+          <textarea name="content_ko" rows="4" class="w-full px-4 py-2 border rounded-lg" placeholder="Korean content">${blog?.content_ko || ''}</textarea>
         </div>
         
         <div>
@@ -4156,9 +4304,16 @@ async function handleBlogSubmit(event, blogId) {
   
   const data = {
     title: formData.get('title'),
+    title_en: formData.get('title_en') || null,
+    title_zh: formData.get('title_zh') || null,
+    title_ko: formData.get('title_ko') || null,
     content: formData.get('content'),
+    content_en: formData.get('content_en') || null,
+    content_zh: formData.get('content_zh') || null,
+    content_ko: formData.get('content_ko') || null,
     image_url: formData.get('image_url') || null,
     published_date: formData.get('published_date'),
+    slug: formData.get('slug') || null,
     tagIds: formData.getAll('tags').map(id => parseInt(id))
   };
   

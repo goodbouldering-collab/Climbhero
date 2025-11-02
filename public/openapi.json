@@ -35,11 +35,15 @@
     },
     {
       "name": "blog",
-      "description": "ブログ記事"
+      "description": "ブログ記事（多言語対応）"
     },
     {
       "name": "announcements",
       "description": "お知らせ"
+    },
+    {
+      "name": "genspark",
+      "description": "Genspark AI連携機能（URL生成、SEO最適化）"
     }
   ],
   "paths": {
@@ -235,7 +239,19 @@
       "get": {
         "tags": ["blog"],
         "summary": "ブログ記事一覧を取得",
-        "description": "公開されているブログ記事の一覧を取得します。",
+        "description": "公開されているブログ記事の一覧を取得します。多言語対応（ja/en/zh/ko）。",
+        "parameters": [
+          {
+            "name": "lang",
+            "in": "query",
+            "description": "言語コード（デフォルト: ja）",
+            "schema": {
+              "type": "string",
+              "enum": ["ja", "en", "zh", "ko"],
+              "default": "ja"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "成功",
@@ -249,6 +265,162 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/blog/{id}": {
+      "get": {
+        "tags": ["blog"],
+        "summary": "ブログ記事詳細を取得",
+        "description": "IDまたはslugでブログ記事を取得します。多言語対応。",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "記事ID（数値）またはslug（英数字-記号）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "description": "言語コード（デフォルト: ja）",
+            "schema": {
+              "type": "string",
+              "enum": ["ja", "en", "zh", "ko"],
+              "default": "ja"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlogPost"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "記事が見つかりません"
+          }
+        }
+      }
+    },
+    "/api/genspark/blog-url": {
+      "post": {
+        "tags": ["genspark"],
+        "summary": "ブログ記事URLを生成（Genspark AI用）",
+        "description": "タイトルからSEO最適化されたブログ記事URLを4言語分生成します。AI Pluginからの呼び出しに最適化。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title_ja"],
+                "properties": {
+                  "title_ja": {
+                    "type": "string",
+                    "description": "日本語タイトル",
+                    "example": "クライミングジム10施設と新規提携！"
+                  },
+                  "title_en": {
+                    "type": "string",
+                    "description": "英語タイトル（省略時は自動生成）",
+                    "example": "10 New Climbing Gym Partners Join ClimbHero!"
+                  },
+                  "title_zh": {
+                    "type": "string",
+                    "description": "中国語タイトル（オプション）",
+                    "example": "ClimbHero新增10家攀岩馆合作伙伴！"
+                  },
+                  "title_ko": {
+                    "type": "string",
+                    "description": "韓国語タイトル（オプション）",
+                    "example": "ClimbHero 10개 클라이밍 체육관 파트너 추가！"
+                  },
+                  "custom_slug": {
+                    "type": "string",
+                    "description": "カスタムslug（省略時は英語タイトルから自動生成）",
+                    "pattern": "^[a-z0-9-]+$",
+                    "example": "10-new-gym-partners"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "slug": {
+                      "type": "string",
+                      "description": "生成されたslug",
+                      "example": "10-new-gym-partners"
+                    },
+                    "urls": {
+                      "type": "object",
+                      "properties": {
+                        "ja": {
+                          "type": "string",
+                          "format": "uri",
+                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=ja"
+                        },
+                        "en": {
+                          "type": "string",
+                          "format": "uri",
+                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=en"
+                        },
+                        "zh": {
+                          "type": "string",
+                          "format": "uri",
+                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=zh"
+                        },
+                        "ko": {
+                          "type": "string",
+                          "format": "uri",
+                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=ko"
+                        }
+                      }
+                    },
+                    "titles": {
+                      "type": "object",
+                      "properties": {
+                        "ja": {"type": "string"},
+                        "en": {"type": "string"},
+                        "zh": {"type": "string"},
+                        "ko": {"type": "string"}
+                      }
+                    },
+                    "seo_preview": {
+                      "type": "object",
+                      "properties": {
+                        "og_url": {"type": "string"},
+                        "canonical": {"type": "string"},
+                        "alternate_langs": {
+                          "type": "array",
+                          "items": {"type": "string"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "不正なリクエスト"
           }
         }
       }
@@ -390,11 +562,39 @@
           },
           "title": {
             "type": "string",
-            "description": "記事タイトル"
+            "description": "記事タイトル（選択言語に応じて返却）"
+          },
+          "title_ja": {
+            "type": "string",
+            "description": "日本語タイトル"
+          },
+          "title_en": {
+            "type": "string",
+            "description": "英語タイトル"
+          },
+          "title_zh": {
+            "type": "string",
+            "description": "中国語タイトル"
+          },
+          "title_ko": {
+            "type": "string",
+            "description": "韓国語タイトル"
           },
           "content": {
             "type": "string",
-            "description": "記事本文（HTML）"
+            "description": "記事本文（HTML、選択言語に応じて返却）"
+          },
+          "slug": {
+            "type": "string",
+            "description": "SEO対応URL slug",
+            "pattern": "^[a-z0-9-]+$",
+            "example": "10-new-gym-partners"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "記事URL",
+            "example": "https://climbhero.pages.dev/blog/10-new-gym-partners"
           },
           "image_url": {
             "type": "string",
@@ -405,6 +605,11 @@
             "type": "string",
             "format": "date",
             "description": "公開日"
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "タグ一覧"
           },
           "created_at": {
             "type": "string",
