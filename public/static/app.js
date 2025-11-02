@@ -6,6 +6,7 @@ const state = {
   trendingVideos: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   blogPosts: [],
+  blogTags: [],
   announcements: [],
   currentView: 'home',
   currentRankingType: 'weekly',
@@ -2095,6 +2096,16 @@ function renderAdminPage() {
               <i class="fas fa-users mr-2"></i>
               会員管理
             </div>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="exportUsersCSV()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-download mr-1"></i>
+                ${i18n.t('admin.csv_export')}
+              </button>
+              <button onclick="showImportCSVModal()" class="btn btn-sm btn-primary">
+                <i class="fas fa-upload mr-1"></i>
+                ${i18n.t('admin.csv_import')}
+              </button>
+            </div>
           </div>
           <div class="horizontal-scroll" id="admin-users-scroll" style="gap: 16px; padding: 8px 0;">
             ${renderLoadingSkeleton(3)}
@@ -2175,6 +2186,31 @@ function renderAdminPage() {
           </div>
           <div class="horizontal-scroll" id="admin-announcements-scroll" style="gap: 16px; padding: 8px 0;">
             ${renderLoadingSkeleton(3)}
+          </div>
+        </div>
+        
+        <!-- Blog Management Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-blog mr-2"></i>
+              ${i18n.t('admin.blog')}
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="showTagManagementModal()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-tags mr-1"></i>
+                ${i18n.t('admin.tag_manage')}
+              </button>
+              <button onclick="showBlogModal()" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus mr-1"></i>
+                ${i18n.t('admin.blog_new')}
+              </button>
+            </div>
+          </div>
+          <div id="admin-blog-list" style="background: white; border-radius: 8px; padding: 16px; margin-top: 12px;">
+            <div style="text-align: center; padding: 40px; color: #666;">
+              ${i18n.t('common.loading')}
+            </div>
           </div>
         </div>
       </main>
@@ -3452,6 +3488,14 @@ async function loadAdminData() {
     // Load announcements (existing)
     const announcementsRes = await axios.get('/api/admin/announcements');
     renderAnnouncementsCarousel(announcementsRes.data);
+    
+    // Load blog posts with tags
+    const blogsRes = await axios.get('/api/admin/blog/posts');
+    renderBlogList(blogsRes.data);
+    
+    // Load tags
+    const tagsRes = await axios.get('/api/blog/tags');
+    state.blogTags = tagsRes.data;
   } catch (error) {
     console.error('Failed to load admin data:', error);
   }
@@ -3809,6 +3853,351 @@ async function changePassword() {
     document.querySelector('.modal').remove();
   } catch (error) {
     showToast(error.response?.data?.error || 'パスワードの変更に失敗しました', 'error');
+  }
+}
+
+// ============ CSV Export/Import Functions ============
+
+async function exportUsersCSV() {
+  try {
+    window.location.href = '/api/admin/users/export';
+    showToast('CSVファイルをダウンロード中...', 'success');
+  } catch (error) {
+    showToast('CSVエクスポートに失敗しました', 'error');
+  }
+}
+
+function showImportCSVModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 700px;" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold">
+          <i class="fas fa-upload mr-2"></i>
+          ${i18n.t('admin.csv_import')}
+        </h3>
+        <button onclick="this.closest('.modal').remove()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <p class="text-sm text-gray-600 mb-4">${i18n.t('admin.csv_import_help')}</p>
+      
+      <textarea id="csv-import-data" rows="15" class="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-xs" placeholder="ID,Email,Username,Membership,Is Admin,Notes,Created At,Last Login
+1,user@example.com,User Name,free,No,,2024-01-01,"></textarea>
+      
+      <div class="flex justify-end gap-3 mt-4">
+        <button onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+          ${i18n.t('common.cancel')}
+        </button>
+        <button onclick="handleCSVImport()" class="btn btn-primary">
+          <i class="fas fa-upload mr-2"></i>
+          ${i18n.t('admin.csv_import')}
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+async function handleCSVImport() {
+  const csvData = document.getElementById('csv-import-data').value.trim();
+  
+  if (!csvData) {
+    showToast('CSVデータを入力してください', 'error');
+    return;
+  }
+  
+  try {
+    const response = await axios.post('/api/admin/users/import', { csvData });
+    
+    if (response.data.success) {
+      showToast(i18n.t('admin.csv_import_success').replace('{count}', response.data.imported), 'success');
+      document.querySelector('.modal').remove();
+      await loadAdminData();
+      
+      if (response.data.errors.length > 0) {
+        console.warn('Import errors:', response.data.details.errors);
+      }
+    }
+  } catch (error) {
+    showToast(error.response?.data?.error || i18n.t('admin.csv_import_error'), 'error');
+  }
+}
+
+// ============ Blog Management Functions ============
+
+function renderBlogList(blogs) {
+  const container = document.getElementById('admin-blog-list');
+  if (!container) return;
+  
+  if (blogs.length === 0) {
+    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">ブログ記事がありません</div>';
+    return;
+  }
+  
+  container.innerHTML = `
+    <table class="w-full">
+      <thead>
+        <tr style="border-bottom: 2px solid #e5e7eb;">
+          <th style="padding: 12px; text-align: left; font-size: 12px; color: #6b7280;">ID</th>
+          <th style="padding: 12px; text-align: left; font-size: 12px; color: #6b7280;">タイトル</th>
+          <th style="padding: 12px; text-align: left; font-size: 12px; color: #6b7280;">タグ</th>
+          <th style="padding: 12px; text-align: left; font-size: 12px; color: #6b7280;">公開日</th>
+          <th style="padding: 12px; text-align: left; font-size: 12px; color: #6b7280;">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${blogs.map(blog => `
+          <tr style="border-bottom: 1px solid #e5e7eb;" class="hover:bg-gray-50">
+            <td style="padding: 12px; font-size: 13px;">#${blog.id}</td>
+            <td style="padding: 12px; font-size: 13px; max-width: 300px;">
+              <div class="line-clamp-2">${blog.title}</div>
+            </td>
+            <td style="padding: 12px; font-size: 11px;">
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                ${blog.tags.length > 0 ? blog.tags.map(tag => `
+                  <span class="category-badge category-bouldering" style="font-size: 10px;">${tag}</span>
+                `).join('') : '<span style="color: #9ca3af;">タグなし</span>'}
+              </div>
+            </td>
+            <td style="padding: 12px; font-size: 13px; color: #6b7280;">${formatDate(blog.published_date)}</td>
+            <td style="padding: 12px;">
+              <div style="display: flex; gap: 8px;">
+                <button onclick="editBlog(${blog.id})" class="btn btn-sm btn-secondary">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteBlog(${blog.id})" class="btn btn-sm" style="background: #ef4444; color: white;">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function showTagManagementModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 600px;" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold">
+          <i class="fas fa-tags mr-2"></i>
+          ${i18n.t('admin.tag_manage')}
+        </h3>
+        <button onclick="this.closest('.modal').remove()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+        <label class="block text-sm font-medium mb-2">${i18n.t('admin.tag_new')}</label>
+        <div class="flex gap-2">
+          <input type="text" id="new-tag-name" class="flex-1 px-3 py-2 border rounded-lg" placeholder="${i18n.t('admin.tag_name')}" />
+          <button onclick="createTag()" class="btn btn-primary">
+            <i class="fas fa-plus mr-1"></i>
+            追加
+          </button>
+        </div>
+      </div>
+      
+      <div id="tags-list" style="max-height: 400px; overflow-y: auto;">
+        ${state.blogTags.map(tag => `
+          <div class="flex items-center justify-between p-3 border-b hover:bg-gray-50">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-tag text-gray-400"></i>
+              <span class="font-medium">${tag.name}</span>
+              <span class="text-xs text-gray-500">(${tag.post_count || 0}記事)</span>
+            </div>
+            <button onclick="deleteTag(${tag.id})" class="btn btn-sm" style="background: #ef4444; color: white;">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+async function createTag() {
+  const name = document.getElementById('new-tag-name').value.trim();
+  
+  if (!name) {
+    showToast('タグ名を入力してください', 'error');
+    return;
+  }
+  
+  try {
+    await axios.post('/api/admin/blog/tags', { name });
+    showToast('タグを作成しました', 'success');
+    
+    // Reload tags
+    const tagsRes = await axios.get('/api/blog/tags');
+    state.blogTags = tagsRes.data;
+    
+    document.querySelector('.modal').remove();
+  } catch (error) {
+    showToast(error.response?.data?.error || 'タグの作成に失敗しました', 'error');
+  }
+}
+
+async function deleteTag(tagId) {
+  if (!confirm('このタグを削除してもよろしいですか？')) return;
+  
+  try {
+    await axios.delete(`/api/admin/blog/tags/${tagId}`);
+    showToast('タグを削除しました', 'success');
+    
+    // Reload tags
+    const tagsRes = await axios.get('/api/blog/tags');
+    state.blogTags = tagsRes.data;
+    
+    document.querySelector('.modal').remove();
+    await loadAdminData();
+  } catch (error) {
+    showToast(error.response?.data?.error || 'タグの削除に失敗しました', 'error');
+  }
+}
+
+function showBlogModal(blogId = null) {
+  const isEdit = blogId !== null;
+  const blog = isEdit ? state.blogPosts.find(b => b.id === blogId) : null;
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold">
+          <i class="fas fa-blog mr-2"></i>
+          ${isEdit ? i18n.t('admin.blog_edit') : i18n.t('admin.blog_new')}
+        </h3>
+        <button onclick="this.closest('.modal').remove()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      
+      <form onsubmit="handleBlogSubmit(event, ${blogId})" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_title')}</label>
+          <input type="text" name="title" value="${blog?.title || ''}" required class="w-full px-4 py-2 border rounded-lg" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_content')}</label>
+          <textarea name="content" rows="10" required class="w-full px-4 py-2 border rounded-lg">${blog?.content || ''}</textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_image')}</label>
+          <input type="url" name="image_url" value="${blog?.image_url || ''}" class="w-full px-4 py-2 border rounded-lg" placeholder="https://..." />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_date')}</label>
+          <input type="date" name="published_date" value="${blog?.published_date || new Date().toISOString().split('T')[0]}" required class="w-full px-4 py-2 border rounded-lg" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">${i18n.t('admin.blog_tags')}</label>
+          <div style="display: flex; flex-wrap: gap: 8px; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb;">
+            ${state.blogTags.map(tag => {
+              const isSelected = blog?.tags?.includes(tag.name) || false;
+              return `
+                <label class="inline-flex items-center gap-2 px-3 py-1 border rounded-full cursor-pointer transition ${isSelected ? 'bg-purple-100 border-purple-300' : 'bg-white border-gray-300 hover:border-purple-300'}">
+                  <input type="checkbox" name="tags" value="${tag.id}" ${isSelected ? 'checked' : ''} class="hidden" onchange="this.parentElement.classList.toggle('bg-purple-100'); this.parentElement.classList.toggle('border-purple-300');" />
+                  <span class="text-sm">${tag.name}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+            ${i18n.t('common.cancel')}
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>
+            ${i18n.t('common.save')}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+async function handleBlogSubmit(event, blogId) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  const data = {
+    title: formData.get('title'),
+    content: formData.get('content'),
+    image_url: formData.get('image_url') || null,
+    published_date: formData.get('published_date'),
+    tagIds: formData.getAll('tags').map(id => parseInt(id))
+  };
+  
+  try {
+    if (blogId) {
+      await axios.put(`/api/admin/blog/posts/${blogId}`, data);
+      showToast('ブログを更新しました', 'success');
+    } else {
+      await axios.post('/api/admin/blog/posts', data);
+      showToast('ブログを作成しました', 'success');
+    }
+    
+    document.querySelector('.modal').remove();
+    await loadAdminData();
+  } catch (error) {
+    showToast(error.response?.data?.error || 'ブログの保存に失敗しました', 'error');
+  }
+}
+
+async function editBlog(blogId) {
+  // Load blog data with tags
+  try {
+    const response = await axios.get('/api/admin/blog/posts');
+    state.blogPosts = response.data;
+    showBlogModal(blogId);
+  } catch (error) {
+    showToast('ブログデータの読み込みに失敗しました', 'error');
+  }
+}
+
+async function deleteBlog(blogId) {
+  if (!confirm(i18n.t('admin.blog_confirm_delete'))) return;
+  
+  try {
+    await axios.delete(`/api/admin/blog/${blogId}`);
+    showToast('ブログを削除しました', 'success');
+    await loadAdminData();
+  } catch (error) {
+    showToast(error.response?.data?.error || 'ブログの削除に失敗しました', 'error');
   }
 }
 

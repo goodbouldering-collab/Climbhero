@@ -613,6 +613,48 @@ app.get('/api/rankings/:type', async (c) => {
 
 // ============ Blog API ============
 
+// ============ Blog Tags API (MUST BE BEFORE /api/blog/:id) ============
+
+// Get all blog tags
+app.get('/api/blog/tags', async (c) => {
+  const { env } = c
+  
+  try {
+    const tags = await env.DB.prepare(`
+      SELECT t.*, COUNT(pt.blog_post_id) as post_count
+      FROM blog_tags t
+      LEFT JOIN blog_post_tags pt ON t.id = pt.tag_id
+      GROUP BY t.id
+      ORDER BY t.name ASC
+    `).all()
+
+    return c.json(tags.results)
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get blog posts by tag
+app.get('/api/blog/posts/tag/:tagName', async (c) => {
+  const { env } = c
+  const tagName = c.req.param('tagName')
+
+  try {
+    const posts = await env.DB.prepare(`
+      SELECT DISTINCT p.*
+      FROM blog_posts p
+      JOIN blog_post_tags pt ON p.id = pt.blog_post_id
+      JOIN blog_tags t ON pt.tag_id = t.id
+      WHERE t.name = ?
+      ORDER BY p.published_date DESC
+    `).bind(tagName).all()
+
+    return c.json(posts.results)
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // Get all blog posts
 app.get('/api/blog', async (c) => {
   const { env } = c
@@ -2949,6 +2991,301 @@ ClimbHeroは、最新のテクノロジーで構築されています：
 **Let's climb together! 🧗‍♀️🧗‍♂️**
     `
   })
+})
+
+// ============ CSV Export/Import API ============
+
+// Export Users as CSV
+app.get('/api/admin/users/export', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const users = await env.DB.prepare(`
+      SELECT id, email, username, membership_type, is_admin, notes, created_at, last_login
+      FROM users
+      ORDER BY id ASC
+    `).all()
+
+    // Generate CSV
+    const headers = ['ID', 'Email', 'Username', 'Membership', 'Is Admin', 'Notes', 'Created At', 'Last Login']
+    const rows = users.results.map((user: any) => [
+      user.id,
+      user.email,
+      user.username,
+      user.membership_type,
+      user.is_admin ? 'Yes' : 'No',
+      user.notes || '',
+      user.created_at,
+      user.last_login || ''
+    ])
+
+    const csv = [
+      headers.join(','),
+      ...rows.map((row: any[]) => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="climbhero-users-${new Date().toISOString().split('T')[0]}.csv"`
+      }
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Import Users from CSV
+app.post('/api/admin/users/import', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const body = await c.req.json()
+    const { csvData } = body
+
+    if (!csvData) {
+      return c.json({ error: 'CSV data is required' }, 400)
+    }
+
+    const lines = csvData.trim().split('\n')
+    if (lines.length < 2) {
+      return c.json({ error: 'CSV must have headers and at least one data row' }, 400)
+    }
+
+    const headers = lines[0].split(',').map((h: string) => h.replace(/"/g, '').trim())
+    const imported = []
+    const errors = []
+
+    for (let i = 1; i < lines.length; i++) {
+      try {
+        const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)?.map((v: string) => v.replace(/^"|"$/g, '').replace(/""/g, '"').trim())
+        
+        if (!values || values.length < 3) continue
+
+        const email = values[1]
+        const username = values[2]
+        const membership = values[3] || 'free'
+        const notes = values[5] || ''
+
+        // Check if user exists
+        const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
+        
+        if (!existing) {
+          // Create new user with default password
+          const defaultPassword = hashPassword('ClimbHero2024!')
+          const result = await env.DB.prepare(`
+            INSERT INTO users (email, username, password_hash, membership_type, notes)
+            VALUES (?, ?, ?, ?, ?)
+          `).bind(email, username, defaultPassword, membership, notes).run()
+          
+          imported.push({ email, username, id: result.meta.last_row_id })
+        } else {
+          errors.push({ line: i + 1, email, reason: 'User already exists' })
+        }
+      } catch (err: any) {
+        errors.push({ line: i + 1, reason: err.message })
+      }
+    }
+
+    return c.json({
+      success: true,
+      imported: imported.length,
+      errors: errors.length,
+      details: { imported, errors }
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Blog Tags Admin API ============
+
+// Create new tag
+app.post('/api/admin/blog/tags', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const { name } = await c.req.json()
+    
+    if (!name) {
+      return c.json({ error: 'Tag name is required' }, 400)
+    }
+
+    const result = await env.DB.prepare('INSERT INTO blog_tags (name) VALUES (?)').bind(name).run()
+    
+    return c.json({
+      success: true,
+      tag: { id: result.meta.last_row_id, name }
+    }, 201)
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Delete tag
+app.delete('/api/admin/blog/tags/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const tagId = parseInt(c.req.param('id'))
+    await env.DB.prepare('DELETE FROM blog_tags WHERE id = ?').bind(tagId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get blog posts with tags (admin list view)
+app.get('/api/admin/blog/posts', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const posts = await env.DB.prepare(`
+      SELECT 
+        p.*,
+        GROUP_CONCAT(t.name, ',') as tags
+      FROM blog_posts p
+      LEFT JOIN blog_post_tags pt ON p.id = pt.blog_post_id
+      LEFT JOIN blog_tags t ON pt.tag_id = t.id
+      GROUP BY p.id
+      ORDER BY p.published_date DESC
+    `).all()
+
+    return c.json(posts.results.map((post: any) => ({
+      ...post,
+      tags: post.tags ? post.tags.split(',') : []
+    })))
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Add tags to blog post
+app.post('/api/admin/blog/posts/:id/tags', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const postId = parseInt(c.req.param('id'))
+    const { tagIds } = await c.req.json()
+
+    // Delete existing tags
+    await env.DB.prepare('DELETE FROM blog_post_tags WHERE blog_post_id = ?').bind(postId).run()
+
+    // Insert new tags
+    for (const tagId of tagIds) {
+      await env.DB.prepare('INSERT INTO blog_post_tags (blog_post_id, tag_id) VALUES (?, ?)').bind(postId, tagId).run()
+    }
+
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update existing blog post endpoint to include tags
+app.put('/api/admin/blog/posts/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const postId = parseInt(c.req.param('id'))
+    const { title, content, image_url, published_date, tagIds } = await c.req.json()
+
+    // Update blog post
+    await env.DB.prepare(`
+      UPDATE blog_posts 
+      SET title = ?, content = ?, image_url = ?, published_date = ?
+      WHERE id = ?
+    `).bind(title, content, image_url, published_date, postId).run()
+
+    // Update tags if provided
+    if (tagIds) {
+      await env.DB.prepare('DELETE FROM blog_post_tags WHERE blog_post_id = ?').bind(postId).run()
+      for (const tagId of tagIds) {
+        await env.DB.prepare('INSERT INTO blog_post_tags (blog_post_id, tag_id) VALUES (?, ?)').bind(postId, tagId).run()
+      }
+    }
+
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Create blog post with tags
+app.post('/api/admin/blog/posts', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const { title, content, image_url, published_date, tagIds } = await c.req.json()
+
+    // Create blog post
+    const result = await env.DB.prepare(`
+      INSERT INTO blog_posts (title, content, image_url, published_date)
+      VALUES (?, ?, ?, ?)
+    `).bind(title, content, image_url, published_date).run()
+
+    const postId = result.meta.last_row_id
+
+    // Add tags if provided
+    if (tagIds && tagIds.length > 0) {
+      for (const tagId of tagIds) {
+        await env.DB.prepare('INSERT INTO blog_post_tags (blog_post_id, tag_id) VALUES (?, ?)').bind(postId, tagId).run()
+      }
+    }
+
+    return c.json({ success: true, id: postId }, 201)
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
 })
 
 export default app
