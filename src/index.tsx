@@ -85,6 +85,39 @@ app.post('/api/auth/login', async (c) => {
   }
 
   try {
+    // Check for hardcoded admin credentials
+    if (email === 'admin' && password === 'admin123') {
+      const sessionToken = generateSessionToken()
+      
+      // Set admin session cookie
+      setCookie(c, 'session_token', sessionToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'Lax'
+      })
+      
+      // Store admin session in memory (for development)
+      setCookie(c, 'admin_session', 'true', {
+        httpOnly: true,
+        secure: true,
+        maxAge: 60 * 60 * 24 * 30,
+        sameSite: 'Lax'
+      })
+
+      return c.json({
+        success: true,
+        user: {
+          id: 0,
+          email: 'admin',
+          username: 'Administrator',
+          membership_type: 'admin',
+          is_admin: true
+        }
+      })
+    }
+
+    // Regular user authentication
     const passwordHash = hashPassword(password)
     const user = await env.DB.prepare(
       'SELECT * FROM users WHERE email = ? AND password_hash = ?'
@@ -112,7 +145,8 @@ app.post('/api/auth/login', async (c) => {
         id: user.id,
         email: user.email,
         username: user.username,
-        membership_type: user.membership_type
+        membership_type: user.membership_type,
+        is_admin: user.is_admin || false
       }
     })
   } catch (error: any) {
@@ -137,6 +171,18 @@ app.post('/api/auth/logout', async (c) => {
 app.get('/api/auth/me', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
+  const adminSession = getCookie(c, 'admin_session')
+  
+  // Check for admin session
+  if (adminSession === 'true' && sessionToken) {
+    return c.json({
+      id: 0,
+      email: 'admin',
+      username: 'Administrator',
+      membership_type: 'admin',
+      is_admin: true
+    })
+  }
   
   const user = await getUserFromSession(env.DB, sessionToken || '')
   if (!user) {
@@ -148,7 +194,7 @@ app.get('/api/auth/me', async (c) => {
     email: (user as any).email,
     username: (user as any).username,
     membership_type: (user as any).membership_type,
-    is_admin: (user as any).is_admin || 0
+    is_admin: (user as any).is_admin || false
   })
 })
 

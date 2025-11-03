@@ -1358,12 +1358,12 @@ function showAuthModal(type) {
         
         <div>
           <label class="text-sm">${i18n.t('auth.email')}</label>
-          <input type="email" name="email" required class="w-full text-sm">
+          <input type="email" name="email" required class="w-full text-sm" id="auth-email">
         </div>
         
         <div>
           <label class="text-sm">${i18n.t('auth.password')}</label>
-          <input type="password" name="password" required class="w-full text-sm">
+          <input type="password" name="password" required class="w-full text-sm" id="auth-password">
         </div>
         
         <button type="submit" class="btn btn-primary w-full text-sm py-2">
@@ -1372,10 +1372,16 @@ function showAuthModal(type) {
       </form>
       
       ${type === 'login' ? `
-        <div class="text-center mt-3">
-          <a href="#" onclick="showPasswordResetModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800">
-            ${i18n.t('auth.forgot_password')}
-          </a>
+        <div class="mt-3 space-y-2">
+          <button onclick="quickAdminLogin()" class="w-full py-2 px-3 bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-medium rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+            <i class="fas fa-shield-alt"></i>
+            <span>管理者としてログイン (Admin Login)</span>
+          </button>
+          <div class="text-center">
+            <a href="#" onclick="showPasswordResetModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800">
+              ${i18n.t('auth.forgot_password')}
+            </a>
+          </div>
         </div>
       ` : ''}
       
@@ -1412,6 +1418,25 @@ async function handleAuth(event, type) {
     }
   } catch (error) {
     showToast(error.response?.data?.error || i18n.t('toast.auth_error'), 'error');
+  }
+}
+
+async function quickAdminLogin() {
+  try {
+    // 管理者認証情報で自動ログイン
+    await axios.post('/api/auth/login', {
+      email: 'admin',
+      password: 'admin123'
+    });
+    
+    await checkAuth();
+    closeModal('auth-modal');
+    
+    // 管理画面にリダイレクト
+    navigateTo('admin');
+    showToast('管理者としてログインしました', 'success');
+  } catch (error) {
+    showToast('管理者ログインに失敗しました', 'error');
   }
 }
 
