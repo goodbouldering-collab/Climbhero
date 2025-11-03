@@ -476,16 +476,16 @@ function renderHomePage() {
           
           <!-- Ranking Period Tabs -->
           <div class="tab-buttons mb-3">
-            <button onclick="switchRankingPeriod('daily')" class="tab-btn ${state.currentRankingType === 'daily' ? 'active' : ''}">
+            <button onclick="switchRankingPeriod('daily', event)" class="tab-btn ${state.currentRankingType === 'daily' ? 'active' : ''}">
               <i class="fas fa-clock"></i> ${i18n.t('ranking.daily')}
             </button>
-            <button onclick="switchRankingPeriod('weekly')" class="tab-btn ${state.currentRankingType === 'weekly' ? 'active' : ''}">
+            <button onclick="switchRankingPeriod('weekly', event)" class="tab-btn ${state.currentRankingType === 'weekly' ? 'active' : ''}">
               <i class="fas fa-calendar-week"></i> ${i18n.t('ranking.weekly')}
             </button>
-            <button onclick="switchRankingPeriod('monthly')" class="tab-btn ${state.currentRankingType === 'monthly' ? 'active' : ''}">
+            <button onclick="switchRankingPeriod('monthly', event)" class="tab-btn ${state.currentRankingType === 'monthly' ? 'active' : ''}">
               <i class="fas fa-calendar-alt"></i> ${i18n.t('ranking.monthly')}
             </button>
-            <button onclick="switchRankingPeriod('yearly')" class="tab-btn ${state.currentRankingType === 'yearly' ? 'active' : ''}">
+            <button onclick="switchRankingPeriod('yearly', event)" class="tab-btn ${state.currentRankingType === 'yearly' ? 'active' : ''}">
               <i class="fas fa-calendar"></i> ${i18n.t('ranking.yearly')}
             </button>
           </div>
@@ -1139,7 +1139,7 @@ function scrollCarousel(carouselId, direction) {
 }
 
 // ============ Switch Ranking Period ============
-async function switchRankingPeriod(period) {
+async function switchRankingPeriod(period, event) {
   state.currentRankingType = period;
   
   const rankingScroll = document.getElementById('ranking-scroll');
@@ -1156,10 +1156,12 @@ async function switchRankingPeriod(period) {
   }
   
   // Update tab active state
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  event.target.classList.add('active');
+  if (event && event.target) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+  }
   
   // Re-render ranking section WITHOUT animation
   if (rankingScroll) {

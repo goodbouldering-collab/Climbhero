@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "name": "climbhero",
+  "displayName": "ClimbHero - クライミング動画共有プラットフォーム",
+  "description": "クライミング動画の共有、いいね、ランキング機能を持つWebアプリケーション",
+  "type": "web-app",
+  "framework": "hono",
+  "runtime": "cloudflare-workers",
+  "buildConfig": {
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
+    "installCommand": "npm install",
+    "nodeVersion": "18"
+  },
+  "deployment": {
+    "platform": "genspark",
+    "autoPublish": true,
+    "customDomain": false
+  },
+  "features": {
+    "database": true,
+    "api": true,
+    "multilingual": true,
+    "seo": true
+  },
+  "metadata": {
+    "author": "YUI (由井辰美)",
+    "category": "sports",
+    "tags": ["climbing", "boulder", "video-sharing", "ranking", "multilingual"],
+    "license": "MIT",
+    "repository": "https://github.com/USERNAME/webapp"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://genspark.ai/schemas/deploy-v1.json",
+  "name": "climbhero",
+  "version": "1.0.0",
+  "description": "ClimbHero - クライミング動画共有プラットフォーム（ボルダリング特化型）",
+  "type": "full-stack-web-app",
+  "deployment": {
+    "provider": "genspark-hosting",
+    "region": "auto",
+    "buildSettings": {
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
+      "installCommand": "npm install --production=false",
+      "nodeVersion": "18.x",
+      "environmentVariables": {}
+    },
+    "routing": {
+      "functionsDirectory": "dist",
+      "staticDirectory": "dist",
+      "rewrites": [
+        {
+          "source": "/api/:path*",
+          "destination": "/_worker.js"
+        },
+        {
+          "source": "/:path*",
+          "destination": "/_worker.js"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/static/:path*",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        },
+        {
+          "source": "/:path*",
+          "headers": [
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "services": {
+    "database": {
+      "type": "sqlite",
+      "provider": "cloudflare-d1",
+      "name": "webapp-production",
+      "migrations": "./migrations"
+    }
+  },
+  "features": {
+    "api": {
+      "enabled": true,
+      "openapi": "/openapi.json",
+      "aiPlugin": "/.well-known/ai-plugin.json"
+    },
+    "seo": {
+      "enabled": true,
+      "sitemap": "/sitemap.xml",
+      "robots": "/robots.txt",
+      "llmo": "/llmo.txt"
+    },
+    "i18n": {
+      "enabled": true,
+      "languages": ["ja", "en", "zh", "ko"],
+      "defaultLanguage": "ja"
+    }
+  },
+  "healthCheck": {
+    "path": "/",
+    "interval": 60,
+    "timeout": 10
+  },
+  "metadata": {
+    "title": "ClimbHero",
+    "description": "クライミング・ボルダリング動画共有プラットフォーム。グッぼるが提供する世界中のクライマーをつなぐコミュニティ。",
+    "keywords": ["climbing", "bouldering", "video", "ranking", "community", "グッぼる", "ボルダリング"],
+    "author": "由井辰美 (YUI Tatsumi) - グッぼる ボルダリングCafe & Shop",
+    "og": {
+      "title": "ClimbHero - クライミング動画共有プラットフォーム",
+      "description": "世界中のクライミング動画を共有・視聴・ランキング。グッぼるが提供するクライマーのためのプラットフォーム。",
+      "image": "/logo-cool.png",
+      "url": "https://climbhero.pages.dev"
+    }
+  }
+}

@@ -1,0 +1,89 @@
+# GenSpark Deployment - Ignore Files
+# デプロイ時に除外するファイル・ディレクトリ
+
+# Dependencies
+node_modules/
+.npm/
+.pnpm-store/
+
+# Development files
+.wrangler/
+.dev.vars
+.env
+.env.*
+
+# Build cache
+.vite/
+.cache/
+.temp/
+.tmp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (keep only essential)
+CAPACITY_ANALYSIS.md
+SEO_OPTIMIZATION_MEMO.md
+
+# Database files (local only)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Images (original high-res versions)
+logo-original.png
+
+# Python scripts
+*.py
+
+# SQL files (migrations are included, seed is excluded)
+seed.sql
+fix_rankings.sql
+
+# PM2
+ecosystem.config.cjs
+.pm2/
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Backup files
+*.backup
+*.bak
+*.tar.gz
+*.zip

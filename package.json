@@ -14,7 +14,9 @@
     "db:seed": "wrangler d1 execute webapp-production --local --file=./seed.sql",
     "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed",
     "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
-    "test": "curl http://localhost:3000"
+    "test": "curl http://localhost:3000",
+    "genspark:build": "bash genspark-build.sh",
+    "genspark:verify": "node -e \"console.log('✓ GenSpark config verified'); process.exit(require('fs').existsSync('.genspark/config.json') ? 0 : 1)\""
   },
   "dependencies": {
     "hono": "^4.10.3"

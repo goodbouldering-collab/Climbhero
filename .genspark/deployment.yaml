@@ -1,0 +1,92 @@
+# GenSpark Deployment Configuration
+# ClimbHero - クライミング動画共有プラットフォーム
+
+version: "1.0"
+project:
+  name: climbhero
+  displayName: "ClimbHero"
+  description: "クライミング・ボルダリング動画共有プラットフォーム"
+  type: web-application
+  framework: hono
+  runtime: cloudflare-workers
+
+# ビルド設定
+build:
+  command: npm run build
+  outputDir: dist
+  install: npm install
+  nodeVersion: "18"
+  environmentVariables: {}
+
+# デプロイ設定
+deploy:
+  platform: genspark-hosting
+  region: auto
+  autoPublish: true
+  
+  # ルーティング設定
+  routing:
+    functionsDir: dist
+    staticDir: dist
+    rewrites:
+      - source: "/api/*"
+        destination: "/_worker.js"
+      - source: "/*"
+        destination: "/_worker.js"
+    
+    # キャッシュヘッダー
+    headers:
+      - source: "/static/*"
+        headers:
+          Cache-Control: "public, max-age=31536000, immutable"
+      - source: "/*"
+        headers:
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "DENY"
+          X-XSS-Protection: "1; mode=block"
+
+# 機能設定
+features:
+  database:
+    enabled: true
+    type: sqlite
+    provider: cloudflare-d1
+    name: webapp-production
+    migrationsDir: ./migrations
+  
+  api:
+    enabled: true
+    openapi: /openapi.json
+    aiPlugin: /.well-known/ai-plugin.json
+  
+  seo:
+    enabled: true
+    sitemap: /sitemap.xml
+    robots: /robots.txt
+    llmo: /llmo.txt
+  
+  i18n:
+    enabled: true
+    languages: [ja, en, zh, ko]
+    default: ja
+
+# ヘルスチェック
+healthCheck:
+  enabled: true
+  path: /
+  interval: 60
+  timeout: 10
+
+# メタデータ
+metadata:
+  author: "由井辰美 (YUI Tatsumi)"
+  organization: "グッぼる ボルダリングCafe & Shop"
+  category: sports
+  tags:
+    - climbing
+    - bouldering
+    - video-sharing
+    - ranking
+    - multilingual
+    - community
+  license: MIT
