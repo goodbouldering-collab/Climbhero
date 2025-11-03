@@ -1140,31 +1140,19 @@ function scrollCarousel(carouselId, direction) {
 
 // ============ Switch Ranking Period ============
 async function switchRankingPeriod(period) {
-  // Disabled: No action on ranking period switch
-  return;
-  
-  /* Original code disabled
   state.currentRankingType = period;
   
-  // Show loading skeleton
   const rankingScroll = document.getElementById('ranking-scroll');
-  if (rankingScroll) {
-    rankingScroll.style.opacity = '0.5';
-  }
   
+  // Load data if not yet loaded
   if (state.rankings[period].length === 0) {
     try {
       const response = await axios.get(`/api/rankings/${period}?limit=20`);
       state.rankings[period] = response.data || [];
     } catch (error) {
       showToast('ランキングの読み込みに失敗しました', 'error');
-      if (rankingScroll) {
-        rankingScroll.style.opacity = '1';
-      }
       return;
     }
-  */
-  /*
   }
   
   // Update tab active state
@@ -1173,20 +1161,10 @@ async function switchRankingPeriod(period) {
   });
   event.target.classList.add('active');
   
-  // Re-render ranking section with animation
+  // Re-render ranking section WITHOUT animation
   if (rankingScroll) {
-    setTimeout(() => {
-      rankingScroll.innerHTML = state.rankings[period].map((video, index) => renderRankingCard(video, index + 1)).join('');
-      rankingScroll.style.opacity = '1';
-      
-      // Re-initialize carousel features
-      document.querySelectorAll('#ranking-scroll .scroll-item').forEach((card, index) => {
-        card.style.animationDelay = (index * 0.05) + 's';
-        card.classList.add('animate-bounce-in');
-      });
-    }, 150);
+    rankingScroll.innerHTML = state.rankings[period].map((video, index) => renderRankingCard(video, index + 1)).join('');
   }
-  */
 }
 
 // ============ Helper Functions ============
