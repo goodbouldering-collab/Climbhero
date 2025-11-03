@@ -379,7 +379,12 @@ const translations = {
     'footer.support_hours': 'サポート時間',
     'footer.weekday_hours': '平日 10:00-18:00',
     'footer.address': '住所',
-    'footer.tokyo_address': '〒522-0043 滋賀県彦根市小泉町34-8 グッぼる ボルダリングカフェ',
+    'footer.supervisor': '監修',
+    'footer.supervisor_name': 'クライミングルプロジェクト',
+    'footer.supervisor_address': '〒224-0054 神奈川県横浜市都筑区佐江戸町417',
+    'footer.producer': '製作者',
+    'footer.producer_name': 'グッぼる ボルダリングカフェ',
+    'footer.producer_address': '〒522-0043 滋賀県彦根市小泉町34-8',
     'footer.social': 'SNS',
     
     // Feature Explanation (Top)
@@ -863,7 +868,12 @@ const translations = {
     'footer.support_hours': 'Support Hours',
     'footer.weekday_hours': 'Weekdays 10:00-18:00',
     'footer.address': 'Address',
-    'footer.tokyo_address': '〒522-0043 34-8 Koizumi-cho, Hikone, Shiga, Gubboru Bouldering Cafe',
+    'footer.supervisor': 'Supervised by',
+    'footer.supervisor_name': 'Climbing Rule Project',
+    'footer.supervisor_address': '〒224-0054 417 Saedo-cho, Tsuzuki-ku, Yokohama, Kanagawa',
+    'footer.producer': 'Produced by',
+    'footer.producer_name': 'Gubboru Bouldering Cafe',
+    'footer.producer_address': '〒522-0043 34-8 Koizumi-cho, Hikone, Shiga',
     'footer.social': 'Social Media',
     
     // Feature Explanation (Top) - Changed to How to Use

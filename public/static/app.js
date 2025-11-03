@@ -779,10 +779,16 @@ function renderFooter() {
               <strong>平日 10:00-18:00</strong>
             </p>
             <p class="text-sm mb-3">
-              <i class="fas fa-map-marker-alt mr-2 text-purple-400"></i>
-              〒522-0043<br>
-              <span class="ml-6">滋賀県彦根市小泉町34-8</span><br>
-              <span class="ml-6">グッぼる ボルダリングカフェ</span>
+              <i class="fas fa-user-tie mr-2 text-purple-400"></i>
+              <strong>${i18n.t('footer.supervisor')}</strong><br>
+              <span class="ml-6">${i18n.t('footer.supervisor_name')}</span><br>
+              <span class="ml-6 text-xs">${i18n.t('footer.supervisor_address')}</span>
+            </p>
+            <p class="text-sm mb-3">
+              <i class="fas fa-coffee mr-2 text-purple-400"></i>
+              <strong>${i18n.t('footer.producer')}</strong><br>
+              <span class="ml-6">${i18n.t('footer.producer_name')}</span><br>
+              <span class="ml-6 text-xs">${i18n.t('footer.producer_address')}</span>
             </p>
             <p class="text-sm">
               <i class="fas fa-envelope mr-2 text-purple-400"></i>
@@ -3247,11 +3253,18 @@ function renderContactPage() {
               <i class="fas fa-map-marker-alt mr-2 text-purple-600"></i>
               所在地
             </h3>
-            <p class="text-gray-600">
-              〒522-0043<br>
-              滋賀県彦根市小泉町34-8<br>
-              グッぼる ボルダリングカフェ
-            </p>
+            <div class="text-gray-600 space-y-3">
+              <div>
+                <p class="font-semibold text-purple-600 mb-1">監修</p>
+                <p class="text-sm">クライミングルプロジェクト</p>
+                <p class="text-xs">〒224-0054<br>神奈川県横浜市都筑区佐江戸町417</p>
+              </div>
+              <div>
+                <p class="font-semibold text-purple-600 mb-1">製作者</p>
+                <p class="text-sm">グッぼる ボルダリングカフェ</p>
+                <p class="text-xs">〒522-0043<br>滋賀県彦根市小泉町34-8</p>
+              </div>
+            </div>
           </div>
         </div>
         
