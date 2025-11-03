@@ -379,7 +379,7 @@ const translations = {
     'footer.support_hours': 'サポート時間',
     'footer.weekday_hours': '平日 10:00-18:00',
     'footer.address': '住所',
-    'footer.tokyo_address': '〒100-0001 東京都千代田区1-1-1',
+    'footer.tokyo_address': '〒522-0043 滋賀県彦根市小泉町34-8 グッぼる ボルダリングカフェ',
     'footer.social': 'SNS',
     
     // Feature Explanation (Top)
@@ -863,7 +863,7 @@ const translations = {
     'footer.support_hours': 'Support Hours',
     'footer.weekday_hours': 'Weekdays 10:00-18:00',
     'footer.address': 'Address',
-    'footer.tokyo_address': '〒100-0001 1-1-1 Chiyoda, Chiyoda-ku, Tokyo',
+    'footer.tokyo_address': '〒522-0043 34-8 Koizumi-cho, Hikone, Shiga, Gubboru Bouldering Cafe',
     'footer.social': 'Social Media',
     
     // Feature Explanation (Top) - Changed to How to Use

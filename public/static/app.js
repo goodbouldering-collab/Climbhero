@@ -780,8 +780,9 @@ function renderFooter() {
             </p>
             <p class="text-sm mb-3">
               <i class="fas fa-map-marker-alt mr-2 text-purple-400"></i>
-              〒100-0001<br>
-              <span class="ml-6">東京都千代田区1-1-1</span>
+              〒522-0043<br>
+              <span class="ml-6">滋賀県彦根市小泉町34-8</span><br>
+              <span class="ml-6">グッぼる ボルダリングカフェ</span>
             </p>
             <p class="text-sm">
               <i class="fas fa-envelope mr-2 text-purple-400"></i>
@@ -3247,8 +3248,9 @@ function renderContactPage() {
               所在地
             </h3>
             <p class="text-gray-600">
-              〒100-0001<br>
-              東京都千代田区1-1-1
+              〒522-0043<br>
+              滋賀県彦根市小泉町34-8<br>
+              グッぼる ボルダリングカフェ
             </p>
           </div>
         </div>
