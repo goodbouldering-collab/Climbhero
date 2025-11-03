@@ -2375,3 +2375,15 @@ nav {
   border-top: 1px solid var(--border);
   margin: 2rem 0;
 }
+
+/* ==================== Pricing Detail Zoom Effect ==================== */
+.pricing-detail-item {
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.pricing-detail-item:hover {
+  transform: scale(1.15);
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}

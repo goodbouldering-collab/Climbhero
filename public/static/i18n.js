@@ -63,6 +63,10 @@ const translations = {
     'pricing.premium.feature1': 'あなたの動画を投稿できる',
     'pricing.premium.feature2': '無制限にいいねできる',
     'pricing.premium.feature3': '動画を応援してランキングUP',
+    'pricing.premium.detail1': '動画投稿無制限',
+    'pricing.premium.detail2': 'いいね・お気に入り機能',
+    'pricing.premium.detail3': '広告非表示',
+    'pricing.premium.detail4': 'AIグレード判定＆優先サポート',
     'pricing.cta': '今すぐ始める',
     
     // Auth Modal
@@ -543,6 +547,10 @@ const translations = {
     'pricing.premium.feature1': 'Upload your videos',
     'pricing.premium.feature2': 'Unlimited likes',
     'pricing.premium.feature3': 'Boost rankings with your support',
+    'pricing.premium.detail1': 'Unlimited Video Uploads',
+    'pricing.premium.detail2': 'Likes & Favorites',
+    'pricing.premium.detail3': 'Ad-Free Experience',
+    'pricing.premium.detail4': 'AI Grading & Priority Support',
     'pricing.cta': 'Get Started',
     
     // Auth Modal
@@ -1025,6 +1033,10 @@ const translations = {
     'pricing.premium.feature1': '上传您的视频',
     'pricing.premium.feature2': '无限点赞',
     'pricing.premium.feature3': '支持排名提升',
+    'pricing.premium.detail1': '无限视频上传',
+    'pricing.premium.detail2': '点赞和收藏功能',
+    'pricing.premium.detail3': '无广告体验',
+    'pricing.premium.detail4': 'AI等级评定及优先支持',
     'pricing.cta': '开始使用',
     
     // Auth Modal
@@ -1183,6 +1195,10 @@ const translations = {
     'pricing.premium.feature1': '나의 비디오 업로드',
     'pricing.premium.feature2': '무제한 좋아요',
     'pricing.premium.feature3': '랭킹 상승 지원',
+    'pricing.premium.detail1': '무제한 비디오 업로드',
+    'pricing.premium.detail2': '좋아요 및 즐겨찾기 기능',
+    'pricing.premium.detail3': '광고 없는 경험',
+    'pricing.premium.detail4': 'AI 등급 평가 및 우선 지원',
     'pricing.cta': '시작하기',
     
     // Auth Modal

@@ -681,11 +681,20 @@ function renderHomePage() {
             <div class="card p-6 bg-gradient-to-br from-purple-600 to-purple-700 text-white relative overflow-hidden">
               <h4 class="text-lg font-bold mb-2">${i18n.t('pricing.premium.title')}</h4>
               <div class="text-2xl font-bold mb-3">${i18n.t('pricing.premium.price')}<span class="text-sm font-normal opacity-90">${i18n.t('pricing.premium.month')}</span></div>
-              <ul class="space-y-2 mb-4 text-sm">
+              <ul class="space-y-2 mb-3 text-sm">
                 <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature1')}</strong></li>
                 <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature2')}</strong></li>
                 <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature3')}</strong></li>
               </ul>
+              <div class="bg-white/10 rounded-lg p-3 mb-3">
+                <p class="text-xs font-semibold mb-2 opacity-90">詳細機能:</p>
+                <ul class="space-y-1 text-xs">
+                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail1')}</li>
+                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail2')}</li>
+                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail3')}</li>
+                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail4')}</li>
+                </ul>
+              </div>
               <button onclick="showPricingModal()" class="btn btn-sm w-full bg-white text-purple-600 hover:bg-gray-100 font-bold">
                 <i class="fas fa-rocket"></i>
                 ${i18n.t('pricing.cta')}
