@@ -367,7 +367,7 @@ function renderHomePage() {
       <!-- Climber Testimonials Section -->
       ${state.testimonials && state.testimonials.length > 0 ? `
       <section class="bg-white py-12 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
           <div class="text-center mb-10">
             <h2 class="text-3xl font-bold text-gray-900 mb-3">
               <i class="fas fa-mountain text-purple-600 mr-2"></i>
@@ -378,7 +378,7 @@ function renderHomePage() {
             </p>
           </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             ${state.testimonials.map(testimonial => {
               const lang = i18n.getCurrentLanguage()
               const climberName = testimonial[`climber_name_${lang}`] || testimonial.climber_name_en
