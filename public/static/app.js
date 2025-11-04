@@ -8,6 +8,7 @@ const state = {
   blogPosts: [],
   blogTags: [],
   announcements: [],
+  testimonials: [],
   currentView: 'home',
   currentRankingType: 'daily',
   loading: false,
@@ -96,12 +97,13 @@ function updateHeroSlide() {
 async function loadInitialData() {
   try {
     const lang = state.currentLanguage || 'ja'
-    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes] = await Promise.all([
+    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get(`/api/blog?lang=${lang}`),
       axios.get(`/api/announcements?lang=${lang}`),
-      axios.get('/api/videos/trending?limit=10')
+      axios.get('/api/videos/trending?limit=10'),
+      axios.get('/api/testimonials')
     ]);
     
     state.videos = videosRes.data.videos || [];
@@ -109,6 +111,7 @@ async function loadInitialData() {
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
     state.trendingVideos = trendingRes.data.videos || [];
+    state.testimonials = testimonialsRes.data.testimonials || [];
     
     // Load user like status and favorites for all videos
     if (state.currentUser) {
@@ -359,6 +362,79 @@ function renderHomePage() {
           </div>
         </div>
       </div>
+      ` : ''}
+      
+      <!-- Climber Testimonials Section -->
+      ${state.testimonials && state.testimonials.length > 0 ? `
+      <section class="bg-white py-12 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-10">
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">
+              <i class="fas fa-mountain text-purple-600 mr-2"></i>
+              ${i18n.t('testimonials.title')}
+            </h2>
+            <p class="text-gray-600 text-lg">
+              ${i18n.t('testimonials.subtitle')}
+            </p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            ${state.testimonials.map(testimonial => {
+              const lang = i18n.getCurrentLanguage()
+              const climberName = testimonial[`climber_name_${lang}`] || testimonial.climber_name_en
+              const title = testimonial[`title_${lang}`] || testimonial.title_en
+              const comment = testimonial[`comment_${lang}`] || testimonial.comment_en
+              
+              return `
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100">
+                  <div class="p-6">
+                    <div class="flex items-center mb-4">
+                      <img 
+                        src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop'}" 
+                        alt="${climberName}"
+                        class="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
+                      />
+                      <div class="ml-4 flex-1">
+                        <h3 class="font-bold text-lg text-gray-900">${climberName}</h3>
+                        <p class="text-sm text-purple-600 font-medium">${title}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <p class="text-gray-700 text-sm leading-relaxed italic">
+                        "${comment}"
+                      </p>
+                    </div>
+                    
+                    ${testimonial.instagram_url || testimonial.youtube_url || testimonial.website_url ? `
+                      <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                        ${testimonial.instagram_url ? `
+                          <a href="${testimonial.instagram_url}" target="_blank" rel="noopener noreferrer" 
+                             class="text-gray-400 hover:text-pink-600 transition-colors">
+                            <i class="fab fa-instagram text-lg"></i>
+                          </a>
+                        ` : ''}
+                        ${testimonial.youtube_url ? `
+                          <a href="${testimonial.youtube_url}" target="_blank" rel="noopener noreferrer"
+                             class="text-gray-400 hover:text-red-600 transition-colors">
+                            <i class="fab fa-youtube text-lg"></i>
+                          </a>
+                        ` : ''}
+                        ${testimonial.website_url ? `
+                          <a href="${testimonial.website_url}" target="_blank" rel="noopener noreferrer"
+                             class="text-gray-400 hover:text-purple-600 transition-colors">
+                            <i class="fas fa-globe text-lg"></i>
+                          </a>
+                        ` : ''}
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `
+            }).join('')}
+          </div>
+        </div>
+      </section>
       ` : ''}
       
       <!-- How to Use ClimbHero Section (Collapsible) -->
@@ -2347,6 +2423,25 @@ function renderAdminPage() {
             </div>
           </div>
         </div>
+        
+        <!-- Climber Testimonials Management Section -->
+        <div class="admin-section">
+          <div class="admin-section-header">
+            <div>
+              <i class="fas fa-mountain mr-2"></i>
+              ${i18n.t('admin.testimonials_title')}
+            </div>
+            <button onclick="showTestimonialModal()" class="btn btn-sm btn-primary">
+              <i class="fas fa-plus mr-1"></i>
+              ${i18n.t('admin.testimonials_new')}
+            </button>
+          </div>
+          <div id="admin-testimonials-list" style="background: white; border-radius: 8px; padding: 16px; margin-top: 12px;">
+            <div style="text-align: center; padding: 40px; color: #666;">
+              ${i18n.t('common.loading')}
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   `;
@@ -3737,6 +3832,10 @@ async function loadAdminData() {
     // Load tags
     const tagsRes = await axios.get('/api/blog/tags');
     state.blogTags = tagsRes.data;
+    
+    // Load testimonials
+    const testimonialsRes = await axios.get('/api/admin/testimonials');
+    renderTestimonialsList(testimonialsRes.data.testimonials);
   } catch (error) {
     console.error('Failed to load admin data:', error);
   }
@@ -4482,6 +4581,275 @@ async function deleteBlog(blogId) {
     await loadAdminData();
   } catch (error) {
     showToast(error.response?.data?.error || 'ブログの削除に失敗しました', 'error');
+  }
+}
+
+// ============ Climber Testimonials Management ============
+
+function renderTestimonialsList(testimonials) {
+  const container = document.getElementById('admin-testimonials-list');
+  if (!container) return;
+  
+  if (!testimonials || testimonials.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #666;">
+        ${i18n.t('testimonials.no_testimonials')}
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="space-y-4">
+      ${testimonials.map(testimonial => `
+        <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <img 
+            src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop'}" 
+            alt="${testimonial.climber_name_ja}"
+            class="w-16 h-16 rounded-full object-cover flex-shrink-0"
+          />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <h4 class="font-bold text-gray-900">${testimonial.climber_name_ja}</h4>
+                <p class="text-sm text-purple-600">${testimonial.title_ja}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs px-2 py-1 rounded ${testimonial.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">
+                  ${testimonial.is_active ? '公開中' : '非公開'}
+                </span>
+                <span class="text-xs text-gray-500">順序: ${testimonial.display_order}</span>
+              </div>
+            </div>
+            <p class="text-sm text-gray-700 mb-2 line-clamp-2">${testimonial.comment_ja}</p>
+            <div class="flex items-center gap-2">
+              <button onclick="editTestimonial(${testimonial.id})" class="text-xs text-blue-600 hover:text-blue-800">
+                <i class="fas fa-edit"></i> ${i18n.t('common.edit')}
+              </button>
+              <button onclick="deleteTestimonial(${testimonial.id})" class="text-xs text-red-600 hover:text-red-800">
+                <i class="fas fa-trash"></i> ${i18n.t('common.delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function showTestimonialModal(testimonialId = null) {
+  const testimonial = testimonialId ? state.testimonials.find(t => t.id === testimonialId) : null;
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold">
+          ${testimonial ? i18n.t('admin.testimonials_edit') : i18n.t('admin.testimonials_new')}
+        </h3>
+        <button class="btn btn-sm btn-secondary" onclick="this.closest('.modal').remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <form onsubmit="saveTestimonial(event, ${testimonialId || 'null'})" class="space-y-4">
+        <!-- Japanese -->
+        <div class="bg-purple-50 p-4 rounded-lg">
+          <h4 class="font-bold mb-3 text-purple-900">日本語 (必須)</h4>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_climber_name')}</label>
+              <input type="text" id="climber_name_ja" value="${testimonial?.climber_name_ja || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_title')}</label>
+              <input type="text" id="title_ja" value="${testimonial?.title_ja || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_comment')}</label>
+              <textarea id="comment_ja" rows="3" class="w-full px-3 py-2 border rounded-lg" required>${testimonial?.comment_ja || ''}</textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- English -->
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <h4 class="font-bold mb-3 text-blue-900">English (Required)</h4>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium mb-1">Climber Name</label>
+              <input type="text" id="climber_name_en" value="${testimonial?.climber_name_en || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Title / Credentials</label>
+              <input type="text" id="title_en" value="${testimonial?.title_en || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Comment</label>
+              <textarea id="comment_en" rows="3" class="w-full px-3 py-2 border rounded-lg" required>${testimonial?.comment_en || ''}</textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Chinese -->
+        <div class="bg-red-50 p-4 rounded-lg">
+          <h4 class="font-bold mb-3 text-red-900">中文 (可选)</h4>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium mb-1">攀岩者姓名</label>
+              <input type="text" id="climber_name_zh" value="${testimonial?.climber_name_zh || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">头衔</label>
+              <input type="text" id="title_zh" value="${testimonial?.title_zh || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">评论</label>
+              <textarea id="comment_zh" rows="3" class="w-full px-3 py-2 border rounded-lg">${testimonial?.comment_zh || ''}</textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Korean -->
+        <div class="bg-green-50 p-4 rounded-lg">
+          <h4 class="font-bold mb-3 text-green-900">한국어 (선택)</h4>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-medium mb-1">클라이머 이름</label>
+              <input type="text" id="climber_name_ko" value="${testimonial?.climber_name_ko || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">직함</label>
+              <input type="text" id="title_ko" value="${testimonial?.title_ko || ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">코멘트</label>
+              <textarea id="comment_ko" rows="3" class="w-full px-3 py-2 border rounded-lg">${testimonial?.comment_ko || ''}</textarea>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Additional Fields -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_avatar')}</label>
+            <input type="url" id="avatar_url" value="${testimonial?.avatar_url || ''}" 
+                   class="w-full px-3 py-2 border rounded-lg" placeholder="https://..." />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_display_order')}</label>
+            <input type="number" id="display_order" value="${testimonial?.display_order || 0}" 
+                   class="w-full px-3 py-2 border rounded-lg" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_instagram')}</label>
+            <input type="url" id="instagram_url" value="${testimonial?.instagram_url || ''}" 
+                   class="w-full px-3 py-2 border rounded-lg" placeholder="https://instagram.com/..." />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_youtube')}</label>
+            <input type="url" id="youtube_url" value="${testimonial?.youtube_url || ''}" 
+                   class="w-full px-3 py-2 border rounded-lg" placeholder="https://youtube.com/..." />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">${i18n.t('admin.testimonial_website')}</label>
+            <input type="url" id="website_url" value="${testimonial?.website_url || ''}" 
+                   class="w-full px-3 py-2 border rounded-lg" placeholder="https://..." />
+          </div>
+          <div class="flex items-center">
+            <label class="flex items-center gap-2">
+              <input type="checkbox" id="is_active" ${testimonial?.is_active ? 'checked' : ''} 
+                     class="w-5 h-5" />
+              <span class="text-sm font-medium">${i18n.t('admin.testimonial_is_active')}</span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-2 pt-4">
+          <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+            ${i18n.t('common.cancel')}
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save mr-2"></i>
+            ${i18n.t('common.save')}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+async function saveTestimonial(event, testimonialId) {
+  event.preventDefault();
+  
+  const data = {
+    climber_name_ja: document.getElementById('climber_name_ja').value,
+    climber_name_en: document.getElementById('climber_name_en').value,
+    climber_name_zh: document.getElementById('climber_name_zh').value || null,
+    climber_name_ko: document.getElementById('climber_name_ko').value || null,
+    title_ja: document.getElementById('title_ja').value,
+    title_en: document.getElementById('title_en').value,
+    title_zh: document.getElementById('title_zh').value || null,
+    title_ko: document.getElementById('title_ko').value || null,
+    comment_ja: document.getElementById('comment_ja').value,
+    comment_en: document.getElementById('comment_en').value,
+    comment_zh: document.getElementById('comment_zh').value || null,
+    comment_ko: document.getElementById('comment_ko').value || null,
+    avatar_url: document.getElementById('avatar_url').value || null,
+    instagram_url: document.getElementById('instagram_url').value || null,
+    youtube_url: document.getElementById('youtube_url').value || null,
+    website_url: document.getElementById('website_url').value || null,
+    display_order: parseInt(document.getElementById('display_order').value) || 0,
+    is_active: document.getElementById('is_active').checked ? 1 : 0
+  };
+  
+  try {
+    if (testimonialId) {
+      await axios.put(`/api/admin/testimonials/${testimonialId}`, data);
+    } else {
+      await axios.post('/api/admin/testimonials', data);
+    }
+    
+    showToast(i18n.t('admin.testimonial_save_success'), 'success');
+    document.querySelector('.modal').remove();
+    await loadAdminData();
+    await loadInitialData(); // Refresh public testimonials
+  } catch (error) {
+    showToast(error.response?.data?.error || 'Failed to save testimonial', 'error');
+  }
+}
+
+async function editTestimonial(testimonialId) {
+  try {
+    const response = await axios.get('/api/admin/testimonials');
+    state.testimonials = response.data.testimonials;
+    showTestimonialModal(testimonialId);
+  } catch (error) {
+    showToast('Failed to load testimonial data', 'error');
+  }
+}
+
+async function deleteTestimonial(testimonialId) {
+  if (!confirm(i18n.t('admin.testimonial_delete_confirm'))) return;
+  
+  try {
+    await axios.delete(`/api/admin/testimonials/${testimonialId}`);
+    showToast(i18n.t('admin.testimonial_delete_success'), 'success');
+    await loadAdminData();
+    await loadInitialData(); // Refresh public testimonials
+  } catch (error) {
+    showToast(error.response?.data?.error || 'Failed to delete testimonial', 'error');
   }
 }
 

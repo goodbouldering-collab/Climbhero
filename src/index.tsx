@@ -3469,4 +3469,153 @@ app.post('/api/admin/blog/posts', async (c) => {
   }
 })
 
+// ============ Climber Testimonials API ============
+
+// Get all active testimonials (public)
+app.get('/api/testimonials', async (c) => {
+  const { env } = c
+  try {
+    const testimonials = await env.DB.prepare(`
+      SELECT * FROM climber_testimonials 
+      WHERE is_active = 1 
+      ORDER BY display_order ASC, created_at DESC
+    `).all()
+    
+    return c.json({ testimonials: testimonials.results })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get all testimonials (admin only)
+app.get('/api/admin/testimonials', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const testimonials = await env.DB.prepare(`
+      SELECT * FROM climber_testimonials 
+      ORDER BY display_order ASC, created_at DESC
+    `).all()
+    
+    return c.json({ testimonials: testimonials.results })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Create testimonial (admin only)
+app.post('/api/admin/testimonials', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const { 
+      climber_name_ja, climber_name_en, climber_name_zh, climber_name_ko,
+      title_ja, title_en, title_zh, title_ko,
+      comment_ja, comment_en, comment_zh, comment_ko,
+      avatar_url, instagram_url, youtube_url, website_url,
+      display_order, is_active 
+    } = await c.req.json()
+
+    if (!climber_name_ja || !climber_name_en || !title_ja || !title_en || !comment_ja || !comment_en) {
+      return c.json({ error: 'Required fields missing (ja and en required)' }, 400)
+    }
+
+    const result = await env.DB.prepare(`
+      INSERT INTO climber_testimonials (
+        climber_name_ja, climber_name_en, climber_name_zh, climber_name_ko,
+        title_ja, title_en, title_zh, title_ko,
+        comment_ja, comment_en, comment_zh, comment_ko,
+        avatar_url, instagram_url, youtube_url, website_url,
+        display_order, is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      climber_name_ja, climber_name_en, climber_name_zh || null, climber_name_ko || null,
+      title_ja, title_en, title_zh || null, title_ko || null,
+      comment_ja, comment_en, comment_zh || null, comment_ko || null,
+      avatar_url || null, instagram_url || null, youtube_url || null, website_url || null,
+      display_order || 0, is_active !== undefined ? is_active : 1
+    ).run()
+
+    return c.json({ success: true, id: result.meta.last_row_id }, 201)
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update testimonial (admin only)
+app.put('/api/admin/testimonials/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const testimonialId = parseInt(c.req.param('id'))
+    const { 
+      climber_name_ja, climber_name_en, climber_name_zh, climber_name_ko,
+      title_ja, title_en, title_zh, title_ko,
+      comment_ja, comment_en, comment_zh, comment_ko,
+      avatar_url, instagram_url, youtube_url, website_url,
+      display_order, is_active 
+    } = await c.req.json()
+
+    await env.DB.prepare(`
+      UPDATE climber_testimonials SET
+        climber_name_ja = ?, climber_name_en = ?, climber_name_zh = ?, climber_name_ko = ?,
+        title_ja = ?, title_en = ?, title_zh = ?, title_ko = ?,
+        comment_ja = ?, comment_en = ?, comment_zh = ?, comment_ko = ?,
+        avatar_url = ?, instagram_url = ?, youtube_url = ?, website_url = ?,
+        display_order = ?, is_active = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      climber_name_ja, climber_name_en, climber_name_zh || null, climber_name_ko || null,
+      title_ja, title_en, title_zh || null, title_ko || null,
+      comment_ja, comment_en, comment_zh || null, comment_ko || null,
+      avatar_url || null, instagram_url || null, youtube_url || null, website_url || null,
+      display_order || 0, is_active !== undefined ? is_active : 1,
+      testimonialId
+    ).run()
+
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Delete testimonial (admin only)
+app.delete('/api/admin/testimonials/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const testimonialId = parseInt(c.req.param('id'))
+    await env.DB.prepare('DELETE FROM climber_testimonials WHERE id = ?').bind(testimonialId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 export default app
