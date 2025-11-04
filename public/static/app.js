@@ -1315,11 +1315,7 @@ function navigateTo(view) {
 
 // Navigate to My Page (Admin or User)
 function navigateToMyPage() {
-  if (state.currentUser && state.currentUser.is_admin) {
-    navigateTo('admin');
-  } else {
-    navigateTo('mypage');
-  }
+  navigateTo('mypage');
 }
 
 // ============ Feature Section Toggle ============
@@ -1495,12 +1491,11 @@ async function handleAuth(event, type) {
     await checkAuth();
     closeModal('auth-modal');
     
-    // ログイン時に管理者であれば管理画面にリダイレクト
-    if (type === 'login' && state.currentUser && state.currentUser.is_admin) {
-      navigateTo('admin');
-      showToast('管理者としてログインしました', 'success');
+    // ログイン後は全員トップページへ
+    renderApp();
+    if (state.currentUser && state.currentUser.is_admin) {
+      showToast('管理者としてログインしました - マイページから管理画面へアクセスできます', 'success');
     } else {
-      renderApp();
       showToast(i18n.t('toast.auth_success'), 'success');
     }
   } catch (error) {
@@ -1519,9 +1514,9 @@ async function quickAdminLogin() {
     await checkAuth();
     closeModal('auth-modal');
     
-    // 管理画面にリダイレクト
-    navigateTo('admin');
-    showToast('管理者としてログインしました', 'success');
+    // トップページにリダイレクト
+    renderApp();
+    showToast('管理者としてログインしました - マイページから管理画面へアクセスできます', 'success');
   } catch (error) {
     showToast('管理者ログインに失敗しました', 'error');
   }
@@ -2198,6 +2193,14 @@ function renderMyPage() {
                 <i class="fas fa-arrow-left mr-2"></i>ホームに戻る
               </button>
               <h1 class="text-xl font-bold text-gray-900">マイページ</h1>
+            </div>
+            <div class="flex items-center gap-2">
+              ${state.currentUser.is_admin ? `
+                <button onclick="navigateTo('admin')" class="btn btn-sm btn-primary">
+                  <i class="fas fa-cog mr-2"></i>
+                  管理画面
+                </button>
+              ` : ''}
             </div>
           </div>
         </div>
