@@ -364,21 +364,28 @@ function renderHomePage() {
       </div>
       ` : ''}
       
-      <!-- Climber Testimonials Section -->
+      <!-- Climber Testimonials Section (Collapsible) -->
       ${state.testimonials && state.testimonials.length > 0 ? `
-      <section class="bg-white py-12 border-b border-gray-200">
-        <div class="w-full px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-10">
-            <h2 class="text-3xl font-bold text-gray-900 mb-3">
+      <section class="bg-white border-b border-gray-200">
+        <div class="w-full px-4 sm:px-6 lg:px-8 py-4">
+          <button 
+            onclick="toggleTestimonialsSection()" 
+            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
+            <h2 class="text-lg font-bold text-gray-900">
               <i class="fas fa-mountain text-purple-600 mr-2"></i>
               ${i18n.t('testimonials.title')}
             </h2>
-            <p class="text-gray-600 text-lg">
-              ${i18n.t('testimonials.subtitle')}
-            </p>
-          </div>
+            <i id="testimonials-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </button>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div id="testimonials-content" class="hidden mt-6">
+            <div class="text-center mb-8">
+              <p class="text-gray-600 text-base">
+                ${i18n.t('testimonials.subtitle')}
+              </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             ${state.testimonials.map(testimonial => {
               const lang = i18n.getCurrentLanguage()
               const climberName = testimonial[`climber_name_${lang}`] || testimonial.climber_name_en
@@ -432,6 +439,7 @@ function renderHomePage() {
                 </div>
               `
             }).join('')}
+            </div>
           </div>
         </div>
       </section>
@@ -1322,6 +1330,20 @@ function navigateToMyPage() {
 function toggleFeatureSection() {
   const content = document.getElementById('feature-content');
   const icon = document.getElementById('feature-toggle-icon');
+  
+  if (content.classList.contains('hidden')) {
+    content.classList.remove('hidden');
+    icon.classList.add('rotate-180');
+  } else {
+    content.classList.add('hidden');
+    icon.classList.remove('rotate-180');
+  }
+}
+
+// ============ Testimonials Section Toggle ============
+function toggleTestimonialsSection() {
+  const content = document.getElementById('testimonials-content');
+  const icon = document.getElementById('testimonials-toggle-icon');
   
   if (content.classList.contains('hidden')) {
     content.classList.remove('hidden');
