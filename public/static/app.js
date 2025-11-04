@@ -9,7 +9,7 @@ const state = {
   blogTags: [],
   announcements: [],
   currentView: 'home',
-  currentRankingType: 'weekly',
+  currentRankingType: 'daily',
   loading: false,
   currentLanguage: 'ja',
   heroSlideIndex: 0,
@@ -4391,4 +4391,7 @@ async function deleteBlog(blogId) {
     showToast(error.response?.data?.error || 'ブログの削除に失敗しました', 'error');
   }
 }
+
+// ============ Expose Functions to Global Scope (for onclick handlers) ============
+window.switchRankingPeriod = switchRankingPeriod;
 
