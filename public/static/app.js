@@ -259,14 +259,6 @@ function renderHomePage() {
             </div>
             
             ${state.currentUser ? `
-              <!-- Notifications -->
-              <div class="relative">
-                <button onclick="toggleNotifications()" class="btn btn-sm btn-secondary relative">
-                  <i class="fas fa-bell"></i>
-                  <span id="notification-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">0</span>
-                </button>
-              </div>
-              
               <!-- My Page Button -->
               <button onclick="navigateToMyPage()" class="btn btn-sm btn-primary">
                 <i class="fas fa-user-circle"></i>
