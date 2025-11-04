@@ -272,6 +272,12 @@ function renderHomePage() {
                 <i class="fas fa-user-circle"></i>
                 <span class="hidden sm:inline">マイページ</span>
               </button>
+              
+              <!-- Logout Button -->
+              <button onclick="logout()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="hidden sm:inline">ログアウト</span>
+              </button>
             ` : `
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary">
                 <i class="fas fa-sign-in-alt"></i>
