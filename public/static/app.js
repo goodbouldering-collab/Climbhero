@@ -2220,7 +2220,7 @@ function renderMyPage() {
               ${state.currentUser.is_admin ? `
                 <button onclick="navigateTo('admin')" class="btn btn-sm btn-primary">
                   <i class="fas fa-cog mr-2"></i>
-                  管理画面
+                  管理者ページ
                 </button>
               ` : ''}
             </div>
@@ -2229,61 +2229,115 @@ function renderMyPage() {
       </header>
 
       <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- User Profile Card -->
+        <!-- User Profile Edit Form -->
         <div class="card p-6 mb-6">
-          <div class="flex items-center gap-4 mb-6">
-            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-bold">
-              ${state.currentUser.username[0].toUpperCase()}
-            </div>
+          <h2 class="text-xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-user-circle mr-2 text-purple-600"></i>
+            プロフィール情報
+          </h2>
+          
+          <form onsubmit="updateMyProfile(event)" class="space-y-4">
             <div>
-              <h2 class="text-2xl font-bold text-gray-900">${state.currentUser.username}</h2>
-              <p class="text-gray-600">${state.currentUser.email}</p>
-              <span class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                state.currentUser.membership_type === 'premium' 
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
-                  : 'bg-gray-200 text-gray-700'
-              }">
-                ${state.currentUser.membership_type === 'premium' ? 'プレミアム会員' : '無料会員'}
-              </span>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                ユーザー名
+              </label>
+              <input 
+                type="text" 
+                id="profile-username" 
+                value="${state.currentUser.username}" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                required
+              />
             </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="p-4 bg-gray-50 rounded-lg">
-              <p class="text-sm text-gray-600 mb-1">会員タイプ</p>
-              <p class="text-lg font-semibold">${state.currentUser.membership_type === 'premium' ? 'プレミアム' : '無料'}</p>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                メールアドレス
+              </label>
+              <input 
+                type="email" 
+                id="profile-email" 
+                value="${state.currentUser.email}" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                required
+              />
             </div>
-            <div class="p-4 bg-gray-50 rounded-lg">
-              <p class="text-sm text-gray-600 mb-1">登録日</p>
-              <p class="text-lg font-semibold">${new Date().toLocaleDateString('ja-JP')}</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-600 mb-1">会員タイプ</p>
+                <p class="text-lg font-semibold ${state.currentUser.membership_type === 'premium' ? 'text-purple-600' : 'text-gray-700'}">
+                  ${state.currentUser.membership_type === 'premium' ? 'プレミアム会員' : '無料会員'}
+                </p>
+              </div>
+              <div class="p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-600 mb-1">登録日</p>
+                <p class="text-lg font-semibold">${state.currentUser.created_at ? new Date(state.currentUser.created_at).toLocaleDateString('ja-JP') : new Date().toLocaleDateString('ja-JP')}</p>
+              </div>
             </div>
-          </div>
+            
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 btn btn-primary">
+                <i class="fas fa-save mr-2"></i>
+                更新する
+              </button>
+              ${state.currentUser.membership_type !== 'premium' ? `
+                <button type="button" onclick="showPricingModal()" class="flex-1 btn" style="background: linear-gradient(to right, rgb(147 51 234), rgb(219 39 119)); color: white;">
+                  <i class="fas fa-crown mr-2"></i>
+                  プレミアムへ
+                </button>
+              ` : ''}
+            </div>
+          </form>
         </div>
 
-        <!-- Account Settings -->
+        <!-- Password Change Section -->
         <div class="card p-6 mb-6">
           <h3 class="text-lg font-bold text-gray-900 mb-4">
-            <i class="fas fa-cog mr-2 text-purple-600"></i>
-            アカウント設定
+            <i class="fas fa-key mr-2 text-purple-600"></i>
+            パスワード変更
           </h3>
-          <div class="space-y-3">
-            <button onclick="showChangePasswordModal()" class="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition flex items-center justify-between">
-              <span>
-                <i class="fas fa-key mr-3 text-purple-600"></i>
-                パスワード変更
-              </span>
-              <i class="fas fa-chevron-right text-gray-400"></i>
+          <form onsubmit="updateMyPassword(event)" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                現在のパスワード
+              </label>
+              <input 
+                type="password" 
+                id="current-password" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                新しいパスワード
+              </label>
+              <input 
+                type="password" 
+                id="new-password" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                required
+                minlength="6"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                新しいパスワード（確認）
+              </label>
+              <input 
+                type="password" 
+                id="confirm-password" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                required
+                minlength="6"
+              />
+            </div>
+            <button type="submit" class="w-full btn btn-primary">
+              <i class="fas fa-key mr-2"></i>
+              パスワードを更新
             </button>
-            ${state.currentUser.membership_type !== 'premium' ? `
-              <button onclick="showPricingModal()" class="w-full text-left px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition flex items-center justify-between">
-                <span>
-                  <i class="fas fa-crown mr-3 text-purple-600"></i>
-                  プレミアムにアップグレード
-                </span>
-                <i class="fas fa-chevron-right text-purple-600"></i>
-              </button>
-            ` : ''}
-          </div>
+          </form>
         </div>
 
         <!-- Logout Button -->
@@ -4875,6 +4929,64 @@ async function deleteTestimonial(testimonialId) {
     await loadInitialData(); // Refresh public testimonials
   } catch (error) {
     showToast(error.response?.data?.error || 'Failed to delete testimonial', 'error');
+  }
+}
+
+// ============ My Page Profile Update Functions ============
+
+async function updateMyProfile(event) {
+  event.preventDefault();
+  
+  const username = document.getElementById('profile-username').value;
+  const email = document.getElementById('profile-email').value;
+  
+  try {
+    await axios.put('/api/users/profile', {
+      username,
+      email
+    });
+    
+    // Update local state
+    state.currentUser.username = username;
+    state.currentUser.email = email;
+    
+    showToast('プロフィールを更新しました', 'success');
+  } catch (error) {
+    showToast(error.response?.data?.error || 'プロフィールの更新に失敗しました', 'error');
+  }
+}
+
+async function updateMyPassword(event) {
+  event.preventDefault();
+  
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  
+  if (newPassword !== confirmPassword) {
+    showToast('新しいパスワードが一致しません', 'error');
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    showToast('パスワードは6文字以上で入力してください', 'error');
+    return;
+  }
+  
+  try {
+    await axios.put('/api/users/password', {
+      currentPassword,
+      newPassword
+    });
+    
+    // Clear form
+    document.getElementById('current-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+    
+    showToast('パスワードを更新しました', 'success');
+  } catch (error) {
+    showToast(error.response?.data?.error || 'パスワードの更新に失敗しました', 'error');
   }
 }
 
