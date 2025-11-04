@@ -50,11 +50,6 @@ async function init() {
   await checkAuth();
   await loadInitialData();
   
-  // 管理者がログイン済みで、かつURLに特定のハッシュがない場合は管理画面にリダイレクト
-  if (state.currentUser && state.currentUser.is_admin && !window.location.hash) {
-    window.location.hash = 'admin';
-  }
-  
   renderApp();
   
   // Initialize hero slideshow
