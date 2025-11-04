@@ -213,6 +213,8 @@ function renderApp() {
   } else if (state.currentView === 'admin') {
     root.innerHTML = renderAdminPage();
     loadAdminData();
+  } else if (state.currentView === 'mypage') {
+    root.innerHTML = renderMyPage();
   } else if (state.currentView === 'api') {
     root.innerHTML = renderApiPage();
   } else if (state.currentView === 'blog-detail') {
@@ -267,26 +269,10 @@ function renderHomePage() {
                 </button>
               </div>
               
-              ${state.currentUser.is_admin ? `
-                <button onclick="navigateTo('admin')" class="btn btn-sm btn-secondary">
-                  <i class="fas fa-cog"></i>
-                  <span class="hidden sm:inline">${i18n.t('nav.admin')}</span>
-                </button>
-              ` : ''}
-              
-              <div class="flex items-center gap-2">
-                <div class="avatar">
-                  ${state.currentUser.username[0].toUpperCase()}
-                </div>
-                <span class="hidden lg:inline text-sm font-medium text-gray-700">
-                  ${state.currentUser.username}
-                </span>
-              </div>
-              <button onclick="showChangePasswordModal()" class="btn btn-sm btn-secondary" title="パスワード変更">
-                <i class="fas fa-key"></i>
-              </button>
-              <button onclick="logout()" class="btn btn-sm btn-secondary">
-                <i class="fas fa-sign-out-alt"></i>
+              <!-- My Page Button -->
+              <button onclick="navigateToMyPage()" class="btn btn-sm btn-primary">
+                <i class="fas fa-user-circle"></i>
+                <span class="hidden sm:inline">マイページ</span>
               </button>
             ` : `
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary">
@@ -1251,6 +1237,15 @@ function navigateTo(view) {
   window.location.hash = view;
 }
 
+// Navigate to My Page (Admin or User)
+function navigateToMyPage() {
+  if (state.currentUser && state.currentUser.is_admin) {
+    navigateTo('admin');
+  } else {
+    navigateTo('mypage');
+  }
+}
+
 // ============ Feature Section Toggle ============
 function toggleFeatureSection() {
   const content = document.getElementById('feature-content');
@@ -2110,6 +2105,98 @@ async function renderBlogDetail() {
   }
 }
 
+// ============ My Page (User Profile) ============
+function renderMyPage() {
+  if (!state.currentUser) {
+    navigateTo('home');
+    return '';
+  }
+
+  return `
+    <div class="min-h-screen bg-gray-50">
+      <header class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-4">
+              <button onclick="navigateTo('home')" class="text-purple-600 hover:text-purple-700">
+                <i class="fas fa-arrow-left mr-2"></i>ホームに戻る
+              </button>
+              <h1 class="text-xl font-bold text-gray-900">マイページ</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- User Profile Card -->
+        <div class="card p-6 mb-6">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-3xl font-bold">
+              ${state.currentUser.username[0].toUpperCase()}
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">${state.currentUser.username}</h2>
+              <p class="text-gray-600">${state.currentUser.email}</p>
+              <span class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                state.currentUser.membership_type === 'premium' 
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
+                  : 'bg-gray-200 text-gray-700'
+              }">
+                ${state.currentUser.membership_type === 'premium' ? 'プレミアム会員' : '無料会員'}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <p class="text-sm text-gray-600 mb-1">会員タイプ</p>
+              <p class="text-lg font-semibold">${state.currentUser.membership_type === 'premium' ? 'プレミアム' : '無料'}</p>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <p class="text-sm text-gray-600 mb-1">登録日</p>
+              <p class="text-lg font-semibold">${new Date().toLocaleDateString('ja-JP')}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Settings -->
+        <div class="card p-6 mb-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">
+            <i class="fas fa-cog mr-2 text-purple-600"></i>
+            アカウント設定
+          </h3>
+          <div class="space-y-3">
+            <button onclick="showChangePasswordModal()" class="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition flex items-center justify-between">
+              <span>
+                <i class="fas fa-key mr-3 text-purple-600"></i>
+                パスワード変更
+              </span>
+              <i class="fas fa-chevron-right text-gray-400"></i>
+            </button>
+            ${state.currentUser.membership_type !== 'premium' ? `
+              <button onclick="showPricingModal()" class="w-full text-left px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition flex items-center justify-between">
+                <span>
+                  <i class="fas fa-crown mr-3 text-purple-600"></i>
+                  プレミアムにアップグレード
+                </span>
+                <i class="fas fa-chevron-right text-purple-600"></i>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <div class="card p-6">
+          <button onclick="logout()" class="w-full btn btn-secondary">
+            <i class="fas fa-sign-out-alt mr-2"></i>
+            ログアウト
+          </button>
+        </div>
+      </main>
+    </div>
+  `;
+}
+
 // ============ Admin Page (Simplified) ============
 function renderAdminPage() {
   return `
@@ -2121,10 +2208,16 @@ function renderAdminPage() {
               <i class="fas fa-cog text-purple-600 text-2xl"></i>
               <h1 class="text-xl font-bold text-gray-900">管理画面</h1>
             </div>
-            <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
-              <i class="fas fa-home"></i>
-              ホームに戻る
-            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
+                <i class="fas fa-home"></i>
+                <span class="hidden sm:inline">ホームに戻る</span>
+              </button>
+              <button onclick="logout()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="hidden sm:inline">ログアウト</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -4394,4 +4487,5 @@ async function deleteBlog(blogId) {
 
 // ============ Expose Functions to Global Scope (for onclick handlers) ============
 window.switchRankingPeriod = switchRankingPeriod;
+window.navigateToMyPage = navigateToMyPage;
 
