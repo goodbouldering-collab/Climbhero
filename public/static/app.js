@@ -1477,11 +1477,7 @@ function showAuthModal(type) {
       </form>
       
       ${type === 'login' ? `
-        <div class="mt-3 space-y-2">
-          <button onclick="quickAdminLogin()" class="w-full py-2 px-3 bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-medium rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2">
-            <i class="fas fa-shield-alt"></i>
-            <span>管理者としてログイン (Admin Login)</span>
-          </button>
+        <div class="mt-3">
           <div class="text-center">
             <a href="#" onclick="showPasswordResetModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800">
               ${i18n.t('auth.forgot_password')}
@@ -1522,25 +1518,6 @@ async function handleAuth(event, type) {
     }
   } catch (error) {
     showToast(error.response?.data?.error || i18n.t('toast.auth_error'), 'error');
-  }
-}
-
-async function quickAdminLogin() {
-  try {
-    // 管理者認証情報で自動ログイン
-    await axios.post('/api/auth/login', {
-      email: 'admin',
-      password: 'admin123'
-    });
-    
-    await checkAuth();
-    closeModal('auth-modal');
-    
-    // トップページにリダイレクト
-    renderApp();
-    showToast('管理者としてログインしました - マイページから管理画面へアクセスできます', 'success');
-  } catch (error) {
-    showToast('管理者ログインに失敗しました', 'error');
   }
 }
 
