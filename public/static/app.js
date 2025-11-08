@@ -314,32 +314,19 @@ function renderHomePage() {
               </button>
             ` : ''}
           </div>
-        </div>
-      </section>
-      
-      <!-- Announcement Text (Above Banner) -->
-      ${state.announcements && state.announcements.length > 0 ? `
-      <div class="bg-gray-50 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="flex items-start gap-3">
-            <i class="fas fa-info-circle text-purple-600 text-lg mt-1 flex-shrink-0"></i>
-            <div class="flex-1">
-              <h3 class="font-bold text-gray-900 mb-2 text-sm">${i18n.t('announcement.latest')}</h3>
+          
+          <!-- Announcements inside Hero -->
+          ${state.announcements && state.announcements.length > 0 ? `
+            <div class="mt-6 space-y-2">
               ${state.announcements.slice(0, 3).map(a => `
-                <div class="mb-2 text-sm text-gray-700">
-                  <span class="font-medium text-purple-600">● ${a.title}:</span> ${a.content}
+                <div class="text-white text-sm bg-black/20 backdrop-blur-sm px-4 py-2 rounded">
+                  <span class="font-bold">● ${a.title}:</span> ${a.content}
                 </div>
               `).join('')}
-              ${state.announcements.length > 3 ? `
-                <a href="#" onclick="showAnnouncementsModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800 font-medium">
-                  ${i18n.t('announcement.view_all')} <i class="fas fa-chevron-right"></i>
-                </a>
-              ` : ''}
             </div>
-          </div>
+          ` : ''}
         </div>
-      </div>
-      ` : ''}
+      </section>
       
       ${state.announcements && state.announcements.length > 0 ? `
       <!-- Scrolling Announcement Banner -->
