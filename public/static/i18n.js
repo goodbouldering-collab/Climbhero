@@ -156,6 +156,7 @@ const translations = {
     'toast.auth_success': 'ログインしました',
     'toast.auth_error': '認証に失敗しました',
     'toast.logout_success': 'ログアウトしました',
+    'toast.logout_confirm': 'ログアウトしますか？',
     
     // Footer
     'footer.about': 'ClimbHeroについて',
@@ -667,6 +668,7 @@ const translations = {
     'toast.auth_success': 'Logged in successfully',
     'toast.auth_error': 'Authentication failed',
     'toast.logout_success': 'Logged out successfully',
+    'toast.logout_confirm': 'Are you sure you want to logout?',
     
     // Footer
     'footer.about': 'About ClimbHero',
@@ -1133,6 +1135,7 @@ const translations = {
     'toast.auth_success': '登录成功',
     'toast.auth_error': '认证失败',
     'toast.logout_success': '已退出登录',
+    'toast.logout_confirm': '确定要退出登录吗？',
     
     // Footer
     'footer.about': '关于ClimbHero',
@@ -1317,6 +1320,7 @@ const translations = {
     'toast.auth_success': '로그인 성공',
     'toast.auth_error': '인증 실패',
     'toast.logout_success': '로그아웃 완료',
+    'toast.logout_confirm': '로그아웃 하시겠습니까?',
     
     // Footer
     'footer.about': 'ClimbHero 소개',

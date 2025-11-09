@@ -1502,6 +1502,11 @@ async function handleAuth(event, type) {
 }
 
 async function logout() {
+  // Show confirmation dialog
+  if (!confirm(i18n.t('toast.logout_confirm'))) {
+    return;
+  }
+  
   try {
     await axios.post('/api/auth/logout');
     state.currentUser = null;
