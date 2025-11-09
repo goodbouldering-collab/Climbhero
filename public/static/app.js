@@ -344,6 +344,78 @@ function renderHomePage() {
       </div>
       ` : ''}
       
+      <!-- How to Use ClimbHero Section (Collapsible) -->
+      <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button 
+            onclick="toggleFeatureSection()" 
+            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
+            <h2 class="text-lg font-bold text-gray-900">
+              <i class="fas fa-info-circle text-purple-600 mr-2"></i>
+              ${i18n.t('feature.title')}
+            </h2>
+            <i id="feature-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+          </button>
+          
+          <div id="feature-content" class="hidden mt-4">
+            <!-- Mission Statement -->
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 rounded-lg p-4 mb-6">
+              <p class="text-sm text-gray-700 leading-relaxed">
+                ${i18n.t('feature.mission')}
+              </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <!-- Step 1: Discover -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-video text-3xl text-purple-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step1.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step1.desc')}</p>
+            </div>
+            
+            <!-- Step 2: Share -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-share-alt text-3xl text-blue-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step2.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step2.desc')}</p>
+            </div>
+            
+            <!-- Step 3: Data Growth -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-chart-line text-3xl text-green-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step3.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step3.desc')}</p>
+            </div>
+            
+            <!-- Step 4: Authentic Value -->
+            <div class="text-center">
+              <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-mountain text-3xl text-yellow-600"></i>
+              </div>
+              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step4.title')}</h3>
+              <p class="text-sm text-gray-600">${i18n.t('feature.step4.desc')}</p>
+            </div>
+            </div>
+            
+            <div class="text-center">
+              <p class="text-sm text-green-600 font-medium mb-3">
+                <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
+              </p>
+              <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
+                <i class="fas fa-crown mr-2"></i>
+                ${i18n.t('feature.upgrade')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Climber Testimonials Section (Collapsible) -->
       ${state.testimonials && state.testimonials.length > 0 ? `
       <section class="bg-white border-b border-gray-200">
@@ -424,78 +496,6 @@ function renderHomePage() {
         </div>
       </section>
       ` : ''}
-      
-      <!-- How to Use ClimbHero Section (Collapsible) -->
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button 
-            onclick="toggleFeatureSection()" 
-            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
-            <h2 class="text-lg font-bold text-gray-900">
-              <i class="fas fa-info-circle text-purple-600 mr-2"></i>
-              ${i18n.t('feature.title')}
-            </h2>
-            <i id="feature-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-          </button>
-          
-          <div id="feature-content" class="hidden mt-4">
-            <!-- Mission Statement -->
-            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 rounded-lg p-4 mb-6">
-              <p class="text-sm text-gray-700 leading-relaxed">
-                ${i18n.t('feature.mission')}
-              </p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <!-- Step 1: Discover -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-video text-3xl text-purple-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step1.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step1.desc')}</p>
-            </div>
-            
-            <!-- Step 2: Share -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-share-alt text-3xl text-blue-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step2.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step2.desc')}</p>
-            </div>
-            
-            <!-- Step 3: Data Growth -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-chart-line text-3xl text-green-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step3.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step3.desc')}</p>
-            </div>
-            
-            <!-- Step 4: Authentic Value -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-mountain text-3xl text-yellow-600"></i>
-              </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step4.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step4.desc')}</p>
-            </div>
-            </div>
-            
-            <div class="text-center">
-              <p class="text-sm text-green-600 font-medium mb-3">
-                <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
-              </p>
-              <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
-                <i class="fas fa-crown mr-2"></i>
-                ${i18n.t('feature.upgrade')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
       
       <!-- Search Section (Below How to Use) -->
       <section class="bg-white border-b border-gray-200">
