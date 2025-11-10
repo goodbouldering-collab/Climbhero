@@ -318,11 +318,18 @@ function renderHomePage() {
           <!-- Announcements inside Hero -->
           ${state.announcements && state.announcements.length > 0 ? `
             <div class="mt-6 space-y-2">
-              ${state.announcements.slice(0, 3).map(a => `
+              ${state.announcements.slice(0, 2).map(a => `
                 <div class="text-white text-sm bg-black/20 backdrop-blur-sm px-4 py-2 rounded">
                   <span class="font-bold">● ${a.title}:</span> ${a.content}
                 </div>
               `).join('')}
+              ${state.announcements.length > 2 ? `
+                <div class="text-center mt-3">
+                  <button onclick="showAnnouncementsModal()" class="text-white text-xs hover:text-gray-200 bg-black/30 hover:bg-black/40 px-4 py-2 rounded-full transition-colors">
+                    ${i18n.t('announcement.view_all')} <i class="fas fa-chevron-right ml-1"></i>
+                  </button>
+                </div>
+              ` : ''}
             </div>
           ` : ''}
         </div>
