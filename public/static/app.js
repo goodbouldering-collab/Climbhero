@@ -275,9 +275,6 @@ function renderHomePage() {
                 <i class="fas fa-sign-in-alt"></i>
                 ${i18n.t('nav.login')}
               </button>
-              <button onclick="showAuthModal('register')" class="btn btn-sm btn-secondary">
-                ${i18n.t('nav.signup')}
-              </button>
             `}
           </div>
         </div>
@@ -727,11 +724,6 @@ function renderHomePage() {
                 <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">${i18n.t('pricing.free.upload')}</span> <span class="text-xs">${i18n.t('pricing.free.upload_status')}</span></li>
                 <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">${i18n.t('pricing.free.likes')}</span> <span class="text-xs">${i18n.t('pricing.free.likes_status')}</span></li>
               </ul>
-              ${!state.currentUser ? `
-                <button onclick="showAuthModal('register')" class="btn btn-sm btn-secondary w-full">
-                  ${i18n.getCurrentLanguage() === 'ja' ? '無料で始める' : 'Start Free'}
-                </button>
-              ` : ''}
             </div>
             
             <!-- Premium Plan -->
