@@ -1424,84 +1424,161 @@ async function handlePremiumSubscribe(event) {
 function showAuthModal(type) {
   const modal = document.getElementById('auth-modal');
   modal.innerHTML = `
-    <div class="modal-content" style="max-width: 380px; width: 90%;">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold">${type === 'login' ? i18n.t('auth.login.title') : i18n.t('auth.signup.title')}</h3>
-        <button onclick="closeModal('auth-modal')" class="text-gray-400 hover:text-gray-600">
-          <i class="fas fa-times"></i>
-        </button>
+    <div class="modal-content" style="max-width: 440px; width: 90%;">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-purple-600 to-pink-600 -mx-6 -mt-6 px-6 py-4 rounded-t-xl mb-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold text-white flex items-center">
+            <i class="fas fa-sign-in-alt mr-2"></i>
+            ${type === 'login' ? 'ログイン' : '新規登録'}
+          </h3>
+          <button onclick="closeModal('auth-modal')" class="text-white hover:text-gray-200 transition">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
       </div>
       
       <!-- Google Login Button -->
-      <button onclick="handleGoogleLogin()" class="w-full btn border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm py-2.5 mb-4">
-        <svg class="w-5 h-5 inline-block mr-2" viewBox="0 0 24 24">
+      <button onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-3 rounded-lg transition shadow-sm hover:shadow-md">
+        <svg class="w-5 h-5" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        Googleでログイン
+        <span>Googleでログイン</span>
       </button>
       
-      <div class="relative my-4">
+      <div class="relative my-6">
         <div class="absolute inset-0 flex items-center">
           <div class="w-full border-t border-gray-300"></div>
         </div>
-        <div class="relative flex justify-center text-xs">
-          <span class="px-2 bg-white text-gray-500">または</span>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-3 bg-white text-gray-500 font-medium">または</span>
         </div>
       </div>
       
-      <form onsubmit="handleAuth(event, '${type}')" class="space-y-3">
+      <form onsubmit="handleAuth(event, '${type}')" class="space-y-4">
         ${type === 'register' ? `
           <div>
-            <label class="text-sm">${i18n.t('auth.name')}</label>
-            <input type="text" name="username" required class="w-full text-sm">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              <i class="fas fa-user text-purple-600 mr-1"></i>
+              ユーザー名
+            </label>
+            <input 
+              type="text" 
+              name="username" 
+              required 
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition"
+              placeholder="山田太郎"
+            />
           </div>
         ` : ''}
         
         <div>
-          <label class="text-sm">${i18n.t('auth.email')}</label>
-          <input type="email" name="email" required class="w-full text-sm" id="auth-email">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-envelope text-purple-600 mr-1"></i>
+            メールアドレス
+          </label>
+          <input 
+            type="email" 
+            name="email" 
+            required 
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition"
+            id="auth-email"
+            placeholder="example@email.com"
+          />
         </div>
         
         <div>
-          <label class="text-sm">${i18n.t('auth.password')}</label>
-          <input type="password" name="password" required class="w-full text-sm" id="auth-password">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i class="fas fa-lock text-purple-600 mr-1"></i>
+            パスワード
+          </label>
+          <div class="relative">
+            <input 
+              type="password" 
+              name="password" 
+              required 
+              class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition"
+              id="auth-password"
+              placeholder="••••••••"
+              minlength="6"
+            />
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility('auth-password', 'password-toggle-icon')"
+              class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+            >
+              <i id="password-toggle-icon" class="fas fa-eye"></i>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">
+            <i class="fas fa-info-circle mr-1"></i>
+            6文字以上で入力してください
+          </p>
         </div>
         
-        <button type="submit" class="btn btn-primary w-full text-sm py-2">
-          ${type === 'login' ? i18n.t('auth.login_btn') : i18n.t('auth.signup_btn')}
+        ${type === 'login' ? `
+          <div class="flex items-center justify-between">
+            <label class="flex items-center">
+              <input type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500" />
+              <span class="ml-2 text-sm text-gray-600">ログイン状態を保持</span>
+            </label>
+            <a href="#" onclick="showPasswordResetModal(); return false;" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+              パスワードを忘れた
+            </a>
+          </div>
+        ` : ''}
+        
+        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 rounded-lg transition shadow-md hover:shadow-lg">
+          <i class="fas ${type === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'} mr-2"></i>
+          ${type === 'login' ? 'ログイン' : '新規登録'}
         </button>
       </form>
       
       ${type === 'login' ? `
-        <div class="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-          <p class="text-xs text-purple-800 font-bold mb-1">
-            <i class="fas fa-crown mr-1"></i>管理者用仮パスワード
-          </p>
-          <p class="text-xs text-purple-700 font-mono">
-            admin@climbhero.com / Admin@2024
-          </p>
-        </div>
-      ` : ''}
-      
-      ${type === 'login' ? `
-        <div class="mt-3">
-          <div class="text-center">
-            <a href="#" onclick="showPasswordResetModal(); return false;" class="text-xs text-purple-600 hover:text-purple-800">
-              ${i18n.t('auth.forgot_password')}
-            </a>
+        <div class="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-crown text-white"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-bold text-purple-900 mb-2">
+                管理者用アカウント
+              </p>
+              <div class="space-y-1 text-xs">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-envelope text-purple-600"></i>
+                  <code class="bg-white px-2 py-1 rounded border border-purple-200 font-mono">admin@climbhero.com</code>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-key text-purple-600"></i>
+                  <code class="bg-white px-2 py-1 rounded border border-purple-200 font-mono">Admin@2024</code>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ` : ''}
       
-      <p class="text-xs text-center text-gray-600 mt-3">
-        ${type === 'login' ? i18n.t('auth.switch_to_signup') : i18n.t('auth.switch_to_login')}
-        <a href="#" onclick="showAuthModal('${type === 'login' ? 'register' : 'login'}')" class="text-purple-600 font-medium">
-          ${type === 'login' ? i18n.t('auth.signup.title') : i18n.t('auth.login.title')}
-        </a>
-      </p>
+      ${type === 'register' ? `
+        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p class="text-xs text-blue-800">
+            <i class="fas fa-info-circle mr-1"></i>
+            登録することで、<a href="#" class="text-blue-600 underline">利用規約</a>と<a href="#" class="text-blue-600 underline">プライバシーポリシー</a>に同意したものとみなされます。
+          </p>
+        </div>
+      ` : ''}
+      
+      <div class="mt-4 text-center">
+        <p class="text-sm text-gray-600">
+          ${type === 'login' ? 'アカウントをお持ちでない方' : 'すでにアカウントをお持ちの方'}
+          <a href="#" onclick="showAuthModal('${type === 'login' ? 'register' : 'login'}'); return false;" class="text-purple-600 hover:text-purple-800 font-bold ml-1">
+            ${type === 'login' ? '新規登録' : 'ログイン'}
+          </a>
+        </p>
+      </div>
     </div>
   `;
   modal.classList.add('active');
@@ -1528,6 +1605,21 @@ async function handleAuth(event, type) {
     }
   } catch (error) {
     showToast(error.response?.data?.error || i18n.t('toast.auth_error'), 'error');
+  }
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
   }
 }
 
