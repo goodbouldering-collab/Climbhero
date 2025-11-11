@@ -259,16 +259,16 @@ function renderHomePage() {
             </div>
             
             ${state.currentUser ? `
-              <!-- My Page Button -->
-              <button onclick="navigateToMyPage()" class="btn btn-sm btn-primary">
-                <i class="fas fa-user-circle"></i>
-                <span class="hidden sm:inline">マイページ</span>
-              </button>
-              
-              <!-- Logout Button -->
-              <button onclick="logout()" class="btn btn-sm btn-secondary">
+              <!-- Logout Button (same position as Login) -->
+              <button onclick="logout()" class="btn btn-sm btn-primary">
                 <i class="fas fa-sign-out-alt"></i>
                 <span class="hidden sm:inline">ログアウト</span>
+              </button>
+              
+              <!-- My Page Button (right of Logout) -->
+              <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary">
+                <i class="fas fa-user-circle"></i>
+                <span class="hidden sm:inline">マイページ</span>
               </button>
             ` : `
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary">
