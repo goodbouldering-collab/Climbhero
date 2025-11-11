@@ -169,6 +169,15 @@ function handleNavigation() {
   
   if (!hash || hash === 'home') {
     state.currentView = 'home';
+  } else if (hash === 'mypage') {
+    if (state.currentUser) {
+      state.currentView = 'mypage';
+    } else {
+      showToast('ログインが必要です', 'error');
+      showAuthModal('login');
+      window.location.hash = 'home';
+      return;
+    }
   } else if (hash === 'admin') {
     if (state.currentUser?.is_admin) {
       state.currentView = 'admin';
@@ -2323,27 +2332,50 @@ function renderMyPage() {
   return `
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
-      <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
           <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-3">
-              <button onclick="navigateTo('home')" class="text-purple-600 hover:text-purple-800 transition">
-                <i class="fas fa-arrow-left mr-2"></i>
-                <span class="font-medium">ホーム</span>
-              </button>
-              <div class="h-6 w-px bg-gray-300"></div>
-              <h1 class="text-xl font-bold text-gray-900">
-                <i class="fas fa-user-circle text-purple-600 mr-2"></i>
-                マイページ
-              </h1>
+            <!-- Logo Section -->
+            <div class="flex items-center flex-shrink-0">
+              <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
+            
+            <!-- Right Section -->
+            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div class="language-switcher-medium flex">
+                ${i18n.getAvailableLanguages().map(lang => `
+                  <button 
+                    onclick="switchLanguage('${lang.code}')" 
+                    class="language-btn-medium ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
+                    title="${lang.name}">
+                    ${lang.flag}
+                  </button>
+                `).join('')}
+              </div>
+              
+              <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
+                <i class="fas fa-home"></i>
+                <span class="hidden sm:inline">ホーム</span>
+              </button>
+              
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-primary">
+                <i class="fas fa-user-circle"></i>
+                <span class="hidden sm:inline">マイページ</span>
+              </button>
+              
               ${state.currentUser.is_admin ? `
                 <button onclick="navigateTo('admin')" class="btn btn-sm" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-                  <i class="fas fa-crown mr-2"></i>
-                  管理画面
+                  <i class="fas fa-crown"></i>
+                  <span class="hidden sm:inline">管理者</span>
                 </button>
               ` : ''}
+              
+              <button onclick="logout()" class="btn btn-sm btn-secondary">
+                ログアウト
+              </button>
             </div>
           </div>
         </div>
@@ -2549,26 +2581,47 @@ function renderAdminPage() {
   return `
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
-      <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
           <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                <i class="fas fa-crown text-white text-lg"></i>
-              </div>
-              <div>
-                <h1 class="text-xl font-bold text-gray-900">管理画面</h1>
-                <p class="text-xs text-gray-500">Administrator Dashboard</p>
+            <!-- Logo Section -->
+            <div class="flex items-center flex-shrink-0">
+              <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+                <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            
+            <!-- Right Section -->
+            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div class="language-switcher-medium flex">
+                ${i18n.getAvailableLanguages().map(lang => `
+                  <button 
+                    onclick="switchLanguage('${lang.code}')" 
+                    class="language-btn-medium ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
+                    title="${lang.name}">
+                    ${lang.flag}
+                  </button>
+                `).join('')}
+              </div>
+              
+              <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
+                <i class="fas fa-home"></i>
+                <span class="hidden sm:inline">ホーム</span>
+              </button>
+              
               <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary">
                 <i class="fas fa-user-circle"></i>
                 <span class="hidden sm:inline">マイページ</span>
               </button>
-              <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
-                <i class="fas fa-home"></i>
-                <span class="hidden sm:inline">ホーム</span>
+              
+              <button onclick="navigateTo('admin')" class="btn btn-sm btn-primary">
+                <i class="fas fa-crown"></i>
+                <span class="hidden sm:inline">管理者</span>
+              </button>
+              
+              <button onclick="logout()" class="btn btn-sm btn-secondary">
+                ログアウト
               </button>
             </div>
           </div>
