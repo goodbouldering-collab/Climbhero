@@ -261,8 +261,7 @@ function renderHomePage() {
             ${state.currentUser ? `
               <!-- Logout Button (same position as Login) -->
               <button onclick="logout()" class="btn btn-sm btn-primary">
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="hidden sm:inline">ログアウト</span>
+                ログアウト
               </button>
               
               <!-- My Page Button (right of Logout) -->
