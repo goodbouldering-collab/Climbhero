@@ -2176,20 +2176,26 @@ function renderMyPage() {
 
   return `
     <div class="min-h-screen bg-gray-50">
-      <header class="bg-white border-b border-gray-200 shadow-sm">
+      <!-- Header -->
+      <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
-            <div class="flex items-center gap-4">
-              <button onclick="navigateTo('home')" class="text-purple-600 hover:text-purple-700">
-                <i class="fas fa-arrow-left mr-2"></i>ホームに戻る
+            <div class="flex items-center gap-3">
+              <button onclick="navigateTo('home')" class="text-purple-600 hover:text-purple-800 transition">
+                <i class="fas fa-arrow-left mr-2"></i>
+                <span class="font-medium">ホーム</span>
               </button>
-              <h1 class="text-xl font-bold text-gray-900">マイページ</h1>
+              <div class="h-6 w-px bg-gray-300"></div>
+              <h1 class="text-xl font-bold text-gray-900">
+                <i class="fas fa-user-circle text-purple-600 mr-2"></i>
+                マイページ
+              </h1>
             </div>
             <div class="flex items-center gap-2">
               ${state.currentUser.is_admin ? `
-                <button onclick="navigateTo('admin')" class="btn btn-sm btn-primary">
-                  <i class="fas fa-cog mr-2"></i>
-                  管理者ページ
+                <button onclick="navigateTo('admin')" class="btn btn-sm" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+                  <i class="fas fa-crown mr-2"></i>
+                  管理画面
                 </button>
               ` : ''}
             </div>
@@ -2197,124 +2203,190 @@ function renderMyPage() {
         </div>
       </header>
 
-      <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- User Profile Edit Form -->
-        <div class="card p-6 mb-6">
-          <h2 class="text-xl font-bold text-gray-900 mb-6">
-            <i class="fas fa-user-circle mr-2 text-purple-600"></i>
-            プロフィール情報
-          </h2>
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          <form onsubmit="updateMyProfile(event)" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                ユーザー名
-              </label>
-              <input 
-                type="text" 
-                id="profile-username" 
-                value="${state.currentUser.username}" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                required
-              />
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                メールアドレス
-              </label>
-              <input 
-                type="email" 
-                id="profile-email" 
-                value="${state.currentUser.email}" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                required
-              />
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="p-4 bg-gray-50 rounded-lg">
-                <p class="text-sm text-gray-600 mb-1">会員タイプ</p>
-                <p class="text-lg font-semibold ${state.currentUser.membership_type === 'premium' ? 'text-purple-600' : 'text-gray-700'}">
-                  ${state.currentUser.membership_type === 'premium' ? 'プレミアム会員' : '無料会員'}
-                </p>
+          <!-- Left Column: Profile Info -->
+          <div class="lg:col-span-2 space-y-6">
+            <!-- User Profile Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+                <h2 class="text-xl font-bold text-white flex items-center">
+                  <i class="fas fa-user-circle mr-3"></i>
+                  プロフィール情報
+                </h2>
               </div>
-              <div class="p-4 bg-gray-50 rounded-lg">
-                <p class="text-sm text-gray-600 mb-1">登録日</p>
-                <p class="text-lg font-semibold">${state.currentUser.created_at ? new Date(state.currentUser.created_at).toLocaleDateString('ja-JP') : new Date().toLocaleDateString('ja-JP')}</p>
+              
+              <div class="p-6">
+                <form onsubmit="updateMyProfile(event)" class="space-y-4">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user text-purple-600 mr-1"></i>
+                        ユーザー名
+                      </label>
+                      <input 
+                        type="text" 
+                        id="profile-username" 
+                        value="${state.currentUser.username}" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope text-purple-600 mr-1"></i>
+                        メールアドレス
+                      </label>
+                      <input 
+                        type="email" 
+                        id="profile-email" 
+                        value="${state.currentUser.email}" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="pt-4">
+                    <button type="submit" class="w-full btn btn-primary py-3 text-base">
+                      <i class="fas fa-save mr-2"></i>
+                      プロフィールを更新
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Password Change Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4">
+                <h3 class="text-xl font-bold text-white flex items-center">
+                  <i class="fas fa-key mr-3"></i>
+                  パスワード変更
+                </h3>
+              </div>
+              
+              <div class="p-6">
+                <form onsubmit="updateMyPassword(event)" class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      <i class="fas fa-lock text-blue-600 mr-1"></i>
+                      現在のパスワード
+                    </label>
+                    <input 
+                      type="password" 
+                      id="current-password" 
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      <i class="fas fa-lock text-blue-600 mr-1"></i>
+                      新しいパスワード
+                    </label>
+                    <input 
+                      type="password" 
+                      id="new-password" 
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+                      required
+                      minlength="6"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      <i class="fas fa-check-circle text-blue-600 mr-1"></i>
+                      新しいパスワード（確認）
+                    </label>
+                    <input 
+                      type="password" 
+                      id="confirm-password" 
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+                      required
+                      minlength="6"
+                    />
+                  </div>
+                  <button type="submit" class="w-full btn btn-primary py-3 text-base">
+                    <i class="fas fa-key mr-2"></i>
+                    パスワードを更新
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Column: Account Info & Actions -->
+          <div class="space-y-6">
+            <!-- Account Status Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                  <i class="fas fa-id-card mr-2"></i>
+                  アカウント情報
+                </h3>
+              </div>
+              <div class="p-6 space-y-4">
+                <div class="flex items-center justify-between p-4 bg-gradient-to-r ${state.currentUser.membership_type === 'premium' ? 'from-purple-50 to-pink-50 border-purple-200' : 'from-gray-50 to-gray-100 border-gray-200'} border rounded-lg">
+                  <div>
+                    <p class="text-xs text-gray-600 mb-1">会員タイプ</p>
+                    <p class="text-lg font-bold ${state.currentUser.membership_type === 'premium' ? 'text-purple-600' : 'text-gray-700'}">
+                      ${state.currentUser.membership_type === 'premium' ? '👑 プレミアム' : '🆓 無料会員'}
+                    </p>
+                  </div>
+                  ${state.currentUser.membership_type !== 'premium' ? `
+                    <button onclick="showPricingModal()" class="btn btn-sm" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white; white-space: nowrap;">
+                      <i class="fas fa-arrow-up mr-1"></i>
+                      アップグレード
+                    </button>
+                  ` : ''}
+                </div>
+                
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p class="text-xs text-gray-600 mb-1">登録日</p>
+                  <p class="text-base font-semibold text-gray-900">
+                    <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                    ${state.currentUser.created_at ? new Date(state.currentUser.created_at).toLocaleDateString('ja-JP') : new Date().toLocaleDateString('ja-JP')}
+                  </p>
+                </div>
+                
+                <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p class="text-xs text-gray-600 mb-1">ユーザーID</p>
+                  <p class="text-base font-mono font-semibold text-gray-900">
+                    #${state.currentUser.id}
+                  </p>
+                </div>
               </div>
             </div>
             
-            <div class="flex gap-3 pt-4">
-              <button type="submit" class="flex-1 btn btn-primary">
-                <i class="fas fa-save mr-2"></i>
-                更新する
-              </button>
-              ${state.currentUser.membership_type !== 'premium' ? `
-                <button type="button" onclick="showPricingModal()" class="flex-1 btn" style="background: linear-gradient(to right, rgb(147 51 234), rgb(219 39 119)); color: white;">
-                  <i class="fas fa-crown mr-2"></i>
-                  プレミアムへ
+            <!-- Quick Actions Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                  <i class="fas fa-bolt mr-2"></i>
+                  クイックアクション
+                </h3>
+              </div>
+              <div class="p-6 space-y-3">
+                <button onclick="navigateTo('home')" class="w-full btn btn-secondary py-3 text-left">
+                  <i class="fas fa-home mr-3 text-gray-600"></i>
+                  <span class="font-medium">ホームに戻る</span>
                 </button>
-              ` : ''}
+                ${state.currentUser.is_admin ? `
+                  <button onclick="navigateTo('admin')" class="w-full btn py-3 text-left" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+                    <i class="fas fa-crown mr-3"></i>
+                    <span class="font-medium">管理画面を開く</span>
+                  </button>
+                ` : ''}
+                <button onclick="logout()" class="w-full btn btn-secondary py-3 text-left border-2 border-red-200 hover:border-red-400 hover:bg-red-50 transition">
+                  <i class="fas fa-sign-out-alt mr-3 text-red-600"></i>
+                  <span class="font-medium text-red-600">ログアウト</span>
+                </button>
+              </div>
             </div>
-          </form>
-        </div>
-
-        <!-- Password Change Section -->
-        <div class="card p-6 mb-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-4">
-            <i class="fas fa-key mr-2 text-purple-600"></i>
-            パスワード変更
-          </h3>
-          <form onsubmit="updateMyPassword(event)" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                現在のパスワード
-              </label>
-              <input 
-                type="password" 
-                id="current-password" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                新しいパスワード
-              </label>
-              <input 
-                type="password" 
-                id="new-password" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                required
-                minlength="6"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                新しいパスワード（確認）
-              </label>
-              <input 
-                type="password" 
-                id="confirm-password" 
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                required
-                minlength="6"
-              />
-            </div>
-            <button type="submit" class="w-full btn btn-primary">
-              <i class="fas fa-key mr-2"></i>
-              パスワードを更新
-            </button>
-          </form>
-        </div>
-
-        <!-- Logout Button -->
-        <div class="card p-6">
-          <button onclick="logout()" class="w-full btn btn-secondary">
-            <i class="fas fa-sign-out-alt mr-2"></i>
-            ログアウト
-          </button>
+          </div>
+          
         </div>
       </main>
     </div>
@@ -2323,23 +2395,34 @@ function renderMyPage() {
 
 // ============ Admin Page (Simplified) ============
 function renderAdminPage() {
+  if (!state.currentUser || !state.currentUser.is_admin) {
+    navigateTo('home');
+    return '';
+  }
+
   return `
     <div class="min-h-screen bg-gray-50">
-      <header class="bg-white border-b border-gray-200 shadow-sm">
+      <!-- Header -->
+      <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
             <div class="flex items-center gap-3">
-              <i class="fas fa-cog text-purple-600 text-2xl"></i>
-              <h1 class="text-xl font-bold text-gray-900">管理画面</h1>
+              <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                <i class="fas fa-crown text-white text-lg"></i>
+              </div>
+              <div>
+                <h1 class="text-xl font-bold text-gray-900">管理画面</h1>
+                <p class="text-xs text-gray-500">Administrator Dashboard</p>
+              </div>
             </div>
             <div class="flex items-center gap-2">
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary">
+                <i class="fas fa-user-circle"></i>
+                <span class="hidden sm:inline">マイページ</span>
+              </button>
               <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
                 <i class="fas fa-home"></i>
-                <span class="hidden sm:inline">ホームに戻る</span>
-              </button>
-              <button onclick="logout()" class="btn btn-sm btn-secondary">
-                <i class="fas fa-sign-out-alt"></i>
-                <span class="hidden sm:inline">ログアウト</span>
+                <span class="hidden sm:inline">ホーム</span>
               </button>
             </div>
           </div>
@@ -2347,148 +2430,149 @@ function renderAdminPage() {
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- User Management Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-users mr-2"></i>
-              会員管理
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button onclick="exportUsersCSV()" class="btn btn-sm btn-secondary">
-                <i class="fas fa-download mr-1"></i>
-                ${i18n.t('admin.csv_export')}
-              </button>
-              <button onclick="showImportCSVModal()" class="btn btn-sm btn-primary">
-                <i class="fas fa-upload mr-1"></i>
-                ${i18n.t('admin.csv_import')}
-              </button>
+        <!-- Quick Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600 mb-1">総会員数</p>
+                <p class="text-2xl font-bold text-purple-600" id="stat-users">-</p>
+              </div>
+              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-users text-purple-600 text-xl"></i>
+              </div>
             </div>
           </div>
-          <div class="horizontal-scroll" id="admin-users-scroll" style="gap: 16px; padding: 8px 0;">
-            ${renderLoadingSkeleton(3)}
-          </div>
-        </div>
-        
-        <!-- Video Management Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-video mr-2"></i>
-              ${i18n.t('admin.videos')}
+          
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600 mb-1">動画数</p>
+                <p class="text-2xl font-bold text-blue-600" id="stat-videos">-</p>
+              </div>
+              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-video text-blue-600 text-xl"></i>
+              </div>
             </div>
           </div>
-          <div class="horizontal-scroll" id="admin-videos-scroll" style="gap: 16px; padding: 8px 0;">
-            ${renderLoadingSkeleton(3)}
-          </div>
-        </div>
-        
-        <!-- Stripe Settings Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fab fa-stripe mr-2"></i>
-              ${i18n.t('admin.stripe')}
+          
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600 mb-1">ブログ記事</p>
+                <p class="text-2xl font-bold text-green-600" id="stat-blogs">-</p>
+              </div>
+              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-blog text-green-600 text-xl"></i>
+              </div>
             </div>
           </div>
-          <div class="admin-form">
-            <div class="admin-form-group">
-              <label>${i18n.t('stripe.public_key')}</label>
-              <input type="text" id="stripe-publishable-key" placeholder="pk_test_..." />
-            </div>
-            <div class="admin-form-group">
-              <label>${i18n.t('stripe.secret_key')}</label>
-              <input type="password" id="stripe-secret-key" placeholder="sk_test_..." />
-            </div>
-            <div class="admin-form-group">
-              <label>${i18n.t('stripe.webhook_secret')}</label>
-              <input type="password" id="stripe-webhook-secret" placeholder="whsec_..." />
-            </div>
-            <button onclick="saveStripeSettings()" class="btn btn-primary">
-              <i class="fas fa-save mr-2"></i>
-              ${i18n.t('stripe.save')}
-            </button>
-          </div>
-        </div>
-        
-        <!-- Email Campaign Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-envelope mr-2"></i>
-              ${i18n.t('admin.email')}
-            </div>
-            <button onclick="createEmailCampaign()" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus mr-2"></i>
-              ${i18n.t('email.new_campaign')}
-            </button>
-          </div>
-          <div class="horizontal-scroll" id="admin-email-campaigns-scroll" style="gap: 16px; padding: 8px 0;">
-            <div style="text-align: center; padding: 40px; color: #666;">
-              ${i18n.t('common.loading')}
+          
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600 mb-1">お知らせ</p>
+                <p class="text-2xl font-bold text-orange-600" id="stat-announcements">-</p>
+              </div>
+              <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-bullhorn text-orange-600 text-xl"></i>
+              </div>
             </div>
           </div>
         </div>
         
-        <!-- Announcements Management Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-bullhorn mr-2"></i>
-              ${i18n.t('admin.announcements')}
+        <!-- Management Sections Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- User Management Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-white flex items-center">
+                <i class="fas fa-users mr-3"></i>
+                会員管理
+              </h2>
+              <div class="flex gap-2">
+                <button onclick="exportUsersCSV()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
+                  <i class="fas fa-download"></i>
+                </button>
+                <button onclick="showImportCSVModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
+                  <i class="fas fa-upload"></i>
+                </button>
+              </div>
             </div>
-            <button onclick="showAnnouncementModal()" class="btn btn-primary btn-sm">
-              <i class="fas fa-plus mr-2"></i>
-              ${i18n.t('admin.announcement_new')}
-            </button>
-          </div>
-          <div class="horizontal-scroll" id="admin-announcements-scroll" style="gap: 16px; padding: 8px 0;">
-            ${renderLoadingSkeleton(3)}
-          </div>
-        </div>
-        
-        <!-- Blog Management Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-blog mr-2"></i>
-              ${i18n.t('admin.blog')}
+            <div class="p-6">
+              <div class="horizontal-scroll" id="admin-users-scroll" style="gap: 12px; padding: 0;">
+                ${renderLoadingSkeleton(2)}
+              </div>
             </div>
-            <div style="display: flex; gap: 8px;">
-              <button onclick="showTagManagementModal()" class="btn btn-sm btn-secondary">
-                <i class="fas fa-tags mr-1"></i>
-                ${i18n.t('admin.tag_manage')}
-              </button>
-              <button onclick="showBlogModal()" class="btn btn-sm btn-primary">
+          </div>
+          
+          <!-- Announcements Management Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-white flex items-center">
+                <i class="fas fa-bullhorn mr-3"></i>
+                お知らせ管理
+              </h2>
+              <button onclick="showAnnouncementModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
                 <i class="fas fa-plus mr-1"></i>
-                ${i18n.t('admin.blog_new')}
+                新規作成
               </button>
             </div>
-          </div>
-          <div id="admin-blog-list" style="background: white; border-radius: 8px; padding: 16px; margin-top: 12px;">
-            <div style="text-align: center; padding: 40px; color: #666;">
-              ${i18n.t('common.loading')}
+            <div class="p-6">
+              <div class="horizontal-scroll" id="admin-announcements-scroll" style="gap: 12px; padding: 0;">
+                ${renderLoadingSkeleton(2)}
+              </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Climber Testimonials Management Section -->
-        <div class="admin-section">
-          <div class="admin-section-header">
-            <div>
-              <i class="fas fa-mountain mr-2"></i>
-              ${i18n.t('admin.testimonials_title')}
+          
+          <!-- Blog Management Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-white flex items-center">
+                <i class="fas fa-blog mr-3"></i>
+                ブログ管理
+              </h2>
+              <div class="flex gap-2">
+                <button onclick="showTagManagementModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
+                  <i class="fas fa-tags"></i>
+                </button>
+                <button onclick="showBlogModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
+                  <i class="fas fa-plus mr-1"></i>
+                  新規作成
+                </button>
+              </div>
             </div>
-            <button onclick="showTestimonialModal()" class="btn btn-sm btn-primary">
-              <i class="fas fa-plus mr-1"></i>
-              ${i18n.t('admin.testimonials_new')}
-            </button>
-          </div>
-          <div id="admin-testimonials-list" style="background: white; border-radius: 8px; padding: 16px; margin-top: 12px;">
-            <div style="text-align: center; padding: 40px; color: #666;">
-              ${i18n.t('common.loading')}
+            <div class="p-6">
+              <div id="admin-blog-list" style="max-height: 400px; overflow-y: auto;">
+                <div style="text-align: center; padding: 40px; color: #666;">
+                  ${i18n.t('common.loading')}
+                </div>
+              </div>
             </div>
           </div>
+          
+          <!-- Testimonials Management Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-pink-600 to-pink-700 px-6 py-4 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-white flex items-center">
+                <i class="fas fa-mountain mr-3"></i>
+                クライマーメッセージ管理
+              </h2>
+              <button onclick="showTestimonialModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
+                <i class="fas fa-plus mr-1"></i>
+                新規作成
+              </button>
+            </div>
+            <div class="p-6">
+              <div id="admin-testimonials-list" style="max-height: 400px; overflow-y: auto;">
+                <div style="text-align: center; padding: 40px; color: #666;">
+                  ${i18n.t('common.loading')}
+                </div>
+              </div>
+            </div>
+          </div>
+          
         </div>
       </main>
     </div>
@@ -3864,18 +3948,22 @@ async function loadAdminData() {
     // Load users
     const usersRes = await axios.get('/api/admin/users');
     renderUsersTable(usersRes.data);
+    updateStat('users', usersRes.data.length);
     
     // Load videos (existing)
     const videosRes = await axios.get('/api/admin/videos');
     renderVideosCarousel(videosRes.data);
+    updateStat('videos', videosRes.data.length);
     
     // Load announcements (existing)
     const announcementsRes = await axios.get('/api/admin/announcements');
     renderAnnouncementsCarousel(announcementsRes.data);
+    updateStat('announcements', announcementsRes.data.length);
     
     // Load blog posts with tags
     const blogsRes = await axios.get('/api/admin/blog/posts');
     renderBlogList(blogsRes.data);
+    updateStat('blogs', blogsRes.data.length);
     
     // Load tags
     const tagsRes = await axios.get('/api/blog/tags');
@@ -3886,6 +3974,14 @@ async function loadAdminData() {
     renderTestimonialsList(testimonialsRes.data.testimonials);
   } catch (error) {
     console.error('Failed to load admin data:', error);
+  }
+}
+
+// Update admin statistics
+function updateStat(key, value) {
+  const el = document.getElementById(`stat-${key}`);
+  if (el) {
+    el.textContent = value.toLocaleString();
   }
 }
 
