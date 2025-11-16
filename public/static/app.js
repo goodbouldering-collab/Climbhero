@@ -322,16 +322,16 @@ function renderHomePage() {
             
             ${state.currentUser ? `
               <!-- Logout Button -->
-              <button onclick="logout()" class="btn btn-sm btn-primary px-3">
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-sm">
                 ログアウト
               </button>
               
               <!-- My Page Button -->
-              <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3">
+              <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3 text-sm">
                 マイページ
               </button>
             ` : `
-              <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3">
+              <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3 text-sm">
                 ${i18n.t('nav.login')}
               </button>
             `}
@@ -2018,7 +2018,18 @@ async function showVideoDetail(videoId) {
         </div>
         
         <div class="aspect-video bg-gray-900 rounded-lg mb-4">
-          ${renderVideoEmbed(video)}
+          ${video.media_source === 'tiktok' || video.media_source === 'instagram' || video.media_source === 'vimeo' 
+            ? `<div class="flex flex-col items-center justify-center h-full text-white space-y-4">
+                <i class="${getMediaIcon(video.media_source)} text-6xl mb-4"></i>
+                <p class="text-lg font-semibold">${getMediaName(video.media_source)}で視聴</p>
+                <a href="${video.url}" target="_blank" rel="noopener noreferrer" 
+                   class="btn btn-primary px-8 py-3 text-lg">
+                  <i class="fas fa-external-link-alt mr-2"></i>
+                  ${getMediaName(video.media_source)}で開く
+                </a>
+                <p class="text-sm text-gray-400">※ この動画は外部サイトで再生されます</p>
+              </div>`
+            : renderVideoEmbed(video)}
         </div>
         
         <div class="flex items-center justify-between mb-4">
@@ -2740,15 +2751,15 @@ function renderAdminPage() {
                 `).join('')}
               </div>
               
-              <button onclick="logout()" class="btn btn-sm btn-primary px-3">
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-sm">
                 ログアウト
               </button>
               
-              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3">
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3 text-sm">
                 マイページ
               </button>
               
-              <button onclick="navigateTo('admin')" class="btn btn-sm px-3" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+              <button onclick="navigateTo('admin')" class="btn btn-sm px-3 text-sm" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
                 管理者
               </button>
             </div>
@@ -2809,13 +2820,13 @@ function renderAdminPage() {
         </div>
         
         <!-- Management Sections Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           
           <!-- User Management Card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 flex items-center justify-between">
-              <h2 class="text-lg font-bold text-white flex items-center">
-                <i class="fas fa-users mr-3"></i>
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
+              <h2 class="text-base font-bold text-white flex items-center">
+                <i class="fas fa-users mr-2"></i>
                 会員管理
               </h2>
               <div class="flex gap-2">
@@ -2827,7 +2838,7 @@ function renderAdminPage() {
                 </button>
               </div>
             </div>
-            <div class="p-6">
+            <div class="p-4">
               <div class="horizontal-scroll" id="admin-users-scroll" style="gap: 12px; padding: 0;">
                 ${renderLoadingSkeleton(2)}
               </div>
@@ -2836,9 +2847,9 @@ function renderAdminPage() {
           
           <!-- Announcements Management Card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-6 py-4 flex items-center justify-between">
-              <h2 class="text-lg font-bold text-white flex items-center">
-                <i class="fas fa-bullhorn mr-3"></i>
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
+              <h2 class="text-base font-bold text-white flex items-center">
+                <i class="fas fa-bullhorn mr-2"></i>
                 お知らせ管理
               </h2>
               <button onclick="showAnnouncementModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
@@ -2846,7 +2857,7 @@ function renderAdminPage() {
                 新規作成
               </button>
             </div>
-            <div class="p-6">
+            <div class="p-4">
               <div class="horizontal-scroll" id="admin-announcements-scroll" style="gap: 12px; padding: 0;">
                 ${renderLoadingSkeleton(2)}
               </div>
@@ -2855,9 +2866,9 @@ function renderAdminPage() {
           
           <!-- Ad Banner Management Card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4 flex items-center justify-between">
-              <h2 class="text-lg font-bold text-white flex items-center">
-                <i class="fas fa-ad mr-3"></i>
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
+              <h2 class="text-base font-bold text-white flex items-center">
+                <i class="fas fa-ad mr-2"></i>
                 広告バナー管理
               </h2>
               <button onclick="showAdBannerModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
@@ -2865,7 +2876,7 @@ function renderAdminPage() {
                 新規作成
               </button>
             </div>
-            <div class="p-6">
+            <div class="p-4">
               <div id="admin-ad-banners-list" style="max-height: 400px; overflow-y: auto;">
                 <div style="text-align: center; padding: 40px; color: #666;">
                   ${i18n.t('common.loading')}
@@ -2876,9 +2887,9 @@ function renderAdminPage() {
           
           <!-- Blog Management Card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex items-center justify-between">
-              <h2 class="text-lg font-bold text-white flex items-center">
-                <i class="fas fa-blog mr-3"></i>
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
+              <h2 class="text-base font-bold text-white flex items-center">
+                <i class="fas fa-blog mr-2"></i>
                 ブログ管理
               </h2>
               <div class="flex gap-2">
@@ -2891,7 +2902,7 @@ function renderAdminPage() {
                 </button>
               </div>
             </div>
-            <div class="p-6">
+            <div class="p-4">
               <div id="admin-blog-list" style="max-height: 400px; overflow-y: auto;">
                 <div style="text-align: center; padding: 40px; color: #666;">
                   ${i18n.t('common.loading')}
@@ -2902,9 +2913,9 @@ function renderAdminPage() {
           
           <!-- Testimonials Management Card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-pink-600 to-pink-700 px-6 py-4 flex items-center justify-between">
-              <h2 class="text-lg font-bold text-white flex items-center">
-                <i class="fas fa-mountain mr-3"></i>
+            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
+              <h2 class="text-base font-bold text-white flex items-center">
+                <i class="fas fa-mountain mr-2"></i>
                 クライマーメッセージ管理
               </h2>
               <button onclick="showTestimonialModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
@@ -2912,7 +2923,7 @@ function renderAdminPage() {
                 新規作成
               </button>
             </div>
-            <div class="p-6">
+            <div class="p-4">
               <div id="admin-testimonials-list" style="max-height: 400px; overflow-y: auto;">
                 <div style="text-align: center; padding: 40px; color: #666;">
                   ${i18n.t('common.loading')}
@@ -4261,7 +4272,7 @@ function showAnnouncementsModal() {
   
   modal.innerHTML = `
     <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
-      <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5">
+      <div class="sticky top-0 bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-5">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-bold text-white">
             <i class="fas fa-bullhorn mr-3"></i>
@@ -4287,7 +4298,7 @@ function showAnnouncementsModal() {
       <div class="overflow-y-auto max-h-[calc(85vh-80px)]">
         <div class="p-6 space-y-5">
           ${state.announcements.map((a, index) => `
-            <div class="bg-gradient-to-r from-gray-50 to-white rounded-xl p-5 border-l-4 ${
+            <div class="bg-white rounded-xl p-5 border-l-4 ${
               index === 0 ? 'border-red-500' : 
               index === 1 ? 'border-orange-500' : 
               index === 2 ? 'border-yellow-500' : 
