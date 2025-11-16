@@ -281,6 +281,7 @@ app.get('/api/videos', async (c) => {
   const page = parseInt(c.req.query('page') || '1')
   const limit = parseInt(c.req.query('limit') || '12')
   const category = c.req.query('category')
+  const platform = c.req.query('platform')
   const search = c.req.query('search')
   const offset = (page - 1) * limit
 
@@ -293,6 +294,12 @@ app.get('/api/videos', async (c) => {
       query += ' AND category = ?'
       countQuery += ' AND category = ?'
       params.push(category)
+    }
+
+    if (platform && platform !== 'all') {
+      query += ' AND platform = ?'
+      countQuery += ' AND platform = ?'
+      params.push(platform)
     }
 
     if (search) {
@@ -338,6 +345,50 @@ app.get('/api/videos/trending', async (c) => {
     return c.json({
       videos: trendingVideos || [],
       count: trendingVideos?.length || 0
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get top liked videos (ランキング: いいね数順)
+app.get('/api/videos/top-liked', async (c) => {
+  const { env } = c
+  const limit = parseInt(c.req.query('limit') || '20')
+  const period = c.req.query('period') || 'all' // 'daily', 'weekly', 'monthly', '6months', '1year', 'all'
+  
+  try {
+    let dateFilter = ''
+    const now = new Date()
+    
+    if (period === 'daily') {
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      dateFilter = ` AND posted_date >= datetime('${yesterday.toISOString()}')`
+    } else if (period === 'weekly') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      dateFilter = ` AND posted_date >= datetime('${weekAgo.toISOString()}')`
+    } else if (period === 'monthly') {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      dateFilter = ` AND posted_date >= datetime('${monthAgo.toISOString()}')`
+    } else if (period === '6months') {
+      const sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+      dateFilter = ` AND posted_date >= datetime('${sixMonthsAgo.toISOString()}')`
+    } else if (period === '1year') {
+      const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+      dateFilter = ` AND posted_date >= datetime('${yearAgo.toISOString()}')`
+    }
+    
+    const { results: topVideos } = await env.DB.prepare(`
+      SELECT * FROM videos 
+      WHERE likes > 0${dateFilter}
+      ORDER BY likes DESC, views DESC
+      LIMIT ?
+    `).bind(limit).all()
+    
+    return c.json({
+      videos: topVideos || [],
+      count: topVideos?.length || 0,
+      period: period
     })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
@@ -652,6 +703,68 @@ app.get('/api/rankings/:type', async (c) => {
     `).bind(limit).all()
 
     return c.json(rankings)
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Ad Banners API ============
+
+// Get ad banners by position
+app.get('/api/ad-banners', async (c) => {
+  const { env } = c
+  const position = c.req.query('position') || ''
+  
+  try {
+    let query = `
+      SELECT * FROM ad_banners 
+      WHERE is_active = 1
+      AND (start_date IS NULL OR start_date <= datetime('now'))
+      AND (end_date IS NULL OR end_date >= datetime('now'))
+    `
+    const params: any[] = []
+    
+    if (position) {
+      query += ' AND position = ?'
+      params.push(position)
+    }
+    
+    query += ' ORDER BY priority ASC'
+    
+    const { results: banners } = await env.DB.prepare(query).bind(...params).all()
+    return c.json(banners || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Track ad banner impression
+app.post('/api/ad-banners/:id/impression', async (c) => {
+  const { env } = c
+  const id = c.req.param('id')
+  
+  try {
+    await env.DB.prepare(
+      'UPDATE ad_banners SET impression_count = impression_count + 1 WHERE id = ?'
+    ).bind(id).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Track ad banner click
+app.post('/api/ad-banners/:id/click', async (c) => {
+  const { env } = c
+  const id = c.req.param('id')
+  
+  try {
+    await env.DB.prepare(
+      'UPDATE ad_banners SET click_count = click_count + 1 WHERE id = ?'
+    ).bind(id).run()
+    
+    return c.json({ success: true })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -995,6 +1108,14 @@ app.get('/', (c) => {
     </head>
     <body class="bg-gray-50">
         <div id="root"></div>
+        
+        <!-- Video Modal -->
+        <div id="video-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-video-content"></div>
+            </div>
+        </div>
+        
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/marked@11.0.0/marked.min.js"></script>
         <script src="/static/i18n.js"></script>
@@ -1319,13 +1440,23 @@ app.post('/api/users/:id/follow', async (c) => {
 app.get('/api/announcements', async (c) => {
   const { env } = c
   const lang = c.req.query('lang') || 'ja'
+  const genre = c.req.query('genre') || ''
   
   try {
-    const announcements = await env.DB.prepare(`
+    let query = `
       SELECT * FROM announcements 
-      WHERE is_active = 1 
-      ORDER BY priority DESC, created_at DESC
-    `).all()
+      WHERE is_active = 1
+    `
+    const params: any[] = []
+    
+    if (genre) {
+      query += ' AND genre = ?'
+      params.push(genre)
+    }
+    
+    query += ' ORDER BY priority DESC, created_at DESC'
+    
+    const announcements = await env.DB.prepare(query).bind(...params).all()
     
     // Return language-specific fields (supports ja/en/zh/ko)
     const localizedAnnouncements = (announcements.results as any[] || []).map((announcement: any) => ({
@@ -1601,6 +1732,117 @@ app.delete('/api/admin/banners/:id', async (c) => {
   try {
     await env.DB.prepare(`
       DELETE FROM sponsor_banners WHERE id = ?
+    `).bind(bannerId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Admin Ad Banners Management API ============
+
+// Create ad banner (admin)
+app.post('/api/admin/ad-banners', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const { title, image_url, link_url, position, is_active, priority, start_date, end_date } = await c.req.json()
+  
+  if (!title || !image_url || !position) {
+    return c.json({ error: 'Title, image_url, and position are required' }, 400)
+  }
+  
+  if (!['hero_bottom', 'blog_top'].includes(position)) {
+    return c.json({ error: 'Position must be "hero_bottom" or "blog_top"' }, 400)
+  }
+  
+  try {
+    const result = await env.DB.prepare(`
+      INSERT INTO ad_banners (title, image_url, link_url, position, is_active, priority, start_date, end_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      title,
+      image_url,
+      link_url || null,
+      position,
+      is_active !== undefined ? is_active : 1,
+      priority || 0,
+      start_date || null,
+      end_date || null
+    ).run()
+    
+    return c.json({ success: true, id: result.meta.last_row_id })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update ad banner (admin)
+app.put('/api/admin/ad-banners/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const bannerId = c.req.param('id')
+  const { title, image_url, link_url, position, is_active, priority, start_date, end_date } = await c.req.json()
+  
+  if (!title || !image_url || !position) {
+    return c.json({ error: 'Title, image_url, and position are required' }, 400)
+  }
+  
+  if (!['hero_bottom', 'blog_top'].includes(position)) {
+    return c.json({ error: 'Position must be "hero_bottom" or "blog_top"' }, 400)
+  }
+  
+  try {
+    await env.DB.prepare(`
+      UPDATE ad_banners 
+      SET title = ?, image_url = ?, link_url = ?, position = ?, is_active = ?, 
+          priority = ?, start_date = ?, end_date = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      title,
+      image_url,
+      link_url || null,
+      position,
+      is_active !== undefined ? is_active : 1,
+      priority || 0,
+      start_date || null,
+      end_date || null,
+      bannerId
+    ).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Delete ad banner (admin)
+app.delete('/api/admin/ad-banners/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user || !user.is_admin) {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  const bannerId = c.req.param('id')
+  
+  try {
+    await env.DB.prepare(`
+      DELETE FROM ad_banners WHERE id = ?
     `).bind(bannerId).run()
     
     return c.json({ success: true })
@@ -3611,6 +3853,210 @@ app.delete('/api/admin/testimonials/:id', async (c) => {
   try {
     const testimonialId = parseInt(c.req.param('id'))
     await env.DB.prepare('DELETE FROM climber_testimonials WHERE id = ?').bind(testimonialId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// AI-powered URL analysis endpoint
+app.post('/api/videos/analyze-url', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const body = await c.req.json()
+    const { url, openai_api_key } = body
+    
+    if (!url) {
+      return c.json({ error: 'URL is required' }, 400)
+    }
+    
+    if (!openai_api_key) {
+      return c.json({ error: 'OpenAI API key is required. Please set it in Settings.' }, 400)
+    }
+    
+    // Detect platform from URL
+    let platform = 'other'
+    let videoId = ''
+    
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      platform = 'youtube'
+      const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)
+      videoId = match ? match[1] : ''
+    } else if (url.includes('instagram.com')) {
+      platform = 'instagram'
+      const match = url.match(/instagram\.com\/(?:p|reel)\/([^\/]+)/)
+      videoId = match ? match[1] : ''
+    } else if (url.includes('tiktok.com')) {
+      platform = 'tiktok'
+      const match = url.match(/tiktok\.com\/.*\/video\/(\d+)/)
+      videoId = match ? match[1] : ''
+    } else if (url.includes('vimeo.com')) {
+      platform = 'vimeo'
+      const match = url.match(/vimeo\.com\/(\d+)/)
+      videoId = match ? match[1] : ''
+    }
+    
+    // Call OpenAI to extract metadata
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openai_api_key}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that extracts metadata from video URLs. Return a JSON object with: title (creative title based on URL), description (brief description), grade (climbing grade if applicable), location (if mentioned in URL), tags (comma-separated keywords).'
+          },
+          {
+            role: 'user',
+            content: `Extract metadata from this video URL: ${url}`
+          }
+        ],
+        response_format: { type: 'json_object' }
+      })
+    })
+    
+    if (!openaiResponse.ok) {
+      throw new Error('OpenAI API request failed')
+    }
+    
+    const openaiData = await openaiResponse.json()
+    const metadata = JSON.parse(openaiData.choices[0].message.content)
+    
+    // Generate thumbnail URL based on platform
+    let thumbnailUrl = ''
+    if (platform === 'youtube' && videoId) {
+      thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+    } else if (platform === 'vimeo' && videoId) {
+      thumbnailUrl = `https://vumbnail.com/${videoId}.jpg`
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        platform,
+        platform_video_id: videoId,
+        video_url: url,
+        thumbnail_url: thumbnailUrl,
+        title: metadata.title || 'Untitled Video',
+        description: metadata.description || '',
+        grade: metadata.grade || '',
+        location: metadata.location || '',
+        tags: metadata.tags || ''
+      }
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// User settings API
+app.get('/api/settings', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const settings = await env.DB.prepare(
+      'SELECT * FROM user_settings WHERE user_id = ?'
+    ).bind(currentUser.id).first()
+    
+    if (!settings) {
+      // Create default settings
+      await env.DB.prepare(
+        'INSERT INTO user_settings (user_id) VALUES (?)'
+      ).bind(currentUser.id).run()
+      
+      return c.json({ settings: { user_id: currentUser.id } })
+    }
+    
+    return c.json({ settings })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+app.put('/api/settings', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const body = await c.req.json()
+    const { 
+      youtube_api_key, 
+      openai_api_key,
+      vimeo_access_token,
+      instagram_access_token,
+      tiktok_access_token,
+      notify_likes,
+      notify_comments,
+      profile_public,
+      allow_comments
+    } = body
+    
+    // Check if settings exist
+    const existing = await env.DB.prepare(
+      'SELECT * FROM user_settings WHERE user_id = ?'
+    ).bind(currentUser.id).first()
+    
+    if (!existing) {
+      // Insert new settings
+      await env.DB.prepare(`
+        INSERT INTO user_settings 
+        (user_id, youtube_api_key, vimeo_access_token, instagram_access_token, tiktok_access_token, 
+         notify_likes, notify_comments, profile_public, allow_comments)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        currentUser.id,
+        youtube_api_key || '',
+        vimeo_access_token || '',
+        instagram_access_token || '',
+        tiktok_access_token || '',
+        notify_likes !== undefined ? notify_likes : 1,
+        notify_comments !== undefined ? notify_comments : 1,
+        profile_public !== undefined ? profile_public : 1,
+        allow_comments !== undefined ? allow_comments : 1
+      ).run()
+    } else {
+      // Update existing settings
+      await env.DB.prepare(`
+        UPDATE user_settings 
+        SET youtube_api_key = ?, vimeo_access_token = ?, instagram_access_token = ?, tiktok_access_token = ?,
+            notify_likes = ?, notify_comments = ?, profile_public = ?, allow_comments = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+      `).bind(
+        youtube_api_key !== undefined ? youtube_api_key : existing.youtube_api_key,
+        vimeo_access_token !== undefined ? vimeo_access_token : existing.vimeo_access_token,
+        instagram_access_token !== undefined ? instagram_access_token : existing.instagram_access_token,
+        tiktok_access_token !== undefined ? tiktok_access_token : existing.tiktok_access_token,
+        notify_likes !== undefined ? notify_likes : existing.notify_likes,
+        notify_comments !== undefined ? notify_comments : existing.notify_comments,
+        profile_public !== undefined ? profile_public : existing.profile_public,
+        allow_comments !== undefined ? allow_comments : existing.allow_comments,
+        currentUser.id
+      ).run()
+    }
     
     return c.json({ success: true })
   } catch (error: any) {

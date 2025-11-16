@@ -4,13 +4,18 @@ const state = {
   videos: [],
   favorites: [],
   trendingVideos: [],
+  topLikedVideos: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
+  currentRankingPeriod: 'all', // 'daily', 'weekly', 'monthly', '6months', '1year', 'all'
   blogPosts: [],
   blogTags: [],
   announcements: [],
+  announcementGenre: '', // 'feature', 'maintenance', 'event', 'campaign', 'general', ''
   testimonials: [],
+  adBanners: { hero_bottom: [], blog_top: [] },
   currentView: 'home',
   currentRankingType: 'daily',
+  currentVideoCategory: 'all',
   loading: false,
   currentLanguage: 'ja',
   heroSlideIndex: 0,
@@ -20,7 +25,16 @@ const state = {
     'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&h=600&fit=crop&q=90', // Mountain peak panoramic
     'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1920&h=600&fit=crop&q=90', // Granite rock wall
     'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1920&h=600&fit=crop&q=90'  // Rocky mountain vista
-  ]
+  ],
+  // New video platform features
+  allVideos: [],
+  userSettings: null,
+  uploadProgress: null,
+  videoFilter: {
+    platform: '',
+    category: '',
+    search: ''
+  }
 };
 
 // ============ Language Support ============
@@ -92,13 +106,16 @@ function updateHeroSlide() {
 async function loadInitialData() {
   try {
     const lang = state.currentLanguage || 'ja'
-    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes] = await Promise.all([
+    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes, topLikedRes, adBannersHeroRes, adBannersBlogRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get(`/api/blog?lang=${lang}`),
       axios.get(`/api/announcements?lang=${lang}`),
       axios.get('/api/videos/trending?limit=10'),
-      axios.get('/api/testimonials')
+      axios.get('/api/testimonials'),
+      axios.get('/api/videos/top-liked?limit=20&period=all'),
+      axios.get('/api/ad-banners?position=hero_bottom'),
+      axios.get('/api/ad-banners?position=blog_top')
     ]);
     
     state.videos = videosRes.data.videos || [];
@@ -107,6 +124,10 @@ async function loadInitialData() {
     state.announcements = announcementsRes.data || [];
     state.trendingVideos = trendingRes.data.videos || [];
     state.testimonials = testimonialsRes.data.testimonials || [];
+    state.topLikedVideos = topLikedRes.data.videos || [];
+    state.currentRankingPeriod = 'all';
+    state.adBanners.hero_bottom = adBannersHeroRes.data || [];
+    state.adBanners.blog_top = adBannersBlogRes.data || [];
     
     // Load user like status and favorites for all videos
     if (state.currentUser) {
@@ -169,6 +190,28 @@ function handleNavigation() {
   
   if (!hash || hash === 'home') {
     state.currentView = 'home';
+  } else if (hash === 'videos') {
+    state.currentView = 'videos';
+    loadVideos();
+  } else if (hash === 'upload') {
+    if (state.currentUser) {
+      state.currentView = 'upload';
+    } else {
+      showToast('ログインが必要です', 'error');
+      showAuthModal('login');
+      window.location.hash = 'home';
+      return;
+    }
+  } else if (hash === 'settings') {
+    if (state.currentUser) {
+      state.currentView = 'settings';
+      loadUserSettings();
+    } else {
+      showToast('ログインが必要です', 'error');
+      showAuthModal('login');
+      window.location.hash = 'home';
+      return;
+    }
   } else if (hash === 'mypage') {
     if (state.currentUser) {
       state.currentView = 'mypage';
@@ -217,6 +260,12 @@ function renderApp() {
   if (state.currentView === 'home') {
     root.innerHTML = renderHomePage();
     initializeCarousels();
+  } else if (state.currentView === 'videos') {
+    root.innerHTML = renderVideosPage();
+  } else if (state.currentView === 'upload') {
+    root.innerHTML = renderUploadPage();
+  } else if (state.currentView === 'settings') {
+    root.innerHTML = renderSettingsPage();
   } else if (state.currentView === 'admin') {
     root.innerHTML = renderAdminPage();
     loadAdminData();
@@ -244,23 +293,27 @@ function renderHomePage() {
   return `
     <!-- Header -->
     <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-        <div class="flex items-center justify-between h-16">
-          <!-- Logo Section -->
-          <div class="flex items-center flex-shrink-0">
-            <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-              <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-              <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
-            </div>
+      <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+        <div class="flex items-center justify-between h-14 sm:h-16">
+          <!-- Logo Section (Clickable for Home) -->
+          <div class="flex items-center flex-shrink-0 min-w-0">
+            <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
+              <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+              <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+            </button>
           </div>
           
           <!-- Right Section -->
-          <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <div class="language-switcher-medium flex">
+          <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div class="flex gap-0.5 sm:gap-1">
               ${i18n.getAvailableLanguages().map(lang => `
                 <button 
                   onclick="switchLanguage('${lang.code}')" 
-                  class="language-btn-medium ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
+                  class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded transition-all text-sm sm:text-base ${
+                    i18n.getCurrentLanguage() === lang.code 
+                      ? 'bg-gradient-to-r from-purple-100 to-pink-100 scale-110' 
+                      : 'hover:bg-gray-100'
+                  }"
                   title="${lang.name}">
                   ${lang.flag}
                 </button>
@@ -268,19 +321,17 @@ function renderHomePage() {
             </div>
             
             ${state.currentUser ? `
-              <!-- Logout Button (same position as Login) -->
-              <button onclick="logout()" class="btn btn-sm btn-primary">
+              <!-- Logout Button -->
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3">
                 ログアウト
               </button>
               
-              <!-- My Page Button (right of Logout) -->
-              <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary">
-                <i class="fas fa-user-circle"></i>
-                <span class="hidden sm:inline">マイページ</span>
+              <!-- My Page Button -->
+              <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3">
+                マイページ
               </button>
             ` : `
-              <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary">
-                <i class="fas fa-sign-in-alt"></i>
+              <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3">
                 ${i18n.t('nav.login')}
               </button>
             `}
@@ -329,16 +380,19 @@ function renderHomePage() {
                 </div>
               `).join('')}
               ${state.announcements.length > 2 ? `
-                <div class="text-center mt-3">
-                  <button onclick="showAnnouncementsModal()" class="text-white text-xs hover:text-gray-200 bg-black/30 hover:bg-black/40 px-4 py-2 rounded-full transition-colors">
-                    ${i18n.t('announcement.view_all')} <i class="fas fa-chevron-right ml-1"></i>
-                  </button>
+                <div class="text-center mt-4">
+                  <a href="javascript:void(0)" onclick="showAnnouncementsModal()" class="text-white text-sm font-semibold hover:text-gray-200 hover:underline transition-all">
+                    もっと見る (全${state.announcements.length}件)
+                  </a>
                 </div>
               ` : ''}
             </div>
           ` : ''}
         </div>
       </section>
+      
+      <!-- Ad Banner: Hero Bottom -->
+      ${renderAdBanner('hero_bottom')}
       
       ${state.announcements && state.announcements.length > 0 ? `
       <!-- Scrolling Announcement Banner -->
@@ -526,31 +580,26 @@ function renderHomePage() {
         </div>
       </section>
       
-      <!-- Rankings Section - 1番目 -->
+      <!-- Rankings Section - いいね数ランキング -->
+      ${state.topLikedVideos && state.topLikedVideos.length > 0 ? `
       <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-3">
             <div class="section-title">
-              <i class="fas fa-trophy"></i>
-              <span>${i18n.t('section.rankings')}</span>
+              <i class="fas fa-trophy text-yellow-500"></i>
+              <span class="text-xl font-bold">いいね数ランキング</span>
             </div>
           </div>
           
-          <!-- Ranking Period Tabs -->
-          <div class="tab-buttons mb-3">
-            <button onclick="switchRankingPeriod('daily', event)" class="tab-btn ${state.currentRankingType === 'daily' ? 'active' : ''}">
-              <i class="fas fa-clock"></i> ${i18n.t('ranking.daily')}
-            </button>
-            <button onclick="switchRankingPeriod('weekly', event)" class="tab-btn ${state.currentRankingType === 'weekly' ? 'active' : ''}">
-              <i class="fas fa-calendar-week"></i> ${i18n.t('ranking.weekly')}
-            </button>
-            <button onclick="switchRankingPeriod('monthly', event)" class="tab-btn ${state.currentRankingType === 'monthly' ? 'active' : ''}">
-              <i class="fas fa-calendar-alt"></i> ${i18n.t('ranking.monthly')}
-            </button>
-            <button onclick="switchRankingPeriod('yearly', event)" class="tab-btn ${state.currentRankingType === 'yearly' ? 'active' : ''}">
-              <i class="fas fa-calendar"></i> ${i18n.t('ranking.yearly')}
-            </button>
-          </div>
+          <!-- Period Filter Tabs -->
+          ${renderFilterButtons('switchRankingPeriod', state.currentRankingPeriod, [
+            { value: 'daily', label: '日次', icon: 'fas fa-calendar-day' },
+            { value: 'weekly', label: '週次', icon: 'fas fa-calendar-week' },
+            { value: 'monthly', label: '月次', icon: 'fas fa-calendar-alt' },
+            { value: '6months', label: '6ヶ月', icon: 'fas fa-calendar' },
+            { value: '1year', label: '1年', icon: 'fas fa-calendar' },
+            { value: 'all', label: '全期間', icon: 'fas fa-infinity' }
+          ])}
           
           <!-- Horizontal Carousel -->
           <div class="carousel-container" id="ranking-carousel">
@@ -558,7 +607,7 @@ function renderHomePage() {
               <i class="fas fa-chevron-left"></i>
             </button>
             <div class="horizontal-scroll" id="ranking-scroll">
-              ${state.rankings[state.currentRankingType].map((video, index) => renderRankingCard(video, index + 1)).join('')}
+              ${state.topLikedVideos.map((video, index) => renderRankingCard(video, index + 1)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('ranking-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
@@ -566,6 +615,7 @@ function renderHomePage() {
           </div>
         </div>
       </section>
+      ` : ''}
       
       <!-- Trending Videos Section (いいね急増中) - 2番目 -->
       ${state.trendingVideos && state.trendingVideos.length > 0 ? `
@@ -627,23 +677,13 @@ function renderHomePage() {
             </div>
           </div>
           
-          <div class="tab-buttons mb-3">
-            <button onclick="filterVideos('all')" class="tab-btn active" data-category="all">
-              <i class="fas fa-th"></i> ${i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All'}
-            </button>
-            <button onclick="filterVideos('bouldering')" class="tab-btn" data-category="bouldering">
-              <i class="fas fa-grip-lines"></i> ${i18n.t('section.bouldering')}
-            </button>
-            <button onclick="filterVideos('lead')" class="tab-btn" data-category="lead">
-              <i class="fas fa-link"></i> ${i18n.t('section.lead')}
-            </button>
-            <button onclick="filterVideos('alpine')" class="tab-btn" data-category="alpine">
-              <i class="fas fa-mountain"></i> ${i18n.t('section.alpine')}
-            </button>
-            <button onclick="filterVideos('other')" class="tab-btn" data-category="other">
-              <i class="fas fa-ellipsis-h"></i> ${i18n.t('section.other')}
-            </button>
-          </div>
+          ${renderFilterButtons('filterVideosByCategory', state.currentVideoCategory, [
+            { value: 'all', label: i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All', icon: 'fas fa-th' },
+            { value: 'bouldering', label: i18n.t('section.bouldering'), icon: 'fas fa-grip-lines' },
+            { value: 'lead', label: i18n.t('section.lead'), icon: 'fas fa-link' },
+            { value: 'alpine', label: i18n.t('section.alpine'), icon: 'fas fa-mountain' },
+            { value: 'other', label: i18n.t('section.other'), icon: 'fas fa-ellipsis-h' }
+          ])}
           
           <!-- Horizontal Carousel -->
           <div class="carousel-container" id="videos-carousel">
@@ -687,13 +727,20 @@ function renderHomePage() {
       </section>
       ` : ''}
 
+      <!-- Ad Banner: Blog Top -->
+      <div class="bg-gray-50 pt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          ${renderAdBanner('blog_top')}
+        </div>
+      </div>
+      
       <!-- Blog Posts Section -->
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-3">
             <div class="section-title">
               <i class="fas fa-newspaper"></i>
-              <span>ブログ & ニュース</span>
+              <span>ブログ</span>
             </div>
             <div class="section-action" onclick="window.location.hash='blog'">
               すべて見る <i class="fas fa-arrow-right"></i>
@@ -867,8 +914,8 @@ function renderFooter() {
 
 // ============ Ranking Card ============
 function renderRankingCard(video, rank) {
-  const score = video.total_score || video.likes;  // Now based on internal likes only
-  const mediaSource = video.media_source || 'youtube';
+  const score = video.likes || 0;  // Based on likes count
+  const mediaSource = video.platform || video.media_source || 'youtube';
   const mediaIcon = getMediaIcon(mediaSource);
   const mediaName = getMediaName(mediaSource);
   const isLiked = video.user_liked || false;
@@ -1212,34 +1259,128 @@ function scrollCarousel(carouselId, direction) {
 }
 
 // ============ Switch Ranking Period ============
-async function switchRankingPeriod(period, event) {
-  state.currentRankingType = period;
+async function switchRankingPeriod(period) {
+  state.currentRankingPeriod = period;
   
   const rankingScroll = document.getElementById('ranking-scroll');
   
-  // Load data if not yet loaded
-  if (state.rankings[period].length === 0) {
-    try {
-      const response = await axios.get(`/api/rankings/${period}?limit=20`);
-      state.rankings[period] = response.data || [];
-    } catch (error) {
-      showToast('ランキングの読み込みに失敗しました', 'error');
-      return;
-    }
+  // Show loading state
+  if (rankingScroll) {
+    rankingScroll.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin text-3xl"></i></div>';
   }
   
-  // Update tab active state
-  if (event && event.target) {
+  // Load data for the selected period
+  try {
+    const response = await axios.get(`/api/videos/top-liked?limit=20&period=${period}`);
+    state.topLikedVideos = response.data.videos || [];
+    
+    // Re-render ranking section
+    if (rankingScroll) {
+      rankingScroll.innerHTML = state.topLikedVideos.map((video, index) => renderRankingCard(video, index + 1)).join('');
+    }
+    
+    // Update all tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.remove('active');
     });
-    event.target.classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      if (btn.onclick && btn.onclick.toString().includes(`'${period}'`)) {
+        btn.classList.add('active');
+      }
+    });
+    
+  } catch (error) {
+    console.error('Failed to load ranking:', error);
+    showToast('ランキングの読み込みに失敗しました', 'error');
+    if (rankingScroll) {
+      rankingScroll.innerHTML = '<div class="text-center py-8 text-gray-500">データの読み込みに失敗しました</div>';
+    }
   }
+}
+
+// ============ Ad Banner Functions ============
+
+// Render ad banner
+function renderAdBanner(position) {
+  const banners = state.adBanners[position] || [];
+  if (banners.length === 0) return '';
   
-  // Re-render ranking section WITHOUT animation
-  if (rankingScroll) {
-    rankingScroll.innerHTML = state.rankings[period].map((video, index) => renderRankingCard(video, index + 1)).join('');
+  // Show first active banner for this position
+  const banner = banners[0];
+  if (!banner) return '';
+  
+  // Track impression
+  trackAdImpression(banner.id);
+  
+  return `
+    <div class="w-full my-4 px-4">
+      <a 
+        href="${banner.link_url || '#'}" 
+        target="${banner.link_url?.startsWith('http') ? '_blank' : '_self'}"
+        onclick="trackAdClick(${banner.id})"
+        class="block w-full overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-shadow"
+        style="height: 60px;">
+        <img 
+          src="${banner.image_url}" 
+          alt="${banner.title}"
+          class="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </a>
+    </div>
+  `;
+}
+
+// Track ad impression
+function trackAdImpression(bannerId) {
+  axios.post(`/api/ad-banners/${bannerId}/impression`).catch(err => {
+    console.error('Failed to track impression:', err);
+  });
+}
+
+// Track ad click
+function trackAdClick(bannerId) {
+  axios.post(`/api/ad-banners/${bannerId}/click`).catch(err => {
+    console.error('Failed to track click:', err);
+  });
+}
+
+// Filter announcements by genre
+async function filterAnnouncements(genre) {
+  state.announcementGenre = genre;
+  
+  try {
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/announcements?lang=${lang}&genre=${genre}`);
+    state.announcements = response.data || [];
+    
+    // Re-render modal
+    const modal = document.getElementById('announcements-modal');
+    if (modal) {
+      modal.remove();
+      showAnnouncementsModal();
+    }
+  } catch (error) {
+    console.error('Failed to filter announcements:', error);
+    showToast('お知らせの読み込みに失敗しました', 'error');
   }
+}
+
+// ============ Unified Filter Buttons Component ============
+
+// Render unified filter buttons (tab-buttons style)
+function renderFilterButtons(filterType, currentValue, options) {
+  return `
+    <div class="tab-buttons mb-1">
+      ${options.map(option => `
+        <button 
+          onclick="${filterType}('${option.value}')" 
+          class="tab-btn ${currentValue === option.value ? 'active' : ''}">
+          ${option.icon ? `<i class="${option.icon}"></i>` : ''} ${option.label}
+        </button>
+      `).join('')}
+    </div>
+  `;
 }
 
 // ============ Helper Functions ============
@@ -2243,20 +2384,13 @@ async function handleUpload(event) {
 }
 
 // ============ Filter Videos ============
-async function filterVideos(category) {
+async function filterVideosByCategory(category) {
+  state.currentVideoCategory = category;
+  
   try {
     const url = category === 'all' ? '/api/videos?limit=20' : `/api/videos?category=${category}&limit=20`;
     const response = await axios.get(url);
     state.videos = response.data.videos || [];
-    
-    // Update tab active state
-    document.querySelectorAll('[data-category]').forEach(btn => {
-      if (btn.getAttribute('data-category') === category) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
     
     // Re-render video section
     const videosScroll = document.getElementById('videos-scroll');
@@ -2333,49 +2467,46 @@ function renderMyPage() {
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
       <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div class="flex items-center justify-between h-16">
-            <!-- Logo Section -->
-            <div class="flex items-center flex-shrink-0">
-              <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-                <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-                <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
-              </div>
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div class="flex items-center justify-between h-14 sm:h-16">
+            <!-- Logo Section (Clickable for Home) -->
+            <div class="flex items-center flex-shrink-0 min-w-0">
+              <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
+                <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+              </button>
             </div>
             
             <!-- Right Section -->
-            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <div class="language-switcher-medium flex">
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <div class="flex gap-0.5 sm:gap-1">
                 ${i18n.getAvailableLanguages().map(lang => `
                   <button 
                     onclick="switchLanguage('${lang.code}')" 
-                    class="language-btn-medium ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
+                    class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded transition-all text-sm sm:text-base ${
+                      i18n.getCurrentLanguage() === lang.code 
+                        ? 'bg-gradient-to-r from-purple-100 to-pink-100 scale-110' 
+                        : 'hover:bg-gray-100'
+                    }"
                     title="${lang.name}">
                     ${lang.flag}
                   </button>
                 `).join('')}
               </div>
               
-              <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
-                <i class="fas fa-home"></i>
-                <span class="hidden sm:inline">ホーム</span>
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3">
+                ログアウト
               </button>
               
-              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-primary">
-                <i class="fas fa-user-circle"></i>
-                <span class="hidden sm:inline">マイページ</span>
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3">
+                マイページ
               </button>
               
               ${state.currentUser.is_admin ? `
-                <button onclick="navigateTo('admin')" class="btn btn-sm" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-                  <i class="fas fa-crown"></i>
-                  <span class="hidden sm:inline">管理者</span>
+                <button onclick="navigateTo('admin')" class="btn btn-sm px-3" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+                  管理者
                 </button>
               ` : ''}
-              
-              <button onclick="logout()" class="btn btn-sm btn-secondary">
-                ログアウト
-              </button>
             </div>
           </div>
         </div>
@@ -2582,46 +2713,43 @@ function renderAdminPage() {
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
       <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div class="flex items-center justify-between h-16">
-            <!-- Logo Section -->
-            <div class="flex items-center flex-shrink-0">
-              <div class="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-                <i class="fas fa-mountain text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-                <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
-              </div>
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div class="flex items-center justify-between h-14 sm:h-16">
+            <!-- Logo Section (Clickable for Home) -->
+            <div class="flex items-center flex-shrink-0 min-w-0">
+              <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
+                <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+              </button>
             </div>
             
             <!-- Right Section -->
-            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <div class="language-switcher-medium flex">
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <div class="flex gap-0.5 sm:gap-1">
                 ${i18n.getAvailableLanguages().map(lang => `
                   <button 
                     onclick="switchLanguage('${lang.code}')" 
-                    class="language-btn-medium ${i18n.getCurrentLanguage() === lang.code ? 'active' : ''}"
+                    class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded transition-all text-sm sm:text-base ${
+                      i18n.getCurrentLanguage() === lang.code 
+                        ? 'bg-gradient-to-r from-purple-100 to-pink-100 scale-110' 
+                        : 'hover:bg-gray-100'
+                    }"
                     title="${lang.name}">
                     ${lang.flag}
                   </button>
                 `).join('')}
               </div>
               
-              <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary">
-                <i class="fas fa-home"></i>
-                <span class="hidden sm:inline">ホーム</span>
-              </button>
-              
-              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary">
-                <i class="fas fa-user-circle"></i>
-                <span class="hidden sm:inline">マイページ</span>
-              </button>
-              
-              <button onclick="navigateTo('admin')" class="btn btn-sm btn-primary">
-                <i class="fas fa-crown"></i>
-                <span class="hidden sm:inline">管理者</span>
-              </button>
-              
-              <button onclick="logout()" class="btn btn-sm btn-secondary">
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3">
                 ログアウト
+              </button>
+              
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3">
+                マイページ
+              </button>
+              
+              <button onclick="navigateTo('admin')" class="btn btn-sm px-3" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+                管理者
               </button>
             </div>
           </div>
@@ -2721,6 +2849,27 @@ function renderAdminPage() {
             <div class="p-6">
               <div class="horizontal-scroll" id="admin-announcements-scroll" style="gap: 12px; padding: 0;">
                 ${renderLoadingSkeleton(2)}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Ad Banner Management Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4 flex items-center justify-between">
+              <h2 class="text-lg font-bold text-white flex items-center">
+                <i class="fas fa-ad mr-3"></i>
+                広告バナー管理
+              </h2>
+              <button onclick="showAdBannerModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
+                <i class="fas fa-plus mr-1"></i>
+                新規作成
+              </button>
+            </div>
+            <div class="p-6">
+              <div id="admin-ad-banners-list" style="max-height: 400px; overflow-y: auto;">
+                <div style="text-align: center; padding: 40px; color: #666;">
+                  ${i18n.t('common.loading')}
+                </div>
               </div>
             </div>
           </div>
@@ -4105,32 +4254,79 @@ async function handleContactSubmit(e) {
 function showAnnouncementsModal() {
   const modal = document.createElement('div');
   modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+  modal.id = 'announcements-modal';
   modal.onclick = (e) => {
     if (e.target === modal) modal.remove();
   };
   
   modal.innerHTML = `
-    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
-      <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-        <h2 class="text-xl font-bold">
-          <i class="fas fa-bullhorn text-purple-600 mr-2"></i>
-          ${i18n.t('announcement.latest')}
-        </h2>
-        <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
-          <i class="fas fa-times text-xl"></i>
-        </button>
+    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+      <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-white">
+            <i class="fas fa-bullhorn mr-3"></i>
+            お知らせ一覧
+          </h2>
+          <button onclick="this.closest('.fixed').remove()" class="text-white hover:text-gray-200 transition-colors">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        
+        <!-- Genre Filters -->
+        <div class="flex flex-wrap gap-2">
+          ${renderFilterButtons('filterAnnouncements', state.announcementGenre, [
+            { value: '', label: 'すべて', icon: 'fas fa-th' },
+            { value: 'feature', label: '新機能', icon: 'fas fa-star' },
+            { value: 'maintenance', label: 'メンテナンス', icon: 'fas fa-tools' },
+            { value: 'event', label: 'イベント', icon: 'fas fa-calendar-alt' },
+            { value: 'campaign', label: 'キャンペーン', icon: 'fas fa-gift' },
+            { value: 'general', label: '一般', icon: 'fas fa-info-circle' }
+          ])}
+        </div>
       </div>
-      <div class="p-6 space-y-4">
-        ${state.announcements.map(a => `
-          <div class="border-b pb-4 last:border-b-0">
-            <h3 class="font-bold text-lg mb-2 text-gray-900">${a.title}</h3>
-            <p class="text-gray-600 text-sm mb-2">${a.content}</p>
-            <span class="text-xs text-gray-400">
-              <i class="fas fa-calendar mr-1"></i>
-              ${new Date(a.created_at).toLocaleDateString('ja-JP')}
-            </span>
+      <div class="overflow-y-auto max-h-[calc(85vh-80px)]">
+        <div class="p-6 space-y-5">
+          ${state.announcements.map((a, index) => `
+            <div class="bg-gradient-to-r from-gray-50 to-white rounded-xl p-5 border-l-4 ${
+              index === 0 ? 'border-red-500' : 
+              index === 1 ? 'border-orange-500' : 
+              index === 2 ? 'border-yellow-500' : 
+              'border-purple-500'
+            } shadow-sm hover:shadow-md transition-shadow">
+              <div class="flex items-start justify-between mb-3">
+                <h3 class="font-bold text-xl text-gray-900 flex items-center gap-2">
+                  ${index < 3 ? '<span class="text-2xl">🔥</span>' : '<span class="text-xl">📢</span>'}
+                  ${a.title}
+                </h3>
+                <span class="text-xs font-semibold px-3 py-1 rounded-full ${
+                  index === 0 ? 'bg-red-100 text-red-700' : 
+                  index === 1 ? 'bg-orange-100 text-orange-700' : 
+                  index === 2 ? 'bg-yellow-100 text-yellow-700' : 
+                  'bg-purple-100 text-purple-700'
+                }">
+                  重要度 ${a.priority}
+                </span>
+              </div>
+              <p class="text-gray-700 text-base leading-relaxed mb-3">${a.content}</p>
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  <i class="fas fa-calendar mr-2"></i>
+                  ${new Date(a.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+                <span>
+                  <i class="fas fa-clock mr-2"></i>
+                  ${new Date(a.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ${state.announcements.length === 0 ? `
+          <div class="text-center py-16">
+            <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 text-lg">お知らせはありません</p>
           </div>
-        `).join('')}
+        ` : ''}
       </div>
     </div>
   `;
@@ -4171,6 +4367,10 @@ async function loadAdminData() {
     // Load testimonials
     const testimonialsRes = await axios.get('/api/admin/testimonials');
     renderTestimonialsList(testimonialsRes.data.testimonials);
+    
+    // Load ad banners
+    const bannersRes = await axios.get('/api/ad-banners');
+    renderAdBannersList(bannersRes.data);
   } catch (error) {
     console.error('Failed to load admin data:', error);
   }
@@ -4929,6 +5129,214 @@ async function deleteBlog(blogId) {
 
 // ============ Climber Testimonials Management ============
 
+// ============ Ad Banners Management ============
+
+function renderAdBannersList(banners) {
+  const container = document.getElementById('admin-ad-banners-list');
+  if (!container) return;
+  
+  if (!banners || banners.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #666;">
+        広告バナーがありません
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="space-y-4">
+      ${banners.map(banner => `
+        <div class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <div class="flex items-start gap-4">
+            <div class="w-32 h-16 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+              <img 
+                src="${banner.image_url}" 
+                alt="${banner.title}"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <h4 class="font-bold text-gray-900">${banner.title}</h4>
+                  <p class="text-xs text-gray-600">${banner.position === 'hero_bottom' ? 'ヒーロー下' : 'ブログ上'}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs px-2 py-1 rounded ${banner.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">
+                    ${banner.is_active ? '公開中' : '非公開'}
+                  </span>
+                  <span class="text-xs text-gray-500">優先度: ${banner.priority}</span>
+                </div>
+              </div>
+              <p class="text-xs text-gray-600 mb-2">${banner.link_url || 'リンクなし'}</p>
+              <div class="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                <span><i class="fas fa-eye"></i> ${banner.impression_count || 0} 表示</span>
+                <span><i class="fas fa-mouse-pointer"></i> ${banner.click_count || 0} クリック</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="editAdBanner(${banner.id})" class="text-xs text-blue-600 hover:text-blue-800">
+                  <i class="fas fa-edit"></i> 編集
+                </button>
+                <button onclick="deleteAdBanner(${banner.id})" class="text-xs text-red-600 hover:text-red-800">
+                  <i class="fas fa-trash"></i> 削除
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function showAdBannerModal(bannerId = null) {
+  axios.get('/api/ad-banners').then(res => {
+    const banner = bannerId ? res.data.find(b => b.id === bannerId) : null;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 600px;">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold">
+            ${banner ? '広告バナー編集' : '広告バナー作成'}
+          </h3>
+          <button class="btn btn-sm btn-secondary" onclick="this.closest('.modal').remove()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <form onsubmit="saveAdBanner(event, ${bannerId || 'null'})" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">タイトル</label>
+            <input type="text" id="ad-title" value="${banner?.title || ''}" 
+                   class="w-full px-3 py-2 border rounded-lg" required />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-1">画像URL</label>
+            <input type="url" id="ad-image-url" value="${banner?.image_url || ''}" 
+                   class="w-full px-3 py-2 border rounded-lg" required 
+                   placeholder="https://example.com/banner.jpg" />
+            <p class="text-xs text-gray-500 mt-1">推奨サイズ: 1200x150px（16:9比率）</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-1">リンクURL（オプション）</label>
+            <input type="url" id="ad-link-url" value="${banner?.link_url || ''}" 
+                   class="w-full px-3 py-2 border rounded-lg" 
+                   placeholder="https://example.com" />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-1">表示位置</label>
+            <select id="ad-position" class="w-full px-3 py-2 border rounded-lg" required>
+              <option value="hero_bottom" ${banner?.position === 'hero_bottom' ? 'selected' : ''}>ヒーロー下</option>
+              <option value="blog_top" ${banner?.position === 'blog_top' ? 'selected' : ''}>ブログ上</option>
+            </select>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">優先度</label>
+              <input type="number" id="ad-priority" value="${banner?.priority || 0}" 
+                     class="w-full px-3 py-2 border rounded-lg" min="0" />
+              <p class="text-xs text-gray-500 mt-1">数値が小さいほど優先</p>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-1">ステータス</label>
+              <select id="ad-is-active" class="w-full px-3 py-2 border rounded-lg">
+                <option value="1" ${banner?.is_active ? 'selected' : ''}>公開</option>
+                <option value="0" ${!banner?.is_active ? 'selected' : ''}>非公開</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">開始日時（オプション）</label>
+              <input type="datetime-local" id="ad-start-date" 
+                     value="${banner?.start_date ? new Date(banner.start_date).toISOString().slice(0, 16) : ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-1">終了日時（オプション）</label>
+              <input type="datetime-local" id="ad-end-date" 
+                     value="${banner?.end_date ? new Date(banner.end_date).toISOString().slice(0, 16) : ''}" 
+                     class="w-full px-3 py-2 border rounded-lg" />
+            </div>
+          </div>
+          
+          <div class="flex gap-2 pt-4">
+            <button type="button" onclick="this.closest('.modal').remove()" 
+                    class="btn btn-secondary flex-1">
+              キャンセル
+            </button>
+            <button type="submit" class="btn btn-primary flex-1">
+              <i class="fas fa-save mr-2"></i>
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  });
+}
+
+async function saveAdBanner(event, bannerId) {
+  event.preventDefault();
+  
+  const data = {
+    title: document.getElementById('ad-title').value,
+    image_url: document.getElementById('ad-image-url').value,
+    link_url: document.getElementById('ad-link-url').value || null,
+    position: document.getElementById('ad-position').value,
+    priority: parseInt(document.getElementById('ad-priority').value) || 0,
+    is_active: parseInt(document.getElementById('ad-is-active').value),
+    start_date: document.getElementById('ad-start-date').value || null,
+    end_date: document.getElementById('ad-end-date').value || null
+  };
+  
+  try {
+    if (bannerId) {
+      await axios.put(`/api/admin/ad-banners/${bannerId}`, data);
+      showToast('広告バナーを更新しました', 'success');
+    } else {
+      await axios.post('/api/admin/ad-banners', data);
+      showToast('広告バナーを作成しました', 'success');
+    }
+    
+    document.querySelector('.modal').remove();
+    await loadAdminData();
+  } catch (error) {
+    showToast('エラーが発生しました', 'error');
+    console.error('Failed to save ad banner:', error);
+  }
+}
+
+async function editAdBanner(bannerId) {
+  showAdBannerModal(bannerId);
+}
+
+async function deleteAdBanner(bannerId) {
+  if (!confirm('この広告バナーを削除してもよろしいですか？')) return;
+  
+  try {
+    await axios.delete(`/api/admin/ad-banners/${bannerId}`);
+    showToast('広告バナーを削除しました', 'success');
+    await loadAdminData();
+  } catch (error) {
+    showToast('削除に失敗しました', 'error');
+    console.error('Failed to delete ad banner:', error);
+  }
+}
+
+// ============ Testimonials Management ============
+
 function renderTestimonialsList(testimonials) {
   const container = document.getElementById('admin-testimonials-list');
   if (!container) return;
@@ -5258,3 +5666,670 @@ async function updateMyPassword(event) {
 window.switchRankingPeriod = switchRankingPeriod;
 window.navigateToMyPage = navigateToMyPage;
 
+
+// ============ Video Platform Features ============
+
+// Load all videos
+async function loadVideos() {
+  try {
+    const params = new URLSearchParams();
+    if (state.videoFilter.platform) {
+      params.append('platform', state.videoFilter.platform);
+    }
+    if (state.videoFilter.category) {
+      params.append('category', state.videoFilter.category);
+    }
+    if (state.videoFilter.search) {
+      params.append('search', state.videoFilter.search);
+    }
+    
+    const res = await axios.get(`/api/videos?${params.toString()}`);
+    state.allVideos = res.data.videos || [];
+    renderApp();
+  } catch (error) {
+    console.error('Failed to load videos:', error);
+    showToast('動画の読み込みに失敗しました', 'error');
+  }
+}
+
+// Load user settings
+async function loadUserSettings() {
+  if (!state.currentUser) return;
+  
+  try {
+    const res = await axios.get('/api/settings');
+    state.userSettings = res.data.settings || {};
+    renderApp();
+  } catch (error) {
+    console.error('Failed to load settings:', error);
+  }
+}
+
+// Save user settings
+async function saveSettings(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  const settings = {
+    youtube_api_key: formData.get('youtube_api_key'),
+    openai_api_key: formData.get('openai_api_key'),
+    vimeo_access_token: formData.get('vimeo_access_token'),
+    instagram_access_token: formData.get('instagram_access_token'),
+    tiktok_access_token: formData.get('tiktok_access_token'),
+    notify_likes: formData.get('notify_likes') === 'on' ? 1 : 0,
+    notify_comments: formData.get('notify_comments') === 'on' ? 1 : 0,
+    profile_public: formData.get('profile_public') === 'on' ? 1 : 0,
+    allow_comments: formData.get('allow_comments') === 'on' ? 1 : 0
+  };
+  
+  try {
+    await axios.put('/api/settings', settings);
+    showToast('設定を保存しました', 'success');
+    state.userSettings = settings;
+  } catch (error) {
+    showToast(error.response?.data?.error || '設定の保存に失敗しました', 'error');
+  }
+}
+
+// Analyze video URL with AI
+async function analyzeVideoUrl() {
+  const url = document.getElementById('video-url').value.trim();
+  
+  if (!url) {
+    showToast('URLを入力してください', 'error');
+    return;
+  }
+  
+  if (!state.userSettings?.openai_api_key) {
+    showToast('OpenAI APIキーを設定ページで設定してください', 'error');
+    window.location.hash = 'settings';
+    return;
+  }
+  
+  const analyzeBtn = document.querySelector('#analyze-btn');
+  analyzeBtn.disabled = true;
+  analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI解析中...';
+  
+  try {
+    const res = await axios.post('/api/videos/analyze-url', {
+      url,
+      openai_api_key: state.userSettings.openai_api_key
+    });
+    
+    const data = res.data.data;
+    
+    // Fill form with AI-extracted data
+    document.getElementById('video-title').value = data.title;
+    document.getElementById('video-description').value = data.description;
+    document.getElementById('video-grade').value = data.grade;
+    document.getElementById('video-location').value = data.location;
+    document.getElementById('video-tags').value = data.tags;
+    document.getElementById('platform-display').textContent = data.platform.toUpperCase();
+    document.getElementById('thumbnail-preview').src = data.thumbnail_url || 'https://via.placeholder.com/300x200?text=No+Thumbnail';
+    document.getElementById('thumbnail-preview').classList.remove('hidden');
+    
+    // Store extracted data
+    state.uploadProgress = data;
+    
+    showToast('AI解析が完了しました！', 'success');
+  } catch (error) {
+    showToast(error.response?.data?.error || 'URL解析に失敗しました', 'error');
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.innerHTML = '<i class="fas fa-robot"></i> AI解析';
+  }
+}
+
+// Submit video
+async function submitVideo(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+  
+  if (!state.uploadProgress) {
+    showToast('まずURLを解析してください', 'error');
+    return;
+  }
+  
+  const videoData = {
+    ...state.uploadProgress,
+    title: formData.get('title'),
+    description: formData.get('description'),
+    grade: formData.get('grade'),
+    location: formData.get('location'),
+    tags: formData.get('tags')
+  };
+  
+  try {
+    await axios.post('/api/videos', videoData);
+    showToast('動画を投稿しました！', 'success');
+    state.uploadProgress = null;
+    form.reset();
+    window.location.hash = 'videos';
+  } catch (error) {
+    showToast(error.response?.data?.error || '動画の投稿に失敗しました', 'error');
+  }
+}
+
+// Open video modal
+function openVideoModal(video) {
+  const modal = document.getElementById('video-modal');
+  const modalContent = modal.querySelector('.modal-video-content');
+  
+  let embedHtml = '';
+  
+  if (video.platform === 'youtube') {
+    embedHtml = `<iframe width="100%" height="500" src="https://www.youtube.com/embed/${video.video_id_external}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  } else if (video.platform === 'vimeo') {
+    embedHtml = `<iframe width="100%" height="500" src="https://player.vimeo.com/video/${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  } else if (video.platform === 'instagram') {
+    // Instagram embed using iframe format (for reels)
+    embedHtml = `<iframe width="100%" height="600" src="https://www.instagram.com/reel/${video.video_id_external}/embed" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  } else if (video.platform === 'tiktok') {
+    // TikTok embed using iframe format
+    embedHtml = `<iframe width="100%" height="600" src="https://www.tiktok.com/embed/v2/${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  } else {
+    embedHtml = `<p>このプラットフォームの埋め込みは対応していません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+  }
+  
+  modalContent.innerHTML = `
+    <div class="bg-gradient-to-r from-purple-600 to-pink-600 -mx-6 -mt-6 px-6 py-4 rounded-t-xl mb-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xl font-bold text-white">${video.title}</h3>
+        <button onclick="closeModal('video-modal')" class="text-white hover:text-gray-200 text-2xl">×</button>
+      </div>
+    </div>
+    <div class="video-embed mb-4">
+      ${embedHtml}
+    </div>
+    <div class="space-y-2 text-sm">
+      <p class="text-gray-700">${video.description || '説明なし'}</p>
+      ${video.grade ? `<p><strong>グレード:</strong> ${video.grade}</p>` : ''}
+      ${video.location ? `<p><strong>場所:</strong> ${video.location}</p>` : ''}
+      ${video.tags ? `<p><strong>タグ:</strong> ${video.tags}</p>` : ''}
+      <p><strong>投稿者 ID:</strong> ${video.uploader_id || 'Unknown'}</p>
+      <p><strong>閲覧数:</strong> ${video.views || 0}</p>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+}
+
+// Close modal
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove('active');
+}
+
+// Filter videos
+function filterVideos(platform) {
+  state.videoFilter.platform = platform;
+  loadVideos();
+}
+
+// Filter by category
+function filterByCategory(category) {
+  state.videoFilter.category = category;
+  loadVideos();
+}
+
+// Search videos
+function searchVideos(event) {
+  if (event.key === 'Enter') {
+    state.videoFilter.search = event.target.value;
+    loadVideos();
+  }
+}
+
+// Expose new functions to global scope
+window.loadVideos = loadVideos;
+window.loadUserSettings = loadUserSettings;
+window.saveSettings = saveSettings;
+window.analyzeVideoUrl = analyzeVideoUrl;
+window.submitVideo = submitVideo;
+window.openVideoModal = openVideoModal;
+window.closeModal = closeModal;
+window.filterVideos = filterVideos;
+window.filterByCategory = filterByCategory;
+window.searchVideos = searchVideos;
+window.trackAdClick = trackAdClick;
+window.filterAnnouncements = filterAnnouncements;
+window.filterVideosByCategory = filterVideosByCategory;
+
+// ============ Render New Pages ============
+
+// Render Settings Page
+function renderSettingsPage() {
+  const settings = state.userSettings || {};
+  
+  return `
+    <div class="min-h-screen bg-gray-50">
+      <!-- Header -->
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div class="flex items-center justify-between h-14 sm:h-16">
+            <div class="flex items-center flex-shrink-0 min-w-0">
+              <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
+                <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+              </button>
+            </div>
+            
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3">ログアウト</button>
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3">マイページ</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Settings Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+            <h2 class="text-2xl font-bold text-white flex items-center">
+              <i class="fas fa-cog mr-3"></i>
+              設定
+            </h2>
+          </div>
+
+          <form onsubmit="saveSettings(event)" class="p-6 space-y-6">
+            <!-- API Keys Section -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-bold text-gray-900 border-b pb-2">API設定</h3>
+              
+              <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                  <i class="fas fa-info-circle text-blue-600 text-xl mt-0.5"></i>
+                  <div>
+                    <p class="font-bold text-blue-900 mb-1">AI動画解析に必要</p>
+                    <p class="text-sm text-blue-800">動画URLの自動解析にはOpenAI APIキーが必須です。</p>
+                    <a href="https://platform.openai.com/api-keys" target="_blank" class="text-sm text-blue-600 hover:underline mt-1 inline-block">
+                      OpenAI APIキーを取得する →
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fas fa-robot text-purple-600"></i> OpenAI API Key（必須）
+                </label>
+                <input 
+                  type="password" 
+                  name="openai_api_key" 
+                  value="${settings.openai_api_key || ''}"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="sk-..."
+                />
+                <p class="text-xs text-gray-500 mt-1">動画URLの自動解析・メタデータ抽出に使用</p>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fab fa-youtube text-red-600"></i> YouTube API Key（オプション）
+                </label>
+                <input 
+                  type="password" 
+                  name="youtube_api_key" 
+                  value="${settings.youtube_api_key || ''}"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="AIzaSy..."
+                />
+                <p class="text-xs text-gray-500 mt-1">YouTube動画の詳細情報取得に使用（オプション）</p>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fab fa-vimeo text-blue-500"></i> Vimeo Access Token（オプション）
+                </label>
+                <input 
+                  type="password" 
+                  name="vimeo_access_token" 
+                  value="${settings.vimeo_access_token || ''}"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="..."
+                />
+              </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-bold text-gray-900 border-b pb-2">通知設定</h3>
+              
+              <label class="flex items-center space-x-3">
+                <input type="checkbox" name="notify_likes" ${settings.notify_likes ? 'checked' : ''} class="w-4 h-4 text-purple-600 rounded">
+                <span>いいね通知を受け取る</span>
+              </label>
+              
+              <label class="flex items-center space-x-3">
+                <input type="checkbox" name="notify_comments" ${settings.notify_comments ? 'checked' : ''} class="w-4 h-4 text-purple-600 rounded">
+                <span>コメント通知を受け取る</span>
+              </label>
+            </div>
+
+            <!-- Privacy Settings -->
+            <div class="space-y-4">
+              <h3 class="text-lg font-bold text-gray-900 border-b pb-2">プライバシー設定</h3>
+              
+              <label class="flex items-center space-x-3">
+                <input type="checkbox" name="profile_public" ${settings.profile_public ? 'checked' : ''} class="w-4 h-4 text-purple-600 rounded">
+                <span>プロフィールを公開する</span>
+              </label>
+              
+              <label class="flex items-center space-x-3">
+                <input type="checkbox" name="allow_comments" ${settings.allow_comments ? 'checked' : ''} class="w-4 h-4 text-purple-600 rounded">
+                <span>コメントを許可する</span>
+              </label>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t">
+              <button type="button" onclick="window.location.hash='mypage'" class="btn btn-secondary">
+                キャンセル
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                設定を保存
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  `;
+}
+
+// Render Upload Page
+function renderUploadPage() {
+  return `
+    <div class="min-h-screen bg-gray-50">
+      <!-- Header -->
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div class="flex items-center justify-between h-14 sm:h-16">
+            <div class="flex items-center flex-shrink-0 min-w-0">
+              <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
+                <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+              </button>
+            </div>
+            
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <button onclick="navigateTo('videos')" class="btn btn-sm btn-secondary px-3">動画一覧</button>
+              <button onclick="navigateTo('settings')" class="btn btn-sm btn-secondary px-3">設定</button>
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3">ログアウト</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+            <h2 class="text-2xl font-bold text-white flex items-center">
+              <i class="fas fa-upload mr-3"></i>
+              動画を投稿
+            </h2>
+          </div>
+
+          <form onsubmit="submitVideo(event)" class="p-6 space-y-6">
+            <!-- AI URL Analysis -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg p-6">
+              <h3 class="text-lg font-bold text-purple-900 mb-3 flex items-center">
+                <i class="fas fa-robot mr-2"></i>
+                AI自動解析
+              </h3>
+              <p class="text-sm text-purple-800 mb-4">
+                YouTube、Instagram、TikTok、VimeoのURLを入力すると、AIが自動的にタイトル、説明、サムネイルなどを抽出します。
+              </p>
+              
+              <div class="flex gap-2">
+                <input 
+                  type="url" 
+                  id="video-url" 
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  class="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  required
+                />
+                <button 
+                  type="button" 
+                  id="analyze-btn"
+                  onclick="analyzeVideoUrl()" 
+                  class="btn btn-primary whitespace-nowrap px-6">
+                  <i class="fas fa-robot"></i> AI解析
+                </button>
+              </div>
+              
+              <div class="mt-4 text-center">
+                <span id="platform-display" class="inline-block px-4 py-2 bg-white rounded-full text-sm font-bold text-purple-600 border-2 border-purple-300 hidden"></span>
+              </div>
+              
+              <img id="thumbnail-preview" class="hidden mt-4 w-full h-48 object-cover rounded-lg border-2 border-purple-300" />
+            </div>
+
+            <!-- Video Details -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">タイトル *</label>
+                <input 
+                  type="text" 
+                  id="video-title"
+                  name="title" 
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="動画のタイトル"
+                />
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">説明</label>
+                <textarea 
+                  id="video-description"
+                  name="description" 
+                  rows="4"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="動画の説明"
+                ></textarea>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">グレード</label>
+                  <input 
+                    type="text" 
+                    id="video-grade"
+                    name="grade"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    placeholder="V4, 5.11a, など"
+                  />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">場所</label>
+                  <input 
+                    type="text" 
+                    id="video-location"
+                    name="location"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    placeholder="場所"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">タグ（カンマ区切り）</label>
+                <input 
+                  type="text" 
+                  id="video-tags"
+                  name="tags"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="クライミング, ボルダリング, アウトドア"
+                />
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t">
+              <button type="button" onclick="window.location.hash='videos'" class="btn btn-secondary">
+                キャンセル
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i>
+                投稿する
+              </button>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  `;
+}
+
+// Render Videos Page
+function renderVideosPage() {
+  return `
+    <div class="min-h-screen bg-gray-50">
+      <!-- Header -->
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div class="flex items-center justify-between h-14 sm:h-16">
+            <div class="flex items-center flex-shrink-0 min-w-0">
+              <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
+                <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+              </button>
+            </div>
+            
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              ${state.currentUser ? `
+                <button onclick="navigateTo('upload')" class="btn btn-sm btn-primary px-3">
+                  投稿
+                </button>
+              ` : ''}
+              <button onclick="navigateTo('home')" class="btn btn-sm btn-secondary px-3">ホーム</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <!-- Platform Filters -->
+          <div class="mb-4">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">プラットフォーム</h3>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="filterVideos('')" class="btn btn-sm ${!state.videoFilter.platform ? 'btn-primary' : 'btn-secondary'}">
+                すべて
+              </button>
+              <button onclick="filterVideos('youtube')" class="btn btn-sm ${state.videoFilter.platform === 'youtube' ? 'btn-primary' : 'btn-secondary'}">
+                <i class="fab fa-youtube"></i> YouTube
+              </button>
+              <button onclick="filterVideos('instagram')" class="btn btn-sm ${state.videoFilter.platform === 'instagram' ? 'btn-primary' : 'btn-secondary'}">
+                <i class="fab fa-instagram"></i> Instagram
+              </button>
+              <button onclick="filterVideos('tiktok')" class="btn btn-sm ${state.videoFilter.platform === 'tiktok' ? 'btn-primary' : 'btn-secondary'}">
+                <i class="fab fa-tiktok"></i> TikTok
+              </button>
+              <button onclick="filterVideos('vimeo')" class="btn btn-sm ${state.videoFilter.platform === 'vimeo' ? 'btn-primary' : 'btn-secondary'}">
+                <i class="fab fa-vimeo"></i> Vimeo
+              </button>
+            </div>
+          </div>
+          
+          <!-- Category Filters -->
+          <div class="mb-4">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">カテゴリー</h3>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="filterByCategory('')" class="btn btn-sm ${!state.videoFilter.category ? 'btn-primary' : 'btn-secondary'}">
+                すべて
+              </button>
+              <button onclick="filterByCategory('bouldering')" class="btn btn-sm ${state.videoFilter.category === 'bouldering' ? 'btn-primary' : 'btn-secondary'}">
+                ボルダリング
+              </button>
+              <button onclick="filterByCategory('competition')" class="btn btn-sm ${state.videoFilter.category === 'competition' ? 'btn-primary' : 'btn-secondary'}">
+                コンペティション
+              </button>
+              <button onclick="filterByCategory('training')" class="btn btn-sm ${state.videoFilter.category === 'training' ? 'btn-primary' : 'btn-secondary'}">
+                トレーニング
+              </button>
+              <button onclick="filterByCategory('tutorial')" class="btn btn-sm ${state.videoFilter.category === 'tutorial' ? 'btn-primary' : 'btn-secondary'}">
+                チュートリアル
+              </button>
+              <button onclick="filterByCategory('lifestyle')" class="btn btn-sm ${state.videoFilter.category === 'lifestyle' ? 'btn-primary' : 'btn-secondary'}">
+                ライフスタイル
+              </button>
+            </div>
+          </div>
+          
+          <!-- Search Bar -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-700 mb-2">検索</h3>
+            <input 
+              type="search" 
+              placeholder="動画タイトルや説明で検索..."
+              onkeypress="searchVideos(event)"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+        </div>
+
+        <!-- Videos Grid -->
+        ${state.allVideos.length === 0 ? `
+          <div class="text-center py-16">
+            <i class="fas fa-video text-6xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 text-lg">動画がまだありません</p>
+            ${state.currentUser ? `
+              <button onclick="navigateTo('upload')" class="btn btn-primary mt-4">
+                <i class="fas fa-upload"></i>
+                最初の動画を投稿する
+              </button>
+            ` : ''}
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            ${state.allVideos.map(video => `
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onclick='openVideoModal(${JSON.stringify(video)})'>
+                <div class="relative aspect-video bg-gray-200">
+                  <img 
+                    src="${video.thumbnail_url || 'https://via.placeholder.com/400x225?text=No+Thumbnail'}" 
+                    alt="${video.title}"
+                    class="w-full h-full object-cover"
+                    onerror="this.src='https://via.placeholder.com/400x225?text=No+Thumbnail'"
+                  />
+                  <div class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold text-white" style="background: ${
+                    video.platform === 'youtube' ? '#FF0000' :
+                    video.platform === 'instagram' ? '#E4405F' :
+                    video.platform === 'tiktok' ? '#000000' :
+                    video.platform === 'vimeo' ? '#1AB7EA' : '#6B7280'
+                  }">
+                    ${video.platform.toUpperCase()}
+                  </div>
+                  ${video.views > 0 ? `
+                    <div class="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-white text-xs">
+                      <i class="fas fa-eye"></i> ${video.views}
+                    </div>
+                  ` : ''}
+                </div>
+                <div class="p-4">
+                  <h3 class="font-bold text-gray-900 mb-2 line-clamp-2">${video.title}</h3>
+                  <p class="text-sm text-gray-600 mb-2 line-clamp-2">${video.description || ''}</p>
+                  <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span><i class="fas fa-user"></i> ${video.username || 'Unknown'}</span>
+                    ${video.grade ? `<span class="font-bold text-purple-600">${video.grade}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </main>
+
+      <!-- Video Modal -->
+      <div id="video-modal" class="modal">
+        <div class="modal-content modal-video-content" style="max-width: 900px;">
+          <!-- Content will be injected by openVideoModal() -->
+        </div>
+      </div>
+    </div>
+  `;
+}

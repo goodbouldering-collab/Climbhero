@@ -27,6 +27,12 @@
 - ✅ **横カルーセルUI** - ランキング、動画、ブログの全セクションに実装
 - ✅ **注目の動画セクション** - いいね増加率が高い動画を上位表示 🔥 NEW
 - ✅ **Instagramギャラリー** - Instagram Reels専用の表示エリア 📸 NEW
+- ✅ **広告バナー管理システム** 🎯 NEW
+  - ヒーロー下とブログ上の2箇所に表示
+  - 高さ60px、両端にマージン付きで美しく表示
+  - 管理画面から画像とテキストを編集可能
+  - 表示位置、優先度、公開期間を設定
+  - クリック数・表示回数を自動追跡
 - ✅ **4期間ランキング** - デイリー、週間、月間、年間の切り替え
 - ✅ **インタラクティブUI** ✨ NEW
   - ホバーアニメーション（サムネイル拡大、シマーエフェクト）
@@ -54,6 +60,13 @@
 ### Admin管理機能
 - ✅ **管理者ダッシュボード** - `#admin`でアクセス
 - ✅ **ブログ管理** - 投稿・編集・削除
+- ✅ **広告バナー管理** 🎯 NEW
+  - 画像URL、リンクURL、タイトル編集
+  - 表示位置（hero_bottom/blog_top）選択
+  - 優先度設定（数値が小さいほど優先）
+  - 公開/非公開ステータス切り替え
+  - 公開期間設定（開始日時・終了日時）
+  - クリック数・表示回数の確認
 - ✅ **権限ベースのアクセス制御**
 
 ### バックエンドAPI
@@ -64,6 +77,10 @@
 - ✅ `/api/videos/trending` - トレンド動画（いいね急増中）✨ NEW
 - ✅ `/api/rankings/:type` - ランキング（daily, weekly, monthly, yearly, total）
 - ✅ `/api/blog` - ブログ記事CRUD操作
+- ✅ `/api/ad-banners` - 広告バナー取得・管理 🎯 NEW
+- ✅ `/api/ad-banners/:id/impression` - 表示回数追跡 🎯 NEW
+- ✅ `/api/ad-banners/:id/click` - クリック数追跡 🎯 NEW
+- ✅ `/api/admin/ad-banners` - 広告バナー作成・編集・削除（管理者専用） 🎯 NEW
 - ✅ Admin権限チェック機能
 
 ## 🗄️ データアーキテクチャ
@@ -91,6 +108,14 @@
 
 **Blog Posts テーブル**
 - id, title, content, image_url, published_date
+
+**Ad Banners テーブル** 🎯 NEW
+- id, title, image_url, link_url
+- position (hero_bottom/blog_top)
+- is_active, priority
+- start_date, end_date
+- click_count, impression_count
+- created_at, updated_at
 
 **その他**: likes, favorites, comments テーブル
 
@@ -369,11 +394,48 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-02
+**最終更新日**: 2025-11-16
 **プロジェクト状態**: ✅ 本番稼働中
 **参考サイト**: https://climbhero.info
 
-## 🎉 最新アップデート (2025-11-02)
+## 🎉 最新アップデート (2025-11-16)
+
+### 🎯 広告バナー管理システム実装
+- ✅ **広告バナー表示機能**:
+  - 2箇所の表示位置: ヒーロー下（hero_bottom）、ブログ上（blog_top）
+  - 高さ60px、両端にマージン（px-4）で美しく表示
+  - レスポンシブ対応、rounded-lg、hover効果付き
+- ✅ **管理画面でバナー編集**:
+  - 画像URL、リンクURL、タイトルを編集
+  - 表示位置選択（hero_bottom/blog_top）
+  - 優先度設定（数値が小さいほど優先）
+  - 公開/非公開ステータス切り替え
+  - 公開期間設定（開始日時・終了日時）
+- ✅ **トラッキング機能**:
+  - 表示回数（impression）自動カウント
+  - クリック数（click）自動カウント
+  - 管理画面でリアルタイム統計確認
+- ✅ **サンプルバナー**:
+  - 「無料体験実施中」 - ヒーロー下に表示
+  - 「プレミアム会員募集」 - ブログ上に表示
+  - AI生成の高品質バナー画像使用
+- ✅ **データベーステーブル**: `ad_banners` テーブル追加
+- ✅ **APIエンドポイント**:
+  - `GET /api/ad-banners?position={hero_bottom|blog_top}` - バナー取得
+  - `POST /api/ad-banners/:id/impression` - 表示回数追跡
+  - `POST /api/ad-banners/:id/click` - クリック数追跡
+  - `POST /api/admin/ad-banners` - バナー作成（管理者）
+  - `PUT /api/admin/ad-banners/:id` - バナー更新（管理者）
+  - `DELETE /api/admin/ad-banners/:id` - バナー削除（管理者）
+
+### 🎨 UI/UX改善
+- ✅ **ブログセクションタイトル変更**: "ブログ & ニュース" → "ブログ"
+- ✅ **フィルタボタンスペース調整**: mb-3 → mb-1（狭く最適化）
+- ✅ **お知らせ「もっと見る」**: ボタン → テキストリンクに変更（シンプル化）
+
+---
+
+## 🎉 過去のアップデート (2025-11-02)
 
 ### 🤖 Genspark AI連携機能実装
 - ✅ **ブログURL自動生成API**: `/api/genspark/blog-url`
