@@ -1102,7 +1102,7 @@ app.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ClimbHero - クライミング動画を共有しよう</title>
+        <title>ClimbHero - 世界中のクライミング動画を発見し共有しよう</title>
         
         <!-- Favicons -->
         <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -1111,22 +1111,22 @@ app.get('/', (c) => {
         <link rel="manifest" href="/static/site.webmanifest">
         
         <!-- Meta Tags for SEO -->
-        <meta name="description" content="ClimbHero - 世界中のクライミング動画を発見し、共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。リアルタイムランキング、多言語対応。">
+        <meta name="description" content="ClimbHero - 世界中のクライミング動画を発見し共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。リアルタイムランキング、多言語対応。">
         <meta name="keywords" content="クライミング,ボルダリング,動画,共有,プラットフォーム,YouTube,Instagram,TikTok,Vimeo,ランキング">
         <meta name="author" content="ClimbHero">
         
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
         <meta property="og:url" content="https://climbhero.pages.dev/">
-        <meta property="og:title" content="ClimbHero - クライミング動画を共有しよう">
-        <meta property="og:description" content="世界中のクライミング動画を発見し、共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
+        <meta property="og:title" content="ClimbHero - 世界中のクライミング動画を発見し共有しよう">
+        <meta property="og:description" content="世界中のクライミング動画を発見し共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
         <meta property="og:image" content="/android-chrome-512x512.png">
         
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
         <meta property="twitter:url" content="https://climbhero.pages.dev/">
-        <meta property="twitter:title" content="ClimbHero - クライミング動画を共有しよう">
-        <meta property="twitter:description" content="世界中のクライミング動画を発見し、共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
+        <meta property="twitter:title" content="ClimbHero - 世界中のクライミング動画を発見し共有しよう">
+        <meta property="twitter:description" content="世界中のクライミング動画を発見し共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
         <meta property="twitter:image" content="/android-chrome-512x512.png">
         
         <!-- Theme Color -->
