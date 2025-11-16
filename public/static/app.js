@@ -9,6 +9,8 @@ const state = {
   currentRankingPeriod: 'all', // 'daily', 'weekly', 'monthly', '6months', '1year', 'all'
   blogPosts: [],
   blogTags: [],
+  blogGenres: [],
+  currentBlogGenre: '', // Genre filter for blog posts
   announcements: [],
   announcementGenre: '', // 'feature', 'maintenance', 'event', 'campaign', 'general', ''
   testimonials: [],
@@ -106,7 +108,7 @@ function updateHeroSlide() {
 async function loadInitialData() {
   try {
     const lang = state.currentLanguage || 'ja'
-    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes, topLikedRes, adBannersHeroRes, adBannersBlogRes] = await Promise.all([
+    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes, topLikedRes, adBannersHeroRes, adBannersBlogRes, blogGenresRes] = await Promise.all([
       axios.get('/api/videos?limit=20'),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get(`/api/blog?lang=${lang}`),
@@ -115,7 +117,8 @@ async function loadInitialData() {
       axios.get('/api/testimonials'),
       axios.get('/api/videos/top-liked?limit=20&period=all'),
       axios.get('/api/ad-banners?position=hero_bottom'),
-      axios.get('/api/ad-banners?position=blog_top')
+      axios.get('/api/ad-banners?position=blog_top'),
+      axios.get('/api/blog/genres')
     ]);
     
     state.videos = videosRes.data.videos || [];
@@ -128,6 +131,7 @@ async function loadInitialData() {
     state.currentRankingPeriod = 'all';
     state.adBanners.hero_bottom = adBannersHeroRes.data || [];
     state.adBanners.blog_top = adBannersBlogRes.data || [];
+    state.blogGenres = blogGenresRes.data || [];
     
     // Load user like status and favorites for all videos
     if (state.currentUser) {
@@ -747,6 +751,12 @@ function renderHomePage() {
             </div>
           </div>
           
+          <!-- Genre Filters -->
+          ${state.blogGenres && state.blogGenres.length > 0 ? renderFilterButtons('filterBlogsByGenre', state.currentBlogGenre, [
+            { value: '', label: 'すべて', icon: 'fas fa-th' },
+            ...state.blogGenres.map(g => ({ value: g.name, label: g.name, icon: g.icon }))
+          ]) : ''}
+          
           <!-- Horizontal Carousel -->
           <div class="carousel-container" id="blog-carousel">
             <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('blog-carousel', -1)">
@@ -1262,32 +1272,13 @@ function scrollCarousel(carouselId, direction) {
 async function switchRankingPeriod(period) {
   state.currentRankingPeriod = period;
   
-  const rankingScroll = document.getElementById('ranking-scroll');
-  
-  // Show loading state
-  if (rankingScroll) {
-    rankingScroll.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin text-3xl"></i></div>';
-  }
-  
   // Load data for the selected period
   try {
     const response = await axios.get(`/api/videos/top-liked?limit=20&period=${period}`);
     state.topLikedVideos = response.data.videos || [];
     
-    // Re-render ranking section
-    if (rankingScroll) {
-      rankingScroll.innerHTML = state.topLikedVideos.map((video, index) => renderRankingCard(video, index + 1)).join('');
-    }
-    
-    // Update all tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      if (btn.onclick && btn.onclick.toString().includes(`'${period}'`)) {
-        btn.classList.add('active');
-      }
-    });
+    // Re-render home page to update filter buttons
+    navigateTo('home');
     
   } catch (error) {
     console.error('Failed to load ranking:', error);
@@ -1363,6 +1354,24 @@ async function filterAnnouncements(genre) {
   } catch (error) {
     console.error('Failed to filter announcements:', error);
     showToast('お知らせの読み込みに失敗しました', 'error');
+  }
+}
+
+// Filter blogs by genre
+async function filterBlogsByGenre(genre) {
+  state.currentBlogGenre = genre;
+  
+  try {
+    const lang = state.currentLanguage || 'ja';
+    const url = genre ? `/api/blog?lang=${lang}&genre=${genre}` : `/api/blog?lang=${lang}`;
+    const response = await axios.get(url);
+    state.blogPosts = response.data || [];
+    
+    // Re-render home page to update filter buttons
+    navigateTo('home');
+  } catch (error) {
+    console.error('Failed to filter blogs:', error);
+    showToast('ブログの読み込みに失敗しました', 'error');
   }
 }
 
@@ -2403,11 +2412,8 @@ async function filterVideosByCategory(category) {
     const response = await axios.get(url);
     state.videos = response.data.videos || [];
     
-    // Re-render video section
-    const videosScroll = document.getElementById('videos-scroll');
-    if (videosScroll) {
-      videosScroll.innerHTML = state.videos.map(video => renderVideoCard(video)).join('');
-    }
+    // Re-render home page to update filter buttons
+    navigateTo('home');
   } catch (error) {
     showToast('動画の読み込みに失敗しました', 'error');
   }
@@ -4272,7 +4278,7 @@ function showAnnouncementsModal() {
   
   modal.innerHTML = `
     <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
-      <div class="sticky top-0 bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-5">
+      <div class="sticky top-0 bg-gradient-to-r from-orange-500 to-pink-500 px-6 py-5">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-bold text-white">
             <i class="fas fa-bullhorn mr-3"></i>
@@ -5905,6 +5911,7 @@ window.filterByCategory = filterByCategory;
 window.searchVideos = searchVideos;
 window.trackAdClick = trackAdClick;
 window.filterAnnouncements = filterAnnouncements;
+window.filterBlogsByGenre = filterBlogsByGenre;
 window.filterVideosByCategory = filterVideosByCategory;
 
 // ============ Render New Pages ============

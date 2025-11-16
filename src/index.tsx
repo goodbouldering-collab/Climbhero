@@ -772,6 +772,25 @@ app.post('/api/ad-banners/:id/click', async (c) => {
 
 // ============ Blog API ============
 
+// ============ Blog Genres API ============
+
+// Get all blog genres
+app.get('/api/blog/genres', async (c) => {
+  const { env } = c
+  
+  try {
+    const { results: genres } = await env.DB.prepare(`
+      SELECT * FROM blog_genres 
+      WHERE is_active = 1 
+      ORDER BY display_order ASC
+    `).all()
+    
+    return c.json(genres || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // ============ Blog Tags API (MUST BE BEFORE /api/blog/:id) ============
 
 // Get all blog tags
@@ -826,9 +845,20 @@ function getLocalizedField(obj: any, fieldName: string, lang: string): string {
 app.get('/api/blog', async (c) => {
   const { env } = c
   const lang = c.req.query('lang') || 'ja'
+  const genre = c.req.query('genre') || ''
 
   try {
-    const { results: posts } = await env.DB.prepare('SELECT * FROM blog_posts ORDER BY published_date DESC').all()
+    let query = 'SELECT * FROM blog_posts'
+    const params: any[] = []
+    
+    if (genre) {
+      query += ' WHERE genre = ?'
+      params.push(genre)
+    }
+    
+    query += ' ORDER BY published_date DESC'
+    
+    const { results: posts } = await env.DB.prepare(query).bind(...params).all()
     
     // Return language-specific fields based on lang parameter (supports ja/en/zh/ko)
     const localizedPosts = (posts as any[]).map((post: any) => ({
@@ -3527,6 +3557,106 @@ app.post('/api/admin/users/import', async (c) => {
 // ============ Blog Tags Admin API ============
 
 // Create new tag
+// ============ Admin Blog Genre Management ============
+
+// Create blog genre (admin)
+app.post('/api/admin/blog/genres', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const { name, name_en, name_zh, name_ko, icon, color, display_order } = await c.req.json()
+    
+    if (!name) {
+      return c.json({ error: 'Genre name is required' }, 400)
+    }
+
+    const result = await env.DB.prepare(`
+      INSERT INTO blog_genres (name, name_en, name_zh, name_ko, icon, color, display_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      name,
+      name_en || null,
+      name_zh || null,
+      name_ko || null,
+      icon || 'fas fa-folder',
+      color || 'purple',
+      display_order || 0
+    ).run()
+    
+    return c.json({
+      success: true,
+      genre: { id: result.meta.last_row_id, name, name_en, name_zh, name_ko, icon, color, display_order }
+    }, 201)
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update blog genre (admin)
+app.put('/api/admin/blog/genres/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const genreId = parseInt(c.req.param('id'))
+    const { name, name_en, name_zh, name_ko, icon, color, display_order, is_active } = await c.req.json()
+    
+    await env.DB.prepare(`
+      UPDATE blog_genres 
+      SET name = ?, name_en = ?, name_zh = ?, name_ko = ?, icon = ?, color = ?, 
+          display_order = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      name,
+      name_en || null,
+      name_zh || null,
+      name_ko || null,
+      icon,
+      color,
+      display_order,
+      is_active !== undefined ? is_active : 1,
+      genreId
+    ).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Delete blog genre (admin)
+app.delete('/api/admin/blog/genres/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser || !currentUser.is_admin) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const genreId = parseInt(c.req.param('id'))
+    await env.DB.prepare('DELETE FROM blog_genres WHERE id = ?').bind(genreId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Admin Blog Tag Management ============
+
 app.post('/api/admin/blog/tags', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
