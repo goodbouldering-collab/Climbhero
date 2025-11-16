@@ -326,16 +326,16 @@ function renderHomePage() {
             
             ${state.currentUser ? `
               <!-- Logout Button -->
-              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-sm">
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
                 ログアウト
               </button>
               
               <!-- My Page Button -->
-              <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3 text-sm">
+              <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3 text-base">
                 マイページ
               </button>
             ` : `
-              <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3 text-sm">
+              <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3 text-base">
                 ${i18n.t('nav.login')}
               </button>
             `}
@@ -588,10 +588,10 @@ function renderHomePage() {
       ${state.topLikedVideos && state.topLikedVideos.length > 0 ? `
       <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-3">
+          <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-trophy text-yellow-500"></i>
-              <span class="text-xl font-bold">いいね数ランキング</span>
+              <span>いいね数ランキング</span>
             </div>
           </div>
           
@@ -625,10 +625,10 @@ function renderHomePage() {
       ${state.trendingVideos && state.trendingVideos.length > 0 ? `
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-3">
+          <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-fire text-orange-500"></i>
-              <h2 class="text-xl font-bold">いいね急増中</h2>
+              <span>いいね急増中</span>
             </div>
           </div>
           
@@ -650,7 +650,7 @@ function renderHomePage() {
       <!-- Recommended Videos Section -->
       <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-3">
+          <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-star"></i>
               <span>${i18n.t('section.recommended')}</span>
@@ -674,7 +674,7 @@ function renderHomePage() {
       <!-- Latest Videos Section -->
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-3">
+          <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-video"></i>
               <span>${i18n.t('section.latest')}</span>
@@ -708,7 +708,7 @@ function renderHomePage() {
       ${state.currentUser && state.favorites && state.favorites.length > 0 ? `
       <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-3">
+          <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-heart"></i>
               <span>${i18n.getCurrentLanguage() === 'ja' ? 'お気に入り' : 'Favorites'}</span>
@@ -741,7 +741,7 @@ function renderHomePage() {
       <!-- Blog Posts Section -->
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-3">
+          <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-newspaper"></i>
               <span>ブログ</span>
@@ -2757,15 +2757,15 @@ function renderAdminPage() {
                 `).join('')}
               </div>
               
-              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-sm">
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
                 ログアウト
               </button>
               
-              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3 text-sm">
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3 text-base">
                 マイページ
               </button>
               
-              <button onclick="navigateTo('admin')" class="btn btn-sm px-3 text-sm" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+              <button onclick="navigateTo('admin')" class="btn btn-sm px-3 text-base" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
                 管理者
               </button>
             </div>
@@ -4278,14 +4278,14 @@ function showAnnouncementsModal() {
   
   modal.innerHTML = `
     <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
-      <div class="sticky top-0 bg-gradient-to-r from-orange-500 to-pink-500 px-6 py-5">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-white">
-            <i class="fas fa-bullhorn mr-3"></i>
+      <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-xl font-bold text-gray-900">
+            <i class="fas fa-bullhorn mr-2 text-purple-600"></i>
             お知らせ一覧
           </h2>
-          <button onclick="this.closest('.fixed').remove()" class="text-white hover:text-gray-200 transition-colors">
-            <i class="fas fa-times text-2xl"></i>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="fas fa-times text-xl"></i>
           </button>
         </div>
         
@@ -4301,47 +4301,44 @@ function showAnnouncementsModal() {
           ])}
         </div>
       </div>
-      <div class="overflow-y-auto max-h-[calc(85vh-80px)]">
-        <div class="p-6 space-y-5">
+      <div class="overflow-y-auto max-h-[calc(85vh-140px)] bg-gray-50">
+        <div class="p-4 space-y-3">
           ${state.announcements.map((a, index) => `
-            <div class="bg-white rounded-xl p-5 border-l-4 ${
+            <div class="bg-white rounded-lg p-4 border-l-4 ${
               index === 0 ? 'border-red-500' : 
               index === 1 ? 'border-orange-500' : 
               index === 2 ? 'border-yellow-500' : 
-              'border-purple-500'
-            } shadow-sm hover:shadow-md transition-shadow">
-              <div class="flex items-start justify-between mb-3">
-                <h3 class="font-bold text-xl text-gray-900 flex items-center gap-2">
-                  ${index < 3 ? '<span class="text-2xl">🔥</span>' : '<span class="text-xl">📢</span>'}
+              'border-gray-300'
+            } shadow-sm hover:shadow transition-shadow">
+              <div class="flex items-start justify-between mb-2">
+                <h3 class="font-semibold text-sm text-gray-900">
                   ${a.title}
                 </h3>
-                <span class="text-xs font-semibold px-3 py-1 rounded-full ${
-                  index === 0 ? 'bg-red-100 text-red-700' : 
-                  index === 1 ? 'bg-orange-100 text-orange-700' : 
-                  index === 2 ? 'bg-yellow-100 text-yellow-700' : 
-                  'bg-purple-100 text-purple-700'
+                <span class="text-xs px-2 py-0.5 rounded ${
+                  a.genre === 'feature' ? 'bg-blue-100 text-blue-700' : 
+                  a.genre === 'maintenance' ? 'bg-orange-100 text-orange-700' : 
+                  a.genre === 'event' ? 'bg-green-100 text-green-700' : 
+                  a.genre === 'campaign' ? 'bg-pink-100 text-pink-700' : 
+                  'bg-gray-100 text-gray-700'
                 }">
-                  重要度 ${a.priority}
+                  ${a.genre === 'feature' ? '新機能' : 
+                    a.genre === 'maintenance' ? 'メンテナンス' : 
+                    a.genre === 'event' ? 'イベント' : 
+                    a.genre === 'campaign' ? 'キャンペーン' : '一般'}
                 </span>
               </div>
-              <p class="text-gray-700 text-base leading-relaxed mb-3">${a.content}</p>
-              <div class="flex items-center justify-between text-xs text-gray-500">
-                <span>
-                  <i class="fas fa-calendar mr-2"></i>
-                  ${new Date(a.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </span>
-                <span>
-                  <i class="fas fa-clock mr-2"></i>
-                  ${new Date(a.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
-                </span>
+              <p class="text-gray-600 text-xs leading-relaxed mb-2">${a.content}</p>
+              <div class="flex items-center text-xs text-gray-400">
+                <i class="fas fa-calendar mr-1"></i>
+                ${new Date(a.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' })}
               </div>
             </div>
           `).join('')}
         </div>
         ${state.announcements.length === 0 ? `
-          <div class="text-center py-16">
-            <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-            <p class="text-gray-500 text-lg">お知らせはありません</p>
+          <div class="text-center py-12">
+            <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+            <p class="text-gray-500 text-sm">お知らせはありません</p>
           </div>
         ` : ''}
       </div>
