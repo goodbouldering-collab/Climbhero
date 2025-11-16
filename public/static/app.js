@@ -395,9 +395,6 @@ function renderHomePage() {
         </div>
       </section>
       
-      <!-- Ad Banner: Hero Bottom -->
-      ${renderAdBanner('hero_bottom')}
-      
       ${state.announcements && state.announcements.length > 0 ? `
       <!-- Scrolling Announcement Banner -->
       <div class="bg-gradient-to-r from-purple-600 to-purple-800 text-white">
@@ -731,13 +728,6 @@ function renderHomePage() {
       </section>
       ` : ''}
 
-      <!-- Ad Banner: Blog Top -->
-      <div class="bg-gray-50 pt-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          ${renderAdBanner('blog_top')}
-        </div>
-      </div>
-      
       <!-- Blog Posts Section -->
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -819,6 +809,16 @@ function renderHomePage() {
       </section>
 
     </main>
+
+    <!-- Ad Banners Section -->
+    <section class="py-8 bg-gray-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="space-y-4">
+          ${renderAdBanner('hero_bottom')}
+          ${renderAdBanner('blog_top')}
+        </div>
+      </div>
+    </section>
 
     <!-- Footer -->
     ${renderFooter()}
