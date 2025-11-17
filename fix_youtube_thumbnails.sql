@@ -1,0 +1,11 @@
+-- Update YouTube thumbnails to use YouTube's own thumbnail service
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/urRVZ4SW7WU/hqdefault.jpg' WHERE id = 1;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/CJ9W3nLFLZM/hqdefault.jpg' WHERE id = 2;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/ZRTNHDd0gL8/hqdefault.jpg' WHERE id = 3;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/gah7dJ_0w7U/hqdefault.jpg' WHERE id = 4;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/x7y4uNDvSJE/hqdefault.jpg' WHERE id = 5;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/mUmLkdqEjH8/hqdefault.jpg' WHERE id = 6;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/QgXkd2kqKBA/hqdefault.jpg' WHERE id = 7;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/edfw9ip9sCQ/hqdefault.jpg' WHERE id = 8;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/9xSuw7vPRhg/hqdefault.jpg' WHERE id = 9;
+UPDATE videos SET thumbnail_url = 'https://i.ytimg.com/vi/N7xYR0mUZKo/hqdefault.jpg' WHERE id = 10;
