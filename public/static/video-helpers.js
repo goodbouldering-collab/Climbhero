@@ -17,8 +17,8 @@ function getVideoThumbnail(video) {
     case 'youtube_shorts':
       const youtubeId = extractYouTubeId(video.url);
       if (youtubeId) {
-        // Use maxresdefault for best quality, fallback to hqdefault
-        return `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`;
+        // Use hqdefault (always available) instead of maxresdefault (sometimes missing)
+        return `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`;
       }
       break;
       

@@ -955,7 +955,8 @@ function renderRankingCard(video, rank) {
     <div class="scroll-item">
       <div class="video-card-compact video-card-ranking">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${thumbnailUrl}" alt="${video.title}" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'">
+          <img src="${thumbnailUrl}" alt="${video.title}" 
+               onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 right-2 media-source-badge">
             <i class="${mediaIcon}"></i> ${mediaName}
@@ -1013,7 +1014,8 @@ function renderVideoCard(video) {
     <div class="scroll-item">
       <div class="video-card-compact">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${thumbnailUrl}" alt="${video.title}" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'">
+          <img src="${thumbnailUrl}" alt="${video.title}" 
+               onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 left-2 media-source-badge">
             <i class="${mediaIcon}"></i> ${mediaName}
@@ -1074,7 +1076,8 @@ function renderVideoCardWide(video) {
     <div class="scroll-item-wide">
       <div class="video-card-compact">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${thumbnailUrl}" alt="${video.title}" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'">
+          <img src="${thumbnailUrl}" alt="${video.title}" 
+               onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 left-2 media-source-badge">
             <i class="${mediaIcon}"></i> ${mediaName}
