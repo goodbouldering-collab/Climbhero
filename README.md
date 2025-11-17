@@ -15,11 +15,27 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://project-02ceb497.pages.dev 🎯 NEW
+- **本番環境**: https://0de760e3.project-02ceb497.pages.dev ✅ **データ投入済み**
+- **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
 - **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
 - **AI Plugin**: https://project-02ceb497.pages.dev/.well-known/ai-plugin.json
 - **LLMO**: https://project-02ceb497.pages.dev/llmo.txt
+
+### 本番環境の確認
+
+```bash
+# 動画データ確認（25本）
+curl "https://0de760e3.project-02ceb497.pages.dev/api/videos?limit=3&lang=ja"
+
+# ブログデータ確認（5本）
+curl "https://0de760e3.project-02ceb497.pages.dev/api/blog?lang=ja"
+
+# 多言語対応確認
+curl "https://0de760e3.project-02ceb497.pages.dev/api/videos/1?lang=en"  # English
+curl "https://0de760e3.project-02ceb497.pages.dev/api/videos/1?lang=zh"  # Chinese
+curl "https://0de760e3.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korean
+```
 
 ## ✨ 完成済み機能
 
@@ -119,31 +135,33 @@
 
 **その他**: likes, favorites, comments テーブル
 
-## 📊 サンプルデータ
+## 📊 本番環境データ（Production Database）
 
-### 動画: 15本
-1. 小川山 - V15ボルダリング完登 (12,500視聴, 890いいね)
-2. IFSC World Cup 2025 決勝 (28,920視聴, 1,342いいね)
-3. ボルダリング初心者講座 (13,450視聴, 756いいね)
-4. 日本選手権2025 女子決勝 (15,670視聴, 834いいね)
-5. 御岳エリア - V13課題初登 (9,340視聴, 498いいね)
-6. 東京最新ジム紹介 (8,120視聴, 387いいね)
-7. 瑞牆山「十一面観音」挑戦 (11,200視聴, 623いいね)
-8. リードクライミング講座 (7,890視聴, 412いいね)
-9. 世界最強クライマーVS V16 (45,000視聴, 2,340いいね)
-10. オリンピック金メダリスト練習風景 (32,000視聴, 1,890いいね)
-11. ボルダリングジム開設マニュアル (5,430視聴, 276いいね)
-12. 城ヶ崎海岸シーサイドクライミング (6,780視聴, 345いいね)
-13. アジアユース選手権2025 (4,230視聴, 189いいね)
-14. トレーニング完全ガイド (9,870視聴, 567いいね)
-15. グッぼるジム完全ガイド (3,290視聴, 198いいね)
+### ✅ データ投入完了 (2025-11-17)
 
-### ブログ: 5本
-- 新規パートナージム10社加入（全国200箇所以上）
-- 第1回動画コンテスト開催（賞金総額100万円）
-- 安全な撮影ガイドライン公開
-- プレミアム会員限定AIグレード判定
-- 投稿動画数10,000本突破
+**動画**: 25本（全4言語翻訳対応）
+- **YouTube**: 10本（Alex Honnold, Magnus Midtbø, Adam Ondra等のプロクライマー動画）
+- **Instagram**: 5本（クライミングジム、コンペ、アウトドア等のリール）
+- **TikTok**: 5本（ボルダリング、トレーニング、テクニック等）
+- **Vimeo**: 5本（ドキュメンタリー、アウトドアクライミング等）
+
+**ブログ**: 5本（完全4言語対応: 日/英/中/韓）
+1. クライミングジム10施設と新規提携！全国200箇所以上で動画撮影が可能に
+2. 第1回クライミング動画コンテスト開催！賞金総額$10,000
+3. クライマー向け安全な撮影ガイドラインを公開
+4. プレミアム会員限定：AI自動グレード検出機能をリリース
+5. ClimbHero、動画投稿数10,000本を突破！
+
+**お知らせ**: 4件（完全4言語対応）
+- 🎉 新機能リリース
+- 🏆 コンテスト開催
+- 📍 提携ジム拡大
+- 🔔 コミュニティマイルストーン
+
+**ユーザー**: 3名
+- admin@climbhero.com (管理者)
+- demo@example.com (デモユーザー)
+- premium@example.com (プレミアム会員)
 
 ## 🎨 UIデザイン特徴
 
@@ -421,11 +439,18 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17
-**プロジェクト状態**: ✅ 本番稼働中（Cloudflare Pages）
-**本番URL**: https://project-02ceb497.pages.dev
+**最終更新日**: 2025-11-17 04:52 JST
+**プロジェクト状態**: ✅ **本番稼働中（完全データ投入済み）**
+**本番URL**: https://0de760e3.project-02ceb497.pages.dev ⭐ 最新デプロイ
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
+
+### 本番環境データ統計
+- **動画**: 25本（YouTube 10本、Instagram 5本、TikTok 5本、Vimeo 5本）
+- **ブログ**: 5本（全4言語完全翻訳済み）
+- **お知らせ**: 4件（全4言語対応）
+- **ユーザー**: 3名（admin、demo、premium）
+- **多言語対応**: 日本語・英語・中国語・韓国語（ja/en/zh/ko）
 
 ## 🚀 クイックスタート（開発環境）
 
