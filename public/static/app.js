@@ -941,6 +941,7 @@ function renderRankingCard(video, rank) {
   const mediaIcon = getMediaIcon(mediaSource);
   const mediaName = getMediaName(mediaSource);
   const isLiked = video.user_liked || false;
+  const thumbnailUrl = getVideoThumbnail(video);
   
   // Rank badge position
   let rankBadge = '';
@@ -954,7 +955,7 @@ function renderRankingCard(video, rank) {
     <div class="scroll-item">
       <div class="video-card-compact video-card-ranking">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${video.thumbnail_url}" alt="${video.title}">
+          <img src="${thumbnailUrl}" alt="${video.title}" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 right-2 media-source-badge">
             <i class="${mediaIcon}"></i> ${mediaName}
@@ -1006,12 +1007,13 @@ function renderVideoCard(video) {
   const mediaName = getMediaName(mediaSource);
   const isLiked = video.user_liked || false;
   const isFavorited = video.user_favorited || false;
+  const thumbnailUrl = getVideoThumbnail(video);
   
   return `
     <div class="scroll-item">
       <div class="video-card-compact">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${video.thumbnail_url}" alt="${video.title}">
+          <img src="${thumbnailUrl}" alt="${video.title}" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 left-2 media-source-badge">
             <i class="${mediaIcon}"></i> ${mediaName}
@@ -1066,12 +1068,13 @@ function renderVideoCardWide(video) {
   const mediaName = getMediaName(mediaSource);
   const isLiked = video.user_liked || false;
   const isFavorited = video.user_favorited || false;
+  const thumbnailUrl = getVideoThumbnail(video);
   
   return `
     <div class="scroll-item-wide">
       <div class="video-card-compact">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${video.thumbnail_url}" alt="${video.title}">
+          <img src="${thumbnailUrl}" alt="${video.title}" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 left-2 media-source-badge">
             <i class="${mediaIcon}"></i> ${mediaName}
@@ -2094,7 +2097,8 @@ async function handlePasswordReset(event) {
 // ============ Video Actions ============
 async function showVideoDetail(videoId) {
   try {
-    const response = await axios.get(`/api/videos/${videoId}`);
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/videos/${videoId}?lang=${lang}`);
     const video = response.data;
     
     const modal = document.getElementById('video-modal');
@@ -2108,18 +2112,7 @@ async function showVideoDetail(videoId) {
         </div>
         
         <div class="aspect-video bg-gray-900 rounded-lg mb-4">
-          ${video.media_source === 'tiktok' || video.media_source === 'instagram' || video.media_source === 'vimeo' 
-            ? `<div class="flex flex-col items-center justify-center h-full text-white space-y-4">
-                <i class="${getMediaIcon(video.media_source)} text-6xl mb-4"></i>
-                <p class="text-lg font-semibold">${getMediaName(video.media_source)}で視聴</p>
-                <a href="${video.url}" target="_blank" rel="noopener noreferrer" 
-                   class="btn btn-primary px-8 py-3 text-lg">
-                  <i class="fas fa-external-link-alt mr-2"></i>
-                  ${getMediaName(video.media_source)}で開く
-                </a>
-                <p class="text-sm text-gray-400">※ この動画は外部サイトで再生されます</p>
-              </div>`
-            : renderVideoEmbed(video)}
+          ${renderEnhancedVideoEmbed(video)}
         </div>
         
         <div class="flex items-center justify-between mb-4">
