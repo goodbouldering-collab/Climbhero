@@ -206,6 +206,33 @@ function extractYouTubeId(url) {
 function renderEnhancedVideoEmbed(video) {
   // Auto-detect media source from URL if not provided
   const mediaSource = video.media_source || detectMediaSource(video.url);
+  
+  // TikTok and Instagram: Show thumbnail with play button (external link)
+  if (mediaSource === 'tiktok' || mediaSource === 'instagram') {
+    const thumbnailUrl = getVideoThumbnail(video);
+    return `
+      <div class="relative w-full h-full flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
+        <img src="${thumbnailUrl}" 
+             alt="${video.title}" 
+             class="absolute inset-0 w-full h-full object-cover"
+             onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=600&fit=crop&q=80'">
+        <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center space-y-4 z-10">
+          <div class="w-20 h-20 rounded-full bg-white bg-opacity-90 flex items-center justify-center mb-4 hover:bg-opacity-100 transition-all transform hover:scale-110">
+            <i class="fas fa-play text-4xl text-gray-800 ml-1"></i>
+          </div>
+          <p class="text-white text-lg font-semibold">${getMediaName(mediaSource)}で視聴</p>
+          <a href="${video.url}" target="_blank" rel="noopener noreferrer" 
+             class="btn btn-primary px-8 py-3 text-base hover:scale-105 transform transition-all shadow-lg">
+            <i class="${getMediaIcon(mediaSource)} mr-2"></i>
+            ${getMediaName(mediaSource)}で開く
+          </a>
+          <p class="text-sm text-gray-300">※ 外部サイトで再生されます</p>
+        </div>
+      </div>
+    `;
+  }
+  
+  // YouTube and Vimeo: iframe embed
   const embedUrl = getVideoEmbedUrl(video);
   
   if (!embedUrl) {
@@ -224,7 +251,7 @@ function renderEnhancedVideoEmbed(video) {
     `;
   }
   
-  // Common iframe attributes
+  // Common iframe attributes for YouTube and Vimeo
   let iframeAttrs = `
     class="w-full h-full rounded-lg"
     frameborder="0"
@@ -242,18 +269,6 @@ function renderEnhancedVideoEmbed(video) {
     // Vimeo: Standard embed
     iframeAttrs += `
       allow="autoplay; fullscreen; picture-in-picture"
-    `;
-  } else if (mediaSource === 'tiktok') {
-    // TikTok: Vertical video (9:16) - center with max-width
-    iframeAttrs += `
-      allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      style="max-width: 325px; height: 100%; margin: 0 auto; border: none;"
-    `;
-  } else if (mediaSource === 'instagram') {
-    // Instagram: Vertical video (9:16) - center with max-width
-    iframeAttrs += `
-      scrolling="no"
-      style="max-width: 328px; height: 100%; margin: 0 auto; border: none;"
     `;
   }
   
