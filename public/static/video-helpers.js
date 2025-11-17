@@ -177,7 +177,32 @@ function extractYouTubeId(url) {
 function renderEnhancedVideoEmbed(video) {
   const mediaSource = video.media_source || 'youtube';
   
-  // Check if video can be embedded
+  // TikTok and Instagram: Show thumbnail with play button (external link)
+  if (mediaSource === 'tiktok' || mediaSource === 'instagram') {
+    const thumbnailUrl = getVideoThumbnail(video);
+    return `
+      <div class="relative w-full h-full flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
+        <img src="${thumbnailUrl}" 
+             alt="${video.title}" 
+             class="absolute inset-0 w-full h-full object-cover"
+             onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=600&fit=crop&q=80'">
+        <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center space-y-4 z-10">
+          <div class="w-20 h-20 rounded-full bg-white bg-opacity-90 flex items-center justify-center mb-4 hover:bg-opacity-100 transition-all transform hover:scale-110">
+            <i class="fas fa-play text-4xl text-gray-800 ml-1"></i>
+          </div>
+          <p class="text-white text-lg font-semibold">${getMediaName(mediaSource)}で視聴</p>
+          <a href="${video.url}" target="_blank" rel="noopener noreferrer" 
+             class="btn btn-primary px-8 py-3 text-base hover:scale-105 transform transition-all shadow-lg">
+            <i class="${getMediaIcon(mediaSource)} mr-2"></i>
+            ${getMediaName(mediaSource)}で開く
+          </a>
+          <p class="text-sm text-gray-300">※ 外部サイトで再生されます</p>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Check if video can be embedded (for other platforms)
   if (!canEmbedVideo(video)) {
     return `
       <div class="flex flex-col items-center justify-center h-full text-white space-y-4">
@@ -199,36 +224,21 @@ function renderEnhancedVideoEmbed(video) {
     return '<div class="flex items-center justify-center h-full text-white">動画を読み込めません</div>';
   }
   
-  // Special handling for different platforms
+  // YouTube and Vimeo: iframe embed
   let iframeAttrs = `
+    class="w-full h-full rounded-lg"
     frameborder="0"
     allowfullscreen
   `;
   
   if (mediaSource === 'youtube' || mediaSource === 'youtube_shorts') {
     iframeAttrs += `
-      class="w-full h-full rounded-lg"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       referrerpolicy="strict-origin-when-cross-origin"
     `;
   } else if (mediaSource === 'vimeo') {
     iframeAttrs += `
-      class="w-full h-full rounded-lg"
       allow="autoplay; fullscreen; picture-in-picture"
-    `;
-  } else if (mediaSource === 'tiktok') {
-    // TikTok: Vertical video, use object-fit to contain within container
-    iframeAttrs += `
-      class="w-full h-full rounded-lg"
-      allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      style="width: 100%; height: 100%; border: none; object-fit: contain;"
-    `;
-  } else if (mediaSource === 'instagram') {
-    // Instagram Reels: Vertical video, centered and contained
-    iframeAttrs += `
-      class="w-full h-full rounded-lg"
-      scrolling="no"
-      style="width: 100%; height: 100%; border: none; object-fit: contain;"
     `;
   }
   
