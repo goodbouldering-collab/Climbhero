@@ -471,9 +471,9 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 06:35 JST
+**最終更新日**: 2025-11-17 06:50 JST
 **プロジェクト状態**: ✅ **本番稼働中（完全最適化版）**
-**本番URL**: https://bec0dd19.project-02ceb497.pages.dev ⭐ 最新デプロイ（ランキング + モーダル最適化）
+**本番URL**: https://fbf2c546.project-02ceb497.pages.dev ⭐ 最新デプロイ（モーダル統一化）
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
 
@@ -582,15 +582,19 @@ pm2 start ecosystem.config.cjs
   - 非YouTubeプラットフォーム優先表示
   - スコア降順 + ランダム化で多様性確保
   - ランキング内でもプラットフォームの偏りを解消
-- ✅ **動画モーダル表示最適化** 🆕:
-  - **縦長動画対応**（TikTok、Instagram）:
-    - 固定高さ600px、幅340pxで中央配置
-    - モーダル幅を`max-w-xl`に縮小
-    - `object-fit: contain`で最適表示
-  - **横長動画対応**（YouTube、Vimeo）:
-    - 16:9アスペクト比維持（`aspect-video`）
-    - モーダル幅`max-w-4xl`で広々表示
-  - プラットフォームごとに最適化されたiframe属性
+- ✅ **動画モーダル表示の統一** 🆕:
+  - **全プラットフォームで統一サイズ**:
+    - モーダル幅: `max-w-4xl`（全プラットフォーム共通）
+    - アスペクト比: 16:9（`aspect-video`）
+  - **TikTok / Instagram**:
+    - サムネイル画像 + 中央配置の大きな再生ボタン
+    - ホバーエフェクト（拡大アニメーション）
+    - 外部リンクで新しいタブで開く
+    - YouTubeやVimeoと同じモーダルサイズで統一感
+  - **YouTube / Vimeo**:
+    - iframe埋め込み再生（従来通り）
+    - モーダル内で直接再生可能
+  - すべてのプラットフォームで一貫したUX
 - ✅ **SQLソート戦略**:
   ```sql
   ORDER BY 
