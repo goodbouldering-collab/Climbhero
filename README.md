@@ -61,6 +61,10 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
   - Vimeo: 高品質フォールバック画像、Vimeo Player統合
   - プラットフォーム別バッジ表示（アイコン + ブランドカラー）
   - エラーハンドリング（onerror画像フォールバック）
+- ✅ **スマートビデオ順序ランダム化** 🎲 NEW
+  - YouTube以外のプラットフォーム（Instagram、TikTok、Vimeo）を優先表示
+  - 各リクエストごとにランダムな順序で配置
+  - 多様なコンテンツを先頭に表示して視覚的興味を向上
 - ✅ **横カルーセルUI** - ランキング、動画、ブログの全セクションに実装
 - ✅ **注目の動画セクション** - いいね増加率が高い動画を上位表示 🔥
 - ✅ **Instagramギャラリー** - Instagram Reels専用の表示エリア 📸
@@ -271,16 +275,21 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
 - `GET /api/auth/me` - 現在のユーザー情報取得
 
 ### 動画API
-- `GET /api/videos` - 動画一覧取得
-  - Query: `?page=1&limit=20&category=bouldering&search=keyword`
+- `GET /api/videos` - 動画一覧取得 🎲 **ランダム順序対応**
+  - Query: `?page=1&limit=20&category=bouldering&search=keyword&lang=ja`
+  - **ソート戦略**: Instagram/TikTok/Vimeoを優先し、YouTube動画を後に配置
+  - 各優先度グループ内でRANDOM()によるランダムソート
+  - 毎回異なる順序で多様なコンテンツを表示
 - `GET /api/videos/:id` - 動画詳細取得
 - `GET /api/videos/trending` - 注目の動画取得（増加率順） 🔥 NEW
-  - Query: `?limit=10`
+  - Query: `?limit=10&lang=ja`
   - いいね増加率で計算: (recent_24h - previous_24h) / previous_24h * 100
   - previous=0の場合は優先順位を最高に設定 (recent * 1000)
+  - **ランダムソート**: 非YouTubeプラットフォーム優先でランダム配置
 - `GET /api/videos/instagram` - Instagram動画一覧取得 📸 NEW
-  - Query: `?limit=10`
+  - Query: `?limit=10&lang=ja`
   - media_source='instagram'でフィルタリング
+  - **ランダムソート**: 毎回異なる順序で表示
 - `POST /api/videos` - 動画投稿（認証必須）
 - `POST /api/videos/:id/like` - いいね/いいね解除
 - `POST /api/videos/:id/favorite` - お気に入り追加/削除
@@ -460,9 +469,9 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 05:10 JST
-**プロジェクト状態**: ✅ **本番稼働中（マルチプラットフォーム完全対応）**
-**本番URL**: https://fb4d2735.project-02ceb497.pages.dev ⭐ 最新デプロイ
+**最終更新日**: 2025-11-17 06:15 JST
+**プロジェクト状態**: ✅ **本番稼働中（マルチプラットフォーム完全対応 + スマートランダム化）**
+**本番URL**: https://be86ed29.project-02ceb497.pages.dev ⭐ 最新デプロイ（ビデオ順序ランダム化対応）
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
 
@@ -555,7 +564,35 @@ pm2 start ecosystem.config.cjs
 
 ---
 
-## 🎉 最新アップデート (2025-11-16)
+## 🎉 最新アップデート (2025-11-17)
+
+### 🎲 スマートビデオ順序ランダム化機能実装
+- ✅ **プラットフォーム優先度ソート**:
+  - Instagram/TikTok/Vimeoを優先グループ（priority=0）に設定
+  - YouTubeを後続グループ（priority=1）に設定
+  - 各グループ内でRANDOM()によるランダムソート
+- ✅ **適用エンドポイント**:
+  - `GET /api/videos`: 全動画一覧（ページネーション対応）
+  - `GET /api/videos/trending`: 注目の動画（いいね増加率順 + ランダム化）
+  - `GET /api/videos/instagram`: Instagram動画専用（ランダム化）
+- ✅ **SQLソート戦略**:
+  ```sql
+  ORDER BY 
+    CASE 
+      WHEN media_source IN ('instagram', 'tiktok', 'vimeo') THEN 0 
+      ELSE 1 
+    END ASC,
+    RANDOM()
+  ```
+- ✅ **ユーザー体験向上**:
+  - 毎回異なる動画順序で新鮮な閲覧体験
+  - 多様なプラットフォームのコンテンツを先頭に表示
+  - YouTube以外のプラットフォームの視認性向上
+- ✅ **本番環境テスト完了**: https://be86ed29.project-02ceb497.pages.dev
+
+---
+
+## 🎉 過去のアップデート (2025-11-16)
 
 ### 🎨 UI/UX大幅改善
 - ✅ **お知らせモーダルデザイン統一**: Purple-Pink グラデーションで全体デザインと統一
