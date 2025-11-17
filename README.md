@@ -17,7 +17,7 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://fb4d2735.project-02ceb497.pages.dev ⭐ **最新デプロイ（マルチプラットフォーム対応）**
+- **本番環境**: https://fe966ae4.project-02ceb497.pages.dev ⭐ **最新デプロイ（TikTok/Instagram最適化）**
 - **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
 - **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
@@ -85,7 +85,7 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
 - ✅ **コンパクトカード** - サムネイル220px、情報密度最適化
 - ✅ **レスポンシブデザイン** - PC/タブレット/モバイル対応
 - ✅ **ヒーローセクション** - グラデーション背景 + CTA
-- ✅ **動画詳細モーダル** - YouTube/Instagram/TikTok/Vimeo埋め込みプレイヤー統合 📱 Instagram対応
+- ✅ **動画詳細モーダル** - YouTube/Vimeo: iframe埋め込み、TikTok/Instagram: サムネイル+外部リンク 📱
 - ✅ **いいね・お気に入り機能**
 - ✅ **ユーザー認証** - ログイン/登録
 - ✅ **動画投稿フォーム** - モーダル形式
@@ -471,9 +471,9 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 07:05 JST
-**プロジェクト状態**: ✅ **本番稼働中（完全最適化版）**
-**本番URL**: https://4d11eca4.project-02ceb497.pages.dev ⭐ 最新デプロイ（全プラットフォームiframe対応）
+**最終更新日**: 2025-11-17 14:30 JST
+**プロジェクト状態**: ✅ **本番稼働中（TikTok/Instagram最適化版）**
+**本番URL**: https://fe966ae4.project-02ceb497.pages.dev ⭐ 最新デプロイ（モーダル表示改善）
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
 
@@ -489,10 +489,13 @@ MIT License
 - **多言語対応**: 日本語・英語・中国語・韓国語（ja/en/zh/ko）
 
 ### 新機能ハイライト 🎥
-- **video-helpers.js**: プラットフォーム固有のサムネイル・埋め込みロジック
+- **video-helpers.js**: プラットフォーム固有のサムネイル・表示ロジック
 - **スマートサムネイル**: YouTubeは自動生成、その他はUnsplash高品質画像
-- **最適化されたiframe埋め込み**: 各プラットフォームに合わせた属性設定
+- **プラットフォーム別最適表示**: 
+  - YouTube/Vimeo: iframe埋め込みで直接再生
+  - TikTok/Instagram: サムネイル+ボタンで外部リンク
 - **エラーハンドリング**: onerror属性で自動フォールバック
+- **URL自動検出**: URLから自動的にプラットフォーム判定
 
 ## 🚀 クイックスタート（開発環境）
 
@@ -568,22 +571,20 @@ pm2 start ecosystem.config.cjs
 
 ## 🎉 最新アップデート (2025-11-17)
 
-### 🎬 全プラットフォームiframe埋め込み + URL自動検出 🆕
+### 🎬 モーダル表示の最適化 + URL自動検出 🆕
 
-**全プラットフォームで直接再生可能に！**
-- ✅ **iframe埋め込み統一**:
-  - YouTube、Vimeo、TikTok、Instagramすべてiframe埋め込みに対応
-  - モーダル内のネイティブ再生ボタンをクリックして直接視聴
-  - 外部リンクボタン不要、シームレスな再生体験
-- ✅ **縦長動画の最適化**:
-  - TikTok: max-width 325px、中央配置
-  - Instagram: max-width 328px、中央配置
-  - 16:9モーダル内で縦長iframeを適切に配置
+**プラットフォームごとに最適な表示方法を実装！**
+- ✅ **統一モーダルサイズ**: 全プラットフォーム共通（max-w-4xl、aspect-video 16:9）
+- ✅ **YouTube / Vimeo**: iframe埋め込みで直接再生可能
+- ✅ **TikTok / Instagram**: サムネイル表示 + 再生ボタン + 外部リンク
+  - iframe埋め込みの動作不安定性を考慮し、サムネイル+ボタン方式に変更
+  - 「〇〇で視聴」メッセージと外部リンクボタンで明確な誘導
+  - ユーザー体験の安定性を優先
 - ✅ **URL自動検出機能** 🤖:
-  - `detectMediaSource(url)`関数を新規実装
+  - `detectMediaSource(url)`関数でURLから自動的にプラットフォーム判定
   - URLから自動的にプラットフォームを判定（YouTube/Vimeo/TikTok/Instagram）
+  - YouTube Shortsも自動検出
   - 投稿時にメディアソースを指定不要
-  - URLを入力するだけで適切な埋め込み形式を自動適用
 - ✅ **Instagram拡張対応**:
   - Reels（`/reel/`）だけでなく通常投稿（`/p/`）もサポート
   - Instagram埋め込みの互換性向上
@@ -602,22 +603,23 @@ pm2 start ecosystem.config.cjs
   - 非YouTubeプラットフォーム優先表示
   - スコア降順 + ランダム化で多様性確保
   - ランキング内でもプラットフォームの偏りを解消
-- ✅ **全プラットフォームでiframe埋め込み再生** 🆕:
+- ✅ **プラットフォーム別最適化表示** 🆕:
   - **統一モーダルサイズ**:
     - モーダル幅: `max-w-4xl`（全プラットフォーム共通）
     - アスペクト比: 16:9（`aspect-video`）
   - **YouTube / Vimeo**:
-    - フル幅iframe埋め込み（従来通り）
+    - フル幅iframe埋め込み
     - モーダル内で直接再生可能
   - **TikTok / Instagram**:
-    - 縦長iframe（TikTok: 325px、Instagram: 328px）を中央配置
-    - 各プラットフォームのネイティブ再生ボタン
-    - モーダル内でクリックして直接再生
-    - 外部ボタン不要、標準的な再生体験
+    - サムネイル表示 + 大きな再生ボタン
+    - プラットフォーム名表示（「TikTokで視聴」「Instagramで視聴」）
+    - 外部リンクボタンで各プラットフォームへ誘導
+    - 「※ 外部サイトで再生されます」の注釈付き
+    - iframe埋め込みの不安定性を回避し、安定した表示を実現
   - **URLから自動検出**:
     - `detectMediaSource()`関数でURLから自動的にプラットフォーム判定
     - YouTube、Vimeo、TikTok、Instagramを自動識別
-    - 投稿URLを入力するだけで適切な埋め込み形式を適用
+    - 投稿URLを入力するだけで適切な表示形式を適用
 - ✅ **SQLソート戦略**:
   ```sql
   ORDER BY 
@@ -633,7 +635,7 @@ pm2 start ecosystem.config.cjs
   - 多様なプラットフォームのコンテンツを先頭に表示
   - YouTube以外のプラットフォームの視認性向上
   - 縦長動画が画面いっぱいに広がる問題を解決
-- ✅ **本番環境テスト完了**: https://bec0dd19.project-02ceb497.pages.dev
+- ✅ **本番環境テスト完了**: https://fe966ae4.project-02ceb497.pages.dev
 
 ---
 
