@@ -15,11 +15,11 @@
 
 ## 🌐 公開URL
 
-- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
-- **OpenAPI仕様**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai/openapi.json
-- **AI Plugin**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai/.well-known/ai-plugin.json
-- **LLMO**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai/llmo.txt
-- **GitHub**: https://github.com/username/webapp (要設定)
+- **本番環境**: https://project-02ceb497.pages.dev 🎯 NEW
+- **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
+- **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
+- **AI Plugin**: https://project-02ceb497.pages.dev/.well-known/ai-plugin.json
+- **LLMO**: https://project-02ceb497.pages.dev/llmo.txt
 
 ## ✨ 完成済み機能
 
@@ -312,25 +312,38 @@ pm2 restart webapp
 
 ## 🌍 デプロイ
 
-### Cloudflare Pagesへのデプロイ
+### GitHub + Cloudflare Pages 自動デプロイ（推奨）🎯 NEW
 
-**⚠️ 重要**: サンドボックス環境からの直接デプロイはIP制限により現在利用不可
+**✅ 自動CI/CD**: GitHubへのプッシュで自動デプロイ
 
-**推奨デプロイ方法**:
+#### セットアップ手順
 
-#### 方法1: Cloudflare Dashboard（推奨）
-1. GitHubにコードをプッシュ
-2. Cloudflare Dashboard → Pages → "Connect to Git"
-3. リポジトリを選択してデプロイ
+1. **GitHubリポジトリ**: `https://github.com/goodbouldering-collab/Climbhero`
 
-詳細: [CLOUDFLARE_DEPLOYMENT.md](./CLOUDFLARE_DEPLOYMENT.md)
+2. **GitHub Secretsの設定** (Settings → Secrets and variables → Actions):
+   ```
+   CLOUDFLARE_API_TOKEN: Cloudflare API トークン
+   CLOUDFLARE_ACCOUNT_ID: CloudflareアカウントID
+   ```
 
-#### 方法2: ローカルマシンから
+3. **自動デプロイフロー**:
+   - `main`ブランチへのプッシュ → 自動ビルド＆デプロイ
+   - Pull Request → プレビュー環境作成
+   - デプロイ状況はGitHub Actionsで確認
+
+4. **デプロイURL**: `https://project-02ceb497.pages.dev`
+
+#### 手動デプロイ（ローカルマシンから）
+
 ```bash
-# ローカル環境でクローン
-git clone https://github.com/YOUR-USERNAME/webapp.git
-cd webapp
+# リポジトリをクローン
+git clone https://github.com/goodbouldering-collab/Climbhero.git
+cd Climbhero
+
+# 依存関係インストール
 npm install
+
+# ビルド
 npm run build
 
 # Cloudflare認証
@@ -340,11 +353,25 @@ npx wrangler login
 npm run deploy:prod
 ```
 
+#### データベースマイグレーション
+
+**手動実行（本番環境）**:
+```bash
+npm run db:migrate:prod
+```
+
+**GitHub Actionsから実行**:
+1. GitHub → Actions → "Database Migrations"
+2. "Run workflow" → Environment: `production`
+3. マイグレーション実行
+
 #### 設定情報
 - **プロジェクト名**: `project-02ceb497`
+- **GitHubリポジトリ**: `goodbouldering-collab/Climbhero`
 - **ビルドコマンド**: `npm run build`
 - **出力ディレクトリ**: `dist`
-- **フレームワーク**: None
+- **Node.js バージョン**: 18.x
+- **自動デプロイ**: ✅ GitHub Actions
 
 ## 📦 技術スタック
 
