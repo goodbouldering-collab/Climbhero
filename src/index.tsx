@@ -310,7 +310,18 @@ app.get('/api/videos', async (c) => {
       params.push(searchPattern, searchPattern)
     }
 
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    // Sort strategy: Non-YouTube platforms randomly mixed and prioritized at the top
+    // 1. Non-YouTube videos (Instagram, TikTok, Vimeo) get priority=0
+    // 2. YouTube videos get priority=1
+    // 3. Within each priority group, randomize order
+    // 4. Apply pagination after sorting
+    query += ` ORDER BY 
+      CASE 
+        WHEN media_source IN ('instagram', 'tiktok', 'vimeo') THEN 0 
+        ELSE 1 
+      END ASC,
+      RANDOM()
+      LIMIT ? OFFSET ?`
     const queryParams = [...params, limit, offset]
     const countParams = params
 
@@ -345,9 +356,16 @@ app.get('/api/videos/trending', async (c) => {
   const lang = c.req.query('lang') || 'ja'
   
   try {
-    // Query the trending_videos view
+    // Query the trending_videos view with prioritized non-YouTube platforms
     const { results: trendingVideos } = await env.DB.prepare(`
-      SELECT * FROM trending_videos LIMIT ?
+      SELECT * FROM trending_videos 
+      ORDER BY 
+        CASE 
+          WHEN media_source IN ('instagram', 'tiktok', 'vimeo') THEN 0 
+          ELSE 1 
+        END ASC,
+        RANDOM()
+      LIMIT ?
     `).bind(limit).all()
     
     // Localize video titles
@@ -396,7 +414,12 @@ app.get('/api/videos/top-liked', async (c) => {
     const { results: topVideos } = await env.DB.prepare(`
       SELECT * FROM videos 
       WHERE likes > 0${dateFilter}
-      ORDER BY likes DESC, views DESC
+      ORDER BY 
+        CASE 
+          WHEN media_source IN ('instagram', 'tiktok', 'vimeo') THEN 0 
+          ELSE 1 
+        END ASC,
+        likes DESC, views DESC
       LIMIT ?
     `).bind(limit).all()
     
@@ -426,7 +449,7 @@ app.get('/api/videos/instagram', async (c) => {
     const { results: instagramVideos } = await env.DB.prepare(`
       SELECT * FROM videos 
       WHERE media_source = 'instagram' 
-      ORDER BY created_at DESC 
+      ORDER BY RANDOM()
       LIMIT ?
     `).bind(limit).all()
     
