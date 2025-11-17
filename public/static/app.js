@@ -2877,32 +2877,6 @@ function renderMyPage() {
                 </div>
               </div>
             </div>
-            
-            <!-- Quick Actions Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div class="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4">
-                <h3 class="text-lg font-bold text-white flex items-center">
-                  <i class="fas fa-bolt mr-2"></i>
-                  クイックアクション
-                </h3>
-              </div>
-              <div class="p-6 space-y-3">
-                ${state.currentUser.is_admin ? `
-                  <button onclick="navigateTo('admin')" class="w-full btn py-3 text-left shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-                    <i class="fas fa-crown mr-3 text-yellow-300"></i>
-                    <span class="font-bold">👑 管理画面を開く</span>
-                  </button>
-                ` : ''}
-                <button onclick="navigateTo('home')" class="w-full btn btn-secondary py-3 text-left">
-                  <i class="fas fa-home mr-3 text-gray-600"></i>
-                  <span class="font-medium">ホームに戻る</span>
-                </button>
-                <button onclick="logout()" class="w-full btn btn-secondary py-3 text-left border-2 border-red-200 hover:border-red-400 hover:bg-red-50 transition">
-                  <i class="fas fa-sign-out-alt mr-3 text-red-600"></i>
-                  <span class="font-medium text-red-600">ログアウト</span>
-                </button>
-              </div>
-            </div>
           </div>
           
         </div>
@@ -2963,9 +2937,19 @@ function renderAdminPage() {
       </header>
 
       <main class="max-w-full mx-auto px-4 lg:px-6 py-6">
+        <!-- Admin Page Button (Top) -->
+        ${state.currentUser.is_admin ? `
+          <div class="mb-6">
+            <button onclick="navigateTo('admin')" class="w-full sm:w-auto px-8 py-4 text-left shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-xl" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+              <i class="fas fa-crown mr-3 text-yellow-300 text-xl"></i>
+              <span class="font-bold text-lg">👑 管理ページ</span>
+            </button>
+          </div>
+        ` : ''}
+        
         <!-- Page Title -->
         <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-800 mb-1">管理ダッシュボード</h1>
+          <h1 class="text-2xl font-bold text-gray-800 mb-1">管理ページ</h1>
           <p class="text-sm text-gray-600">ClimbHeroの運営管理システム</p>
         </div>
 
