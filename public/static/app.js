@@ -344,6 +344,11 @@ function renderHomePage() {
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3 text-base">
                 ${i18n.t('nav.login')}
               </button>
+              
+              <!-- Admin Quick Login Button -->
+              <button onclick="quickAdminLogin()" class="btn btn-sm px-3 text-base" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;" title="管理者としてログイン">
+                <i class="fas fa-crown text-yellow-300"></i>
+              </button>
             `}
           </div>
         </div>
@@ -1850,6 +1855,32 @@ async function handleAuth(event, type) {
     }
   } catch (error) {
     showToast(error.response?.data?.error || i18n.t('toast.auth_error'), 'error');
+  }
+}
+
+// Quick Admin Login (Development/Testing Only)
+async function quickAdminLogin() {
+  try {
+    // Admin credentials
+    const adminData = {
+      email: 'admin@climbhero.com',
+      password: 'admin123'
+    };
+    
+    await axios.post('/api/auth/login', adminData);
+    await checkAuth();
+    
+    // Redirect to admin page
+    renderApp();
+    showToast('👑 管理者としてログインしました', 'success');
+    
+    // Navigate to mypage after short delay
+    setTimeout(() => {
+      navigateTo('mypage');
+    }, 1000);
+  } catch (error) {
+    showToast('管理者ログインに失敗しました', 'error');
+    console.error('Quick admin login error:', error);
   }
 }
 
