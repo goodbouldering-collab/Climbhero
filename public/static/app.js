@@ -2756,6 +2756,17 @@ function renderMyPage() {
                 </h3>
               </div>
               <div class="p-6 space-y-4">
+                ${state.currentUser.is_admin ? `
+                  <div class="p-4 bg-gradient-to-r from-purple-600 to-pink-600 border-2 border-purple-400 rounded-lg shadow-lg">
+                    <p class="text-xs text-purple-100 mb-1">アカウント権限</p>
+                    <p class="text-xl font-bold text-white flex items-center">
+                      <i class="fas fa-crown text-yellow-300 mr-2"></i>
+                      👑 管理者アカウント
+                    </p>
+                    <p class="text-xs text-purple-100 mt-1">すべての管理機能にアクセスできます</p>
+                  </div>
+                ` : ''}
+                
                 <div class="flex items-center justify-between p-4 bg-gradient-to-r ${state.currentUser.membership_type === 'premium' ? 'from-purple-50 to-pink-50 border-purple-200' : 'from-gray-50 to-gray-100 border-gray-200'} border rounded-lg">
                   <div>
                     <p class="text-xs text-gray-600 mb-1">会員タイプ</p>
@@ -2797,16 +2808,16 @@ function renderMyPage() {
                 </h3>
               </div>
               <div class="p-6 space-y-3">
+                ${state.currentUser.is_admin ? `
+                  <button onclick="navigateTo('admin')" class="w-full btn py-3 text-left shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+                    <i class="fas fa-crown mr-3 text-yellow-300"></i>
+                    <span class="font-bold">👑 管理画面を開く</span>
+                  </button>
+                ` : ''}
                 <button onclick="navigateTo('home')" class="w-full btn btn-secondary py-3 text-left">
                   <i class="fas fa-home mr-3 text-gray-600"></i>
                   <span class="font-medium">ホームに戻る</span>
                 </button>
-                ${state.currentUser.is_admin ? `
-                  <button onclick="navigateTo('admin')" class="w-full btn py-3 text-left" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-                    <i class="fas fa-crown mr-3"></i>
-                    <span class="font-medium">管理画面を開く</span>
-                  </button>
-                ` : ''}
                 <button onclick="logout()" class="w-full btn btn-secondary py-3 text-left border-2 border-red-200 hover:border-red-400 hover:bg-red-50 transition">
                   <i class="fas fa-sign-out-alt mr-3 text-red-600"></i>
                   <span class="font-medium text-red-600">ログアウト</span>
