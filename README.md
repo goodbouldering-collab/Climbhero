@@ -421,9 +421,41 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-16
-**プロジェクト状態**: ✅ 本番稼働中
+**最終更新日**: 2025-11-17
+**プロジェクト状態**: ✅ 本番稼働中（Cloudflare Pages）
+**本番URL**: https://project-02ceb497.pages.dev
+**GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
+
+## 🚀 クイックスタート（開発環境）
+
+```bash
+# 1. リポジトリクローン
+git clone https://github.com/goodbouldering-collab/Climbhero.git
+cd Climbhero
+
+# 2. 依存関係インストール
+npm install
+
+# 3. ローカルデータベース初期化
+npm run db:migrate:local
+npm run db:seed
+
+# 4. ビルド
+npm run build
+
+# 5. 開発サーバー起動（PM2）
+pm2 start ecosystem.config.cjs
+
+# 6. ブラウザで確認
+# http://localhost:3000
+```
+
+## 📖 詳細ドキュメント
+
+- **デプロイガイド**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Cloudflare Pages + D1完全手順
+- **Cloudflare設定**: [CLOUDFLARE_DEPLOYMENT.md](./CLOUDFLARE_DEPLOYMENT.md) - 旧マニュアルデプロイ手順
+- **Genspark連携**: [GENSPARK_INTEGRATION.md](./GENSPARK_INTEGRATION.md) - AI連携API仕様
 
 ## 💡 推奨追加機能（実装検討中）
 
