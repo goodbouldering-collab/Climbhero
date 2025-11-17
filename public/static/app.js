@@ -2711,6 +2711,16 @@ function renderMyPage() {
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Admin Page Button (Top - Admin Only) -->
+        ${state.currentUser.is_admin ? `
+          <div class="mb-6">
+            <button onclick="navigateTo('admin')" class="w-full sm:w-auto px-8 py-4 text-left shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-xl" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+              <i class="fas fa-crown mr-3 text-yellow-300 text-xl"></i>
+              <span class="font-bold text-lg">👑 管理ページ</span>
+            </button>
+          </div>
+        ` : ''}
+        
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           <!-- Left Column: Profile Info -->
