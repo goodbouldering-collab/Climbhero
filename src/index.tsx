@@ -85,8 +85,8 @@ app.post('/api/auth/login', async (c) => {
   }
 
   try {
-    // Check for hardcoded admin credentials
-    if (email === 'admin' && password === 'admin123') {
+    // Check for hardcoded admin credentials (support both 'admin' and 'admin@climbhero.com')
+    if ((email === 'admin' || email === 'admin@climbhero.com') && password === 'admin123') {
       const sessionToken = generateSessionToken()
       
       // Set admin session cookie
@@ -109,7 +109,7 @@ app.post('/api/auth/login', async (c) => {
         success: true,
         user: {
           id: 0,
-          email: 'admin',
+          email: email === 'admin' ? 'admin' : 'admin@climbhero.com',
           username: 'Administrator',
           membership_type: 'admin',
           is_admin: true

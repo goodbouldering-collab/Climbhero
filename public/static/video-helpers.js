@@ -66,6 +66,44 @@ function detectMediaSource(url) {
 }
 
 /**
+ * Get app deep link URL for mobile platforms
+ */
+function getAppDeepLink(video) {
+  const mediaSource = video.media_source || detectMediaSource(video.url);
+  
+  switch (mediaSource) {
+    case 'tiktok':
+      // TikTok deep link format: tiktok://video/{video_id}
+      const tiktokId = video.url.match(/\/video\/(\d+)/)?.[1];
+      if (tiktokId) {
+        // Return custom protocol that will attempt app first, fallback to web
+        return `tiktok://video/${tiktokId}`;
+      }
+      break;
+      
+    case 'instagram':
+      // Instagram deep link format: instagram://media?id={media_id}
+      // For Reels: extract the shortcode
+      if (video.url.includes('/reel/')) {
+        const reelMatch = video.url.match(/\/reel\/([^\/\?]+)/);
+        if (reelMatch && reelMatch[1]) {
+          return `instagram://reel?id=${reelMatch[1]}`;
+        }
+      }
+      // For posts
+      if (video.url.includes('/p/')) {
+        const postMatch = video.url.match(/\/p\/([^\/\?]+)/);
+        if (postMatch && postMatch[1]) {
+          return `instagram://media?id=${postMatch[1]}`;
+        }
+      }
+      break;
+  }
+  
+  return null;
+}
+
+/**
  * Get proper embed URL for video modal
  */
 function getVideoEmbedUrl(video) {
@@ -207,9 +245,20 @@ function renderEnhancedVideoEmbed(video) {
   // Auto-detect media source from URL if not provided
   const mediaSource = video.media_source || detectMediaSource(video.url);
   
-  // TikTok and Instagram: Show thumbnail with play button (external link)
+  // TikTok and Instagram: Show thumbnail with play button (external link with deep link support)
   if (mediaSource === 'tiktok' || mediaSource === 'instagram') {
     const thumbnailUrl = getVideoThumbnail(video);
+    const deepLink = getAppDeepLink(video);
+    const linkUrl = deepLink || video.url; // Fallback to web URL if deep link not available
+    
+    // Mobile app opening strategy:
+    // - On mobile devices with app installed: Deep link opens app directly
+    // - On mobile without app: Browser prompts to install or opens web version
+    // - On desktop: Opens web version in new tab
+    const openVideoLink = deepLink 
+      ? `onclick="openInApp('${deepLink}', '${video.url}'); return false;"` 
+      : '';
+    
     return `
       <div class="relative w-full h-full flex items-center justify-center bg-gray-900 rounded-lg overflow-hidden">
         <img src="${thumbnailUrl}" 
@@ -221,12 +270,13 @@ function renderEnhancedVideoEmbed(video) {
             <i class="fas fa-play text-4xl text-gray-800 ml-1"></i>
           </div>
           <p class="text-white text-lg font-semibold">${getMediaName(mediaSource)}で視聴</p>
-          <a href="${video.url}" target="_blank" rel="noopener noreferrer" 
+          <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" 
+             ${openVideoLink}
              class="btn btn-primary px-8 py-3 text-base hover:scale-105 transform transition-all shadow-lg">
             <i class="${getMediaIcon(mediaSource)} mr-2"></i>
-            ${getMediaName(mediaSource)}で開く
+            ${deepLink ? `${getMediaName(mediaSource)}アプリで開く` : `${getMediaName(mediaSource)}で開く`}
           </a>
-          <p class="text-sm text-gray-300">※ 外部サイトで再生されます</p>
+          <p class="text-sm text-gray-300">※ ${deepLink ? 'アプリがインストールされている場合は直接開きます' : '外部サイトで再生されます'}</p>
         </div>
       </div>
     `;

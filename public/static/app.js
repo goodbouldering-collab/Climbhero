@@ -91,6 +91,54 @@ async function checkAuth() {
   }
 }
 
+// ============ Video Platform Deep Link Helper ============
+/**
+ * Open video in native app with fallback to web browser
+ * @param {string} deepLink - App-specific deep link URL (e.g., tiktok://video/123)
+ * @param {string} webUrl - Fallback web URL
+ */
+function openInApp(deepLink, webUrl) {
+  if (!deepLink) {
+    // No deep link available, open web URL directly
+    window.open(webUrl, '_blank');
+    return;
+  }
+  
+  // Detect if user is on mobile device
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  if (!isMobile) {
+    // On desktop, always open web URL
+    window.open(webUrl, '_blank');
+    return;
+  }
+  
+  // Mobile strategy: Try to open app, fallback to web after timeout
+  let appOpened = false;
+  
+  // Listen for visibility change (app opening hides the page)
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      appOpened = true;
+    }
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // Attempt to open in app
+  window.location.href = deepLink;
+  
+  // Fallback to web after 2 seconds if app didn't open
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    
+    if (!appOpened && !document.hidden) {
+      // App didn't open, fallback to web browser
+      window.open(webUrl, '_blank');
+    }
+  }, 2000);
+}
+
 // ============ Hero Slideshow ============
 function initHeroSlideshow() {
   setInterval(() => {
