@@ -3090,6 +3090,9 @@ function renderAdminPage() {
                 ブログ管理
               </h2>
               <div class="flex gap-2">
+                <button onclick="loadAdminBlogs()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-sync-alt mr-1"></i>一覧表示
+                </button>
                 <button onclick="showTagManagementModal()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors text-sm">
                   <i class="fas fa-tags mr-1"></i>ジャンル管理
                 </button>
@@ -3101,7 +3104,38 @@ function renderAdminPage() {
             <div class="p-4">
               <div id="admin-blog-list">
                 <div class="text-center py-8 text-gray-500">
-                  ${i18n.t('common.loading')}
+                  <p class="mb-4">「一覧表示」ボタンをクリックしてブログ記事を表示</p>
+                  <button onclick="loadAdminBlogs()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    <i class="fas fa-list mr-2"></i>ブログ一覧を表示
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Announcements Management Section -->
+          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+              <h2 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fas fa-bullhorn mr-2 text-blue-600"></i>
+                お知らせ管理
+              </h2>
+              <div class="flex gap-2">
+                <button onclick="loadAdminAnnouncements()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-sync-alt mr-1"></i>一覧表示
+                </button>
+                <button onclick="showAnnouncementModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-plus mr-1"></i>新規作成
+                </button>
+              </div>
+            </div>
+            <div class="p-4">
+              <div id="admin-announcements-list">
+                <div class="text-center py-8 text-gray-500">
+                  <p class="mb-4">「一覧表示」ボタンをクリックしてお知らせを表示</p>
+                  <button onclick="loadAdminAnnouncements()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    <i class="fas fa-list mr-2"></i>お知らせ一覧を表示
+                  </button>
                 </div>
               </div>
             </div>
@@ -3528,50 +3562,153 @@ async function deleteVideo(videoId) {
   }
 }
 
-// Load admin announcements
-async function loadAdminAnnouncements() {
+// Load admin blogs
+async function loadAdminBlogs() {
   try {
-    const response = await axios.get('/api/admin/announcements');
-    const announcements = response.data;
+    const response = await axios.get('/api/blog?lang=ja');
+    const blogs = response.data;
     
-    const tbody = document.getElementById('admin-announcements-table');
-    if (!tbody) return;
+    const container = document.getElementById('admin-blog-list');
+    if (!container) return;
     
-    if (announcements.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" style="text-align: center; padding: 20px;">
-            ${i18n.t('announcement.no_announcements')}
-          </td>
-        </tr>
+    if (blogs.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-gray-500">
+          <i class="fas fa-inbox text-4xl mb-3"></i>
+          <p>ブログ記事がありません</p>
+        </div>
       `;
       return;
     }
     
-    tbody.innerHTML = announcements.map(announcement => `
-      <tr>
-        <td>${announcement.id}</td>
-        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${announcement.title}</td>
-        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${announcement.content}</td>
-        <td>
-          <span class="badge ${announcement.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-            ${announcement.is_active ? i18n.t('admin.announcement_active') : i18n.t('admin.announcement_inactive')}
-          </span>
-        </td>
-        <td>
-          <div class="admin-actions">
-            <button onclick="editAnnouncement(${announcement.id})" class="btn-edit">
-              <i class="fas fa-edit"></i> ${i18n.t('common.edit')}
-            </button>
-            <button onclick="deleteAnnouncement(${announcement.id})" class="btn-delete">
-              <i class="fas fa-trash"></i> ${i18n.t('common.delete')}
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    container.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">タイトル</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ジャンル</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">公開日</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            ${blogs.map(blog => `
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm text-gray-900">${blog.id}</td>
+                <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">${blog.title || blog.title_ja}</td>
+                <td class="px-4 py-3 text-sm">
+                  <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                    ${blog.genre || 'general'}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-600">${new Date(blog.published_date).toLocaleDateString('ja-JP')}</td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button onclick="showBlogModal(${blog.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
+                      <i class="fas fa-edit mr-1"></i>編集
+                    </button>
+                    <button onclick="deleteBlog(${blog.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                      <i class="fas fa-trash mr-1"></i>削除
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (error) {
+    console.error('Failed to load admin blogs:', error);
+    const container = document.getElementById('admin-blog-list');
+    if (container) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-red-500">
+          <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+          <p>ブログ記事の読み込みに失敗しました</p>
+        </div>
+      `;
+    }
+  }
+}
+
+// Load admin announcements
+async function loadAdminAnnouncements() {
+  try {
+    const response = await axios.get('/api/announcements?lang=ja');
+    const announcements = response.data;
+    
+    const container = document.getElementById('admin-announcements-list');
+    if (!container) return;
+    
+    if (announcements.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-gray-500">
+          <i class="fas fa-inbox text-4xl mb-3"></i>
+          <p>お知らせがありません</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = `
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">タイトル</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">内容</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ジャンル</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ステータス</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            ${announcements.map(announcement => `
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm text-gray-900">${announcement.id}</td>
+                <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">${announcement.title || announcement.title_ja}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 max-w-md truncate">${announcement.content || announcement.content_ja}</td>
+                <td class="px-4 py-3 text-sm">
+                  <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                    ${announcement.genre || 'general'}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <span class="px-2 py-1 text-xs font-medium rounded-full ${announcement.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                    ${announcement.is_active ? '公開中' : '非公開'}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <div class="flex gap-2 justify-center">
+                    <button onclick="showAnnouncementModal(${announcement.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
+                      <i class="fas fa-edit mr-1"></i>編集
+                    </button>
+                    <button onclick="deleteAnnouncement(${announcement.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                      <i class="fas fa-trash mr-1"></i>削除
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
   } catch (error) {
     console.error('Failed to load admin announcements:', error);
+    const container = document.getElementById('admin-announcements-list');
+    if (container) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-red-500">
+          <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+          <p>お知らせの読み込みに失敗しました</p>
+        </div>
+      `;
+    }
   }
 }
 
