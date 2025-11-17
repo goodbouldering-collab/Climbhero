@@ -46,6 +46,11 @@ const translations = {
     'video.duration': '再生時間',
     'video.like_btn': 'いいね',
     'video.liked': 'いいね済み',
+    'video.favorite_btn': 'お気に入り',
+    'video.watch_on': '{platform}で視聴',
+    'video.open_on': '{platform}で開く',
+    'video.external_notice': '※ この動画は外部サイトで再生されます',
+    'video.more_info': 'もっと見る (全{count}件)',
     
     // Pricing Section
     'pricing.title': 'プレミアムで、動画投稿❤️',
@@ -263,6 +268,39 @@ const translations = {
     'email.history': '配信履歴',
     'email.sent_at': '送信日時',
     
+    // My Page
+    'mypage.title': 'マイページ',
+    'mypage.profile': 'プロフィール情報',
+    'mypage.username': 'ユーザー名',
+    'mypage.email': 'メールアドレス',
+    'mypage.update_profile': 'プロフィールを更新',
+    'mypage.password_change': 'パスワード変更',
+    'mypage.current_password': '現在のパスワード',
+    'mypage.new_password': '新しいパスワード',
+    'mypage.confirm_password': '新しいパスワード（確認）',
+    'mypage.update_password': 'パスワードを変更',
+    'mypage.membership': '会員プラン',
+    'mypage.membership_free': '無料プラン',
+    'mypage.membership_premium': 'プレミアムプラン',
+    'mypage.membership_upgrade': 'プレミアムにアップグレード',
+    'mypage.membership_expires': '有効期限',
+    'mypage.quick_actions': 'クイックアクション',
+    'mypage.upload_video': '動画投稿',
+    'mypage.favorites': 'お気に入り動画',
+    'mypage.liked_videos': 'いいねした動画',
+    'mypage.upload_history': '投稿履歴',
+    'mypage.admin_panel': '管理画面',
+    
+    // Announcements Modal
+    'announcements.modal_title': 'お知らせ一覧',
+    'announcements.all': 'すべて',
+    'announcements.feature': '新機能',
+    'announcements.maintenance': 'メンテナンス',
+    'announcements.event': 'イベント',
+    'announcements.campaign': 'キャンペーン',
+    'announcements.general': '一般',
+    'announcements.no_items': 'お知らせはありません',
+
     // Common
     'common.loading': '読み込み中...',
     'common.cancel': 'キャンセル',
@@ -278,6 +316,7 @@ const translations = {
     'common.follow': 'フォロー',
     'common.following': 'フォロー中',
     'common.submit': '送信',
+    'common.no_videos': '動画がありません',
     
     // Comments
     'comments.title': 'コメント',
@@ -558,6 +597,11 @@ const translations = {
     'video.duration': 'Duration',
     'video.like_btn': 'Like',
     'video.liked': 'Liked',
+    'video.favorite_btn': 'Favorite',
+    'video.watch_on': 'Watch on {platform}',
+    'video.open_on': 'Open on {platform}',
+    'video.external_notice': '* This video will be played on an external site',
+    'video.more_info': 'More ({count} total)',
     
     // Pricing Section
     'pricing.title': 'Premium: Video Posts❤️',
@@ -775,6 +819,39 @@ const translations = {
     'email.history': 'Campaign History',
     'email.sent_at': 'Sent At',
     
+    // My Page
+    'mypage.title': 'My Page',
+    'mypage.profile': 'Profile Information',
+    'mypage.username': 'Username',
+    'mypage.email': 'Email Address',
+    'mypage.update_profile': 'Update Profile',
+    'mypage.password_change': 'Change Password',
+    'mypage.current_password': 'Current Password',
+    'mypage.new_password': 'New Password',
+    'mypage.confirm_password': 'Confirm New Password',
+    'mypage.update_password': 'Change Password',
+    'mypage.membership': 'Membership Plan',
+    'mypage.membership_free': 'Free Plan',
+    'mypage.membership_premium': 'Premium Plan',
+    'mypage.membership_upgrade': 'Upgrade to Premium',
+    'mypage.membership_expires': 'Valid Until',
+    'mypage.quick_actions': 'Quick Actions',
+    'mypage.upload_video': 'Upload Video',
+    'mypage.favorites': 'Favorite Videos',
+    'mypage.liked_videos': 'Liked Videos',
+    'mypage.upload_history': 'Upload History',
+    'mypage.admin_panel': 'Admin Panel',
+    
+    // Announcements Modal
+    'announcements.modal_title': 'All Announcements',
+    'announcements.all': 'All',
+    'announcements.feature': 'New Feature',
+    'announcements.maintenance': 'Maintenance',
+    'announcements.event': 'Event',
+    'announcements.campaign': 'Campaign',
+    'announcements.general': 'General',
+    'announcements.no_items': 'No announcements',
+
     // Common
     'common.loading': 'Loading...',
     'common.cancel': 'Cancel',
@@ -790,6 +867,7 @@ const translations = {
     'common.follow': 'Follow',
     'common.following': 'Following',
     'common.submit': 'Submit',
+    'common.no_videos': 'No videos',
     
     // Comments
     'comments.title': 'Comments',
@@ -1195,6 +1273,39 @@ const translations = {
     'admin.testimonial_delete_confirm': '确定要删除此推荐吗？',
     'admin.testimonial_delete_success': '推荐删除成功',
     
+    // My Page
+    'mypage.title': '我的页面',
+    'mypage.profile': '个人信息',
+    'mypage.username': '用户名',
+    'mypage.email': '电子邮件',
+    'mypage.update_profile': '更新个人信息',
+    'mypage.password_change': '更改密码',
+    'mypage.current_password': '当前密码',
+    'mypage.new_password': '新密码',
+    'mypage.confirm_password': '确认新密码',
+    'mypage.update_password': '更改密码',
+    'mypage.membership': '会员计划',
+    'mypage.membership_free': '免费计划',
+    'mypage.membership_premium': '高级会员',
+    'mypage.membership_upgrade': '升级到高级会员',
+    'mypage.membership_expires': '有效期至',
+    'mypage.quick_actions': '快捷操作',
+    'mypage.upload_video': '上传视频',
+    'mypage.favorites': '收藏视频',
+    'mypage.liked_videos': '点赞视频',
+    'mypage.upload_history': '上传历史',
+    'mypage.admin_panel': '管理面板',
+    
+    // Announcements Modal
+    'announcements.modal_title': '所有公告',
+    'announcements.all': '全部',
+    'announcements.feature': '新功能',
+    'announcements.maintenance': '维护',
+    'announcements.event': '活动',
+    'announcements.campaign': '促销',
+    'announcements.general': '常规',
+    'announcements.no_items': '没有公告',
+
     // Common
     'common.loading': '加载中...',
     'common.cancel': '取消',
@@ -1204,6 +1315,7 @@ const translations = {
     'common.edit': '编辑',
     'common.search': '搜索',
     'common.submit': '提交',
+    'common.no_videos': '没有视频',
     
     // Feature Explanation
     'feature.title': '什么是ClimbHero？',
@@ -1380,11 +1492,45 @@ const translations = {
     'admin.testimonial_delete_confirm': '이 추천을 삭제하시겠습니까?',
     'admin.testimonial_delete_success': '추천이 삭제되었습니다',
     
+    // My Page
+    'mypage.title': '마이 페이지',
+    'mypage.profile': '프로필 정보',
+    'mypage.username': '사용자 이름',
+    'mypage.email': '이메일 주소',
+    'mypage.update_profile': '프로필 업데이트',
+    'mypage.password_change': '비밀번호 변경',
+    'mypage.current_password': '현재 비밀번호',
+    'mypage.new_password': '새 비밀번호',
+    'mypage.confirm_password': '새 비밀번호 확인',
+    'mypage.update_password': '비밀번호 변경',
+    'mypage.membership': '회원 플랜',
+    'mypage.membership_free': '무료 플랜',
+    'mypage.membership_premium': '프리미엄 플랜',
+    'mypage.membership_upgrade': '프리미엄으로 업그레이드',
+    'mypage.membership_expires': '유효 기간',
+    'mypage.quick_actions': '빠른 작업',
+    'mypage.upload_video': '비디오 업로드',
+    'mypage.favorites': '즐겨찾기 비디오',
+    'mypage.liked_videos': '좋아요한 비디오',
+    'mypage.upload_history': '업로드 기록',
+    'mypage.admin_panel': '관리자 패널',
+    
+    // Announcements Modal
+    'announcements.modal_title': '모든 공지사항',
+    'announcements.all': '전체',
+    'announcements.feature': '새로운 기능',
+    'announcements.maintenance': '유지 관리',
+    'announcements.event': '이벤트',
+    'announcements.campaign': '캠페인',
+    'announcements.general': '일반',
+    'announcements.no_items': '공지사항이 없습니다',
+
     // Common
     'common.loading': '로딩 중...',
     'common.cancel': '취소',
     'common.close': '닫기',
     'common.save': '저장',
+    'common.no_videos': '비디오가 없습니다',
     'common.delete': '삭제',
     'common.edit': '편집',
     'common.search': '검색',

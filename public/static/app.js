@@ -42,15 +42,21 @@ const state = {
 // ============ Language Support ============
 window.addEventListener('languageChanged', async (e) => {
   state.currentLanguage = e.detail.language;
-  // Reload blog posts and announcements with new language
+  // Reload blog posts, announcements, and videos with new language
   try {
     const lang = state.currentLanguage || 'ja'
-    const [blogRes, announcementsRes] = await Promise.all([
+    const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes] = await Promise.all([
       axios.get(`/api/blog?lang=${lang}`),
-      axios.get(`/api/announcements?lang=${lang}`)
+      axios.get(`/api/announcements?lang=${lang}`),
+      axios.get(`/api/videos?limit=20&lang=${lang}`),
+      axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
+      axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`)
     ]);
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
+    state.videos = videosRes.data.videos || [];
+    state.trendingVideos = trendingRes.data.videos || [];
+    state.topLikedVideos = topLikedRes.data.videos || [];
   } catch (error) {
     console.error('Error reloading data for language change:', error);
   }
@@ -592,27 +598,29 @@ function renderHomePage() {
             </div>
           </div>
           
-          <!-- Period Filter Tabs -->
-          ${renderFilterButtons('switchRankingPeriod', state.currentRankingPeriod, [
-            { value: 'daily', label: '日次', icon: 'fas fa-calendar-day' },
-            { value: 'weekly', label: '週次', icon: 'fas fa-calendar-week' },
-            { value: 'monthly', label: '月次', icon: 'fas fa-calendar-alt' },
-            { value: '6months', label: '6ヶ月', icon: 'fas fa-calendar' },
-            { value: '1year', label: '1年', icon: 'fas fa-calendar' },
-            { value: 'all', label: '全期間', icon: 'fas fa-infinity' }
-          ])}
-          
-          <!-- Horizontal Carousel -->
-          <div class="carousel-container" id="ranking-carousel">
-            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('ranking-carousel', -1)">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="horizontal-scroll" id="ranking-scroll">
-              ${state.topLikedVideos.map((video, index) => renderRankingCard(video, index + 1)).join('')}
+          <div id="ranking-section-content">
+            <!-- Period Filter Tabs -->
+            ${renderFilterButtons('switchRankingPeriod', state.currentRankingPeriod, [
+              { value: 'daily', label: '日次', icon: 'fas fa-calendar-day' },
+              { value: 'weekly', label: '週次', icon: 'fas fa-calendar-week' },
+              { value: 'monthly', label: '月次', icon: 'fas fa-calendar-alt' },
+              { value: '6months', label: '6ヶ月', icon: 'fas fa-calendar' },
+              { value: '1year', label: '1年', icon: 'fas fa-calendar' },
+              { value: 'all', label: '全期間', icon: 'fas fa-infinity' }
+            ])}
+            
+            <!-- Horizontal Carousel -->
+            <div class="carousel-container" id="ranking-carousel">
+              <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('ranking-carousel', -1)">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <div class="horizontal-scroll" id="ranking-scroll">
+                ${state.topLikedVideos.map((video, index) => renderRankingCard(video, index + 1)).join('')}
+              </div>
+              <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('ranking-carousel', 1)">
+                <i class="fas fa-chevron-right"></i>
+              </button>
             </div>
-            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('ranking-carousel', 1)">
-              <i class="fas fa-chevron-right"></i>
-            </button>
           </div>
         </div>
       </section>
@@ -678,25 +686,27 @@ function renderHomePage() {
             </div>
           </div>
           
-          ${renderFilterButtons('filterVideosByCategory', state.currentVideoCategory, [
-            { value: 'all', label: i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All', icon: 'fas fa-th' },
-            { value: 'bouldering', label: i18n.t('section.bouldering'), icon: 'fas fa-grip-lines' },
-            { value: 'lead', label: i18n.t('section.lead'), icon: 'fas fa-link' },
-            { value: 'alpine', label: i18n.t('section.alpine'), icon: 'fas fa-mountain' },
-            { value: 'other', label: i18n.t('section.other'), icon: 'fas fa-ellipsis-h' }
-          ])}
-          
-          <!-- Horizontal Carousel -->
-          <div class="carousel-container" id="videos-carousel">
-            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('videos-carousel', -1)">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="horizontal-scroll" id="videos-scroll">
-              ${state.videos.map(video => renderVideoCard(video)).join('')}
+          <div id="videos-section-content">
+            ${renderFilterButtons('filterVideosByCategory', state.currentVideoCategory, [
+              { value: 'all', label: i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All', icon: 'fas fa-th' },
+              { value: 'bouldering', label: i18n.t('section.bouldering'), icon: 'fas fa-grip-lines' },
+              { value: 'lead', label: i18n.t('section.lead'), icon: 'fas fa-link' },
+              { value: 'alpine', label: i18n.t('section.alpine'), icon: 'fas fa-mountain' },
+              { value: 'other', label: i18n.t('section.other'), icon: 'fas fa-ellipsis-h' }
+            ])}
+            
+            <!-- Horizontal Carousel -->
+            <div class="carousel-container" id="videos-carousel">
+              <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('videos-carousel', -1)">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <div class="horizontal-scroll" id="videos-scroll">
+                ${state.videos.map(video => renderVideoCard(video)).join('')}
+              </div>
+              <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('videos-carousel', 1)">
+                <i class="fas fa-chevron-right"></i>
+              </button>
             </div>
-            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('videos-carousel', 1)">
-              <i class="fas fa-chevron-right"></i>
-            </button>
           </div>
         </div>
       </section>
@@ -741,23 +751,25 @@ function renderHomePage() {
             </div>
           </div>
           
-          <!-- Genre Filters -->
-          ${state.blogGenres && state.blogGenres.length > 0 ? renderFilterButtons('filterBlogsByGenre', state.currentBlogGenre, [
-            { value: '', label: 'すべて', icon: 'fas fa-th' },
-            ...state.blogGenres.map(g => ({ value: g.name, label: g.name, icon: g.icon }))
-          ]) : ''}
-          
-          <!-- Horizontal Carousel -->
-          <div class="carousel-container" id="blog-carousel">
-            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('blog-carousel', -1)">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="horizontal-scroll" id="blog-scroll">
-              ${state.blogPosts.map(post => renderBlogCard(post)).join('')}
+          <div id="blog-section-content">
+            <!-- Genre Filters -->
+            ${state.blogGenres && state.blogGenres.length > 0 ? renderFilterButtons('filterBlogsByGenre', state.currentBlogGenre, [
+              { value: '', label: 'すべて', icon: 'fas fa-th' },
+              ...state.blogGenres.map(g => ({ value: g.name, label: g.name, icon: g.icon }))
+            ]) : ''}
+            
+            <!-- Horizontal Carousel -->
+            <div class="carousel-container" id="blog-carousel">
+              <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('blog-carousel', -1)">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <div class="horizontal-scroll" id="blog-scroll">
+                ${state.blogPosts.map(post => renderBlogCard(post)).join('')}
+              </div>
+              <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('blog-carousel', 1)">
+                <i class="fas fa-chevron-right"></i>
+              </button>
             </div>
-            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('blog-carousel', 1)">
-              <i class="fas fa-chevron-right"></i>
-            </button>
           </div>
         </div>
       </section>
@@ -1274,19 +1286,51 @@ async function switchRankingPeriod(period) {
   
   // Load data for the selected period
   try {
-    const response = await axios.get(`/api/videos/top-liked?limit=20&period=${period}`);
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/videos/top-liked?limit=20&period=${period}&lang=${lang}`);
     state.topLikedVideos = response.data.videos || [];
     
-    // Re-render home page to update filter buttons
-    navigateTo('home');
+    // Re-render only the ranking section
+    renderRankingSection();
     
   } catch (error) {
     console.error('Failed to load ranking:', error);
     showToast('ランキングの読み込みに失敗しました', 'error');
+    const rankingScroll = document.getElementById('ranking-scroll');
     if (rankingScroll) {
       rankingScroll.innerHTML = '<div class="text-center py-8 text-gray-500">データの読み込みに失敗しました</div>';
     }
   }
+}
+
+function renderRankingSection() {
+  const container = document.getElementById('ranking-section-content');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <!-- Filter Buttons -->
+    ${renderFilterButtons('switchRankingPeriod', state.currentRankingPeriod, [
+      { value: 'daily', label: '日次', icon: 'fas fa-calendar-day' },
+      { value: 'weekly', label: '週次', icon: 'fas fa-calendar-week' },
+      { value: 'monthly', label: '月次', icon: 'fas fa-calendar-alt' },
+      { value: '6months', label: '6ヶ月', icon: 'fas fa-calendar' },
+      { value: '1year', label: '1年', icon: 'fas fa-calendar' },
+      { value: 'all', label: '全期間', icon: 'fas fa-infinity' }
+    ])}
+    
+    <!-- Horizontal Carousel -->
+    <div class="carousel-container" id="ranking-carousel">
+      <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('ranking-carousel', -1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="horizontal-scroll" id="ranking-scroll">
+        ${state.topLikedVideos && state.topLikedVideos.length > 0 ? state.topLikedVideos.map((video, index) => renderRankingCard(video, index + 1)).join('') : '<div class="text-center py-8 text-gray-500">データがありません</div>'}
+      </div>
+      <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('ranking-carousel', 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  `;
 }
 
 // ============ Ad Banner Functions ============
@@ -1303,20 +1347,31 @@ function renderAdBanner(position) {
   // Track impression
   trackAdImpression(banner.id);
   
+  // Determine gradient based on banner ID or position
+  const gradients = [
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Purple to deep purple
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', // Pink to red
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', // Blue to cyan
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', // Green to teal
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'  // Pink to yellow
+  ];
+  
+  const gradient = gradients[banner.id % gradients.length];
+  
   return `
     <div class="w-full my-4 px-4">
       <a 
         href="${banner.link_url || '#'}" 
         target="${banner.link_url?.startsWith('http') ? '_blank' : '_self'}"
         onclick="trackAdClick(${banner.id})"
-        class="block w-full overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-shadow"
-        style="height: 60px;">
-        <img 
-          src="${banner.image_url}" 
-          alt="${banner.title}"
-          class="w-full h-full object-cover"
-          loading="lazy"
-        />
+        class="block w-full overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all relative group"
+        style="height: 80px; background: ${gradient};">
+        <!-- Text centered -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="text-white font-bold text-lg md:text-xl px-6 py-2 bg-black/20 backdrop-blur-sm rounded-lg group-hover:bg-black/30 transition-all">
+            ${banner.title}
+          </span>
+        </div>
       </a>
     </div>
   `;
@@ -1367,12 +1422,38 @@ async function filterBlogsByGenre(genre) {
     const response = await axios.get(url);
     state.blogPosts = response.data || [];
     
-    // Re-render home page to update filter buttons
-    navigateTo('home');
+    // Re-render only the blog section
+    renderBlogSection();
   } catch (error) {
     console.error('Failed to filter blogs:', error);
     showToast('ブログの読み込みに失敗しました', 'error');
   }
+}
+
+function renderBlogSection() {
+  const container = document.getElementById('blog-section-content');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <!-- Genre Filter Buttons -->
+    ${state.blogGenres && state.blogGenres.length > 0 ? renderFilterButtons('filterBlogsByGenre', state.currentBlogGenre, [
+      { value: '', label: 'すべて', icon: 'fas fa-th' },
+      ...state.blogGenres.map(g => ({ value: g.name, label: g.name, icon: g.icon }))
+    ]) : ''}
+    
+    <!-- Horizontal Carousel -->
+    <div class="carousel-container" id="blog-carousel">
+      <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('blog-carousel', -1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="horizontal-scroll" id="blog-scroll">
+        ${state.blogPosts && state.blogPosts.length > 0 ? state.blogPosts.map(post => renderBlogCard(post)).join('') : '<div class="text-center py-8 text-gray-500">ブログ記事がありません</div>'}
+      </div>
+      <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('blog-carousel', 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  `;
 }
 
 // ============ Unified Filter Buttons Component ============
@@ -2408,21 +2489,52 @@ async function filterVideosByCategory(category) {
   state.currentVideoCategory = category;
   
   try {
-    const url = category === 'all' ? '/api/videos?limit=20' : `/api/videos?category=${category}&limit=20`;
+    const lang = state.currentLanguage || 'ja';
+    const url = category === 'all' ? `/api/videos?limit=20&lang=${lang}` : `/api/videos?category=${category}&limit=20&lang=${lang}`;
     const response = await axios.get(url);
     state.videos = response.data.videos || [];
     
-    // Re-render home page to update filter buttons
-    navigateTo('home');
+    // Re-render only the videos section
+    renderVideosSection();
   } catch (error) {
     showToast('動画の読み込みに失敗しました', 'error');
   }
 }
 
+function renderVideosSection() {
+  const container = document.getElementById('videos-section-content');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <!-- Filter Buttons -->
+    ${renderFilterButtons('filterVideosByCategory', state.currentVideoCategory, [
+      { value: 'all', label: i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All', icon: 'fas fa-th' },
+      { value: 'bouldering', label: i18n.t('section.bouldering'), icon: 'fas fa-grip-lines' },
+      { value: 'lead', label: i18n.t('section.lead'), icon: 'fas fa-link' },
+      { value: 'alpine', label: i18n.t('section.alpine'), icon: 'fas fa-mountain' },
+      { value: 'other', label: i18n.t('section.other'), icon: 'fas fa-ellipsis-h' }
+    ])}
+    
+    <!-- Horizontal Carousel -->
+    <div class="carousel-container" id="videos-carousel">
+      <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('videos-carousel', -1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="horizontal-scroll" id="videos-scroll">
+        ${state.videos && state.videos.length > 0 ? state.videos.map(video => renderVideoCard(video)).join('') : '<div class="text-center py-8 text-gray-500">データがありません</div>'}
+      </div>
+      <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('videos-carousel', 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  `;
+}
+
 // ============ Blog Detail (Simplified) ============
 async function renderBlogDetail() {
   try {
-    const response = await axios.get(`/api/blog/${state.currentBlogId}`);
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/blog/${state.currentBlogId}?lang=${lang}`);
     const post = response.data;
     
     const root = document.getElementById('root');
@@ -2511,19 +2623,13 @@ function renderMyPage() {
                 `).join('')}
               </div>
               
-              <button onclick="logout()" class="btn btn-sm btn-primary px-3">
-                ログアウト
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
+                ${i18n.t('nav.logout')}
               </button>
               
-              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3">
-                マイページ
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3 text-base">
+                ${i18n.t('mypage.title')}
               </button>
-              
-              ${state.currentUser.is_admin ? `
-                <button onclick="navigateTo('admin')" class="btn btn-sm px-3" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-                  管理者
-                </button>
-              ` : ''}
             </div>
           </div>
         </div>
@@ -2539,7 +2645,7 @@ function renderMyPage() {
               <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
                 <h2 class="text-xl font-bold text-white flex items-center">
                   <i class="fas fa-user-circle mr-3"></i>
-                  プロフィール情報
+                  ${i18n.t('mypage.profile')}
                 </h2>
               </div>
               
@@ -2549,7 +2655,7 @@ function renderMyPage() {
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-user text-purple-600 mr-1"></i>
-                        ユーザー名
+                        ${i18n.t('mypage.username')}
                       </label>
                       <input 
                         type="text" 
@@ -2563,7 +2669,7 @@ function renderMyPage() {
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-envelope text-purple-600 mr-1"></i>
-                        メールアドレス
+                        ${i18n.t('mypage.email')}
                       </label>
                       <input 
                         type="email" 
@@ -2578,7 +2684,7 @@ function renderMyPage() {
                   <div class="pt-4">
                     <button type="submit" class="w-full btn btn-primary py-3 text-base">
                       <i class="fas fa-save mr-2"></i>
-                      プロフィールを更新
+                      ${i18n.t('mypage.update_profile')}
                     </button>
                   </div>
                 </form>
@@ -2590,7 +2696,7 @@ function renderMyPage() {
               <div class="bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4">
                 <h3 class="text-xl font-bold text-white flex items-center">
                   <i class="fas fa-key mr-3"></i>
-                  パスワード変更
+                  ${i18n.t('mypage.password_change')}
                 </h3>
               </div>
               
@@ -2599,7 +2705,7 @@ function renderMyPage() {
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                       <i class="fas fa-lock text-blue-600 mr-1"></i>
-                      現在のパスワード
+                      ${i18n.t('mypage.current_password')}
                     </label>
                     <input 
                       type="password" 
@@ -2611,7 +2717,7 @@ function renderMyPage() {
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                       <i class="fas fa-lock text-blue-600 mr-1"></i>
-                      新しいパスワード
+                      ${i18n.t('mypage.new_password')}
                     </label>
                     <input 
                       type="password" 
@@ -2727,28 +2833,29 @@ function renderAdminPage() {
   }
 
   return `
-    <div class="min-h-screen bg-gray-50">
-      <!-- Header -->
-      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-          <div class="flex items-center justify-between h-14 sm:h-16">
-            <!-- Logo Section (Clickable for Home) -->
-            <div class="flex items-center flex-shrink-0 min-w-0">
-              <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
-                <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-                <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
+    <div class="min-h-screen bg-gray-100">
+      <!-- Admin Header with Sidebar Toggle -->
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-300 shadow">
+        <div class="max-w-full mx-auto px-4 lg:px-6">
+          <div class="flex items-center justify-between h-16">
+            <!-- Logo Section -->
+            <div class="flex items-center gap-4">
+              <button onclick="navigateTo('home')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <i class="fas fa-mountain text-lg text-gray-700"></i>
+                <span class="text-lg font-bold text-gray-800">ClimbHero</span>
+                <span class="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded-full font-semibold">ADMIN</span>
               </button>
             </div>
             
             <!-- Right Section -->
-            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <div class="flex gap-0.5 sm:gap-1">
+            <div class="flex items-center gap-3">
+              <div class="flex gap-1">
                 ${i18n.getAvailableLanguages().map(lang => `
                   <button 
                     onclick="switchLanguage('${lang.code}')" 
-                    class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded transition-all text-sm sm:text-base ${
+                    class="w-8 h-8 flex items-center justify-center rounded transition-all ${
                       i18n.getCurrentLanguage() === lang.code 
-                        ? 'bg-gradient-to-r from-purple-100 to-pink-100 scale-110' 
+                        ? 'bg-gray-200 scale-110' 
                         : 'hover:bg-gray-100'
                     }"
                     title="${lang.name}">
@@ -2757,181 +2864,183 @@ function renderAdminPage() {
                 `).join('')}
               </div>
               
-              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
-                ログアウト
+              <button onclick="navigateTo('mypage')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors text-sm font-medium">
+                <i class="fas fa-user mr-2"></i>マイページ
               </button>
               
-              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3 text-base">
-                マイページ
-              </button>
-              
-              <button onclick="navigateTo('admin')" class="btn btn-sm px-3 text-base" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-                管理者
+              <button onclick="logout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors text-sm font-medium">
+                <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main class="max-w-full mx-auto px-4 lg:px-6 py-6">
+        <!-- Page Title -->
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-800 mb-1">管理ダッシュボード</h1>
+          <p class="text-sm text-gray-600">ClimbHeroの運営管理システム</p>
+        </div>
+
         <!-- Quick Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-600 mb-1">総会員数</p>
-                <p class="text-2xl font-bold text-purple-600" id="stat-users">-</p>
-              </div>
-              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-users text-purple-600 text-xl"></i>
-              </div>
-            </div>
-          </div>
-          
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-gray-600 mb-1">動画数</p>
-                <p class="text-2xl font-bold text-blue-600" id="stat-videos">-</p>
+                <p class="text-xs text-gray-600 font-medium mb-1">総会員数</p>
+                <p class="text-2xl font-bold text-gray-800" id="stat-users">-</p>
               </div>
               <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-video text-blue-600 text-xl"></i>
+                <i class="fas fa-users text-blue-600 text-xl"></i>
               </div>
             </div>
           </div>
           
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-600 mb-1">ブログ記事</p>
-                <p class="text-2xl font-bold text-green-600" id="stat-blogs">-</p>
+                <p class="text-xs text-gray-600 font-medium mb-1">動画数</p>
+                <p class="text-2xl font-bold text-gray-800" id="stat-videos">-</p>
               </div>
               <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-blog text-green-600 text-xl"></i>
+                <i class="fas fa-video text-green-600 text-xl"></i>
               </div>
             </div>
           </div>
           
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm text-gray-600 mb-1">お知らせ</p>
-                <p class="text-2xl font-bold text-orange-600" id="stat-announcements">-</p>
+                <p class="text-xs text-gray-600 font-medium mb-1">ブログ記事</p>
+                <p class="text-2xl font-bold text-gray-800" id="stat-blogs">-</p>
               </div>
               <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-bullhorn text-orange-600 text-xl"></i>
+                <i class="fas fa-blog text-orange-600 text-xl"></i>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs text-gray-600 font-medium mb-1">お知らせ</p>
+                <p class="text-2xl font-bold text-gray-800" id="stat-announcements">-</p>
+              </div>
+              <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-bullhorn text-red-600 text-xl"></i>
               </div>
             </div>
           </div>
         </div>
         
         <!-- Management Sections Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4">
           
-          <!-- User Management Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
-              <h2 class="text-base font-bold text-white flex items-center">
-                <i class="fas fa-users mr-2"></i>
+          <!-- User Management Section -->
+          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+              <h2 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fas fa-users mr-2 text-blue-600"></i>
                 会員管理
               </h2>
               <div class="flex gap-2">
-                <button onclick="exportUsersCSV()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
-                  <i class="fas fa-download"></i>
+                <button onclick="exportUsersCSV()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors text-sm">
+                  <i class="fas fa-download mr-1"></i>CSV出力
                 </button>
-                <button onclick="showImportCSVModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
-                  <i class="fas fa-upload"></i>
+                <button onclick="showImportCSVModal()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors text-sm">
+                  <i class="fas fa-upload mr-1"></i>CSV取込
                 </button>
               </div>
             </div>
             <div class="p-4">
-              <div class="horizontal-scroll" id="admin-users-scroll" style="gap: 12px; padding: 0;">
-                ${renderLoadingSkeleton(2)}
-              </div>
-            </div>
-          </div>
-          
-          <!-- Announcements Management Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
-              <h2 class="text-base font-bold text-white flex items-center">
-                <i class="fas fa-bullhorn mr-2"></i>
-                お知らせ管理
-              </h2>
-              <button onclick="showAnnouncementModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
-                <i class="fas fa-plus mr-1"></i>
-                新規作成
-              </button>
-            </div>
-            <div class="p-4">
-              <div class="horizontal-scroll" id="admin-announcements-scroll" style="gap: 12px; padding: 0;">
-                ${renderLoadingSkeleton(2)}
-              </div>
-            </div>
-          </div>
-          
-          <!-- Ad Banner Management Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
-              <h2 class="text-base font-bold text-white flex items-center">
-                <i class="fas fa-ad mr-2"></i>
-                広告バナー管理
-              </h2>
-              <button onclick="showAdBannerModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
-                <i class="fas fa-plus mr-1"></i>
-                新規作成
-              </button>
-            </div>
-            <div class="p-4">
-              <div id="admin-ad-banners-list" style="max-height: 400px; overflow-y: auto;">
-                <div style="text-align: center; padding: 40px; color: #666;">
+              <div id="admin-users-table" class="overflow-x-auto">
+                <div class="text-center py-8 text-gray-500">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
             </div>
           </div>
           
-          <!-- Blog Management Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
-              <h2 class="text-base font-bold text-white flex items-center">
-                <i class="fas fa-blog mr-2"></i>
+          <!-- Announcements Management Section -->
+          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+              <h2 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fas fa-bullhorn mr-2 text-red-600"></i>
+                お知らせ管理
+              </h2>
+              <button onclick="showAnnouncementModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                <i class="fas fa-plus mr-1"></i>新規作成
+              </button>
+            </div>
+            <div class="p-4">
+              <div id="admin-announcements-table" class="overflow-x-auto">
+                <div class="text-center py-8 text-gray-500">
+                  ${i18n.t('common.loading')}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Ad Banner Management Section -->
+          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+              <h2 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fas fa-ad mr-2 text-purple-600"></i>
+                広告バナー管理
+              </h2>
+              <button onclick="showAdBannerModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                <i class="fas fa-plus mr-1"></i>新規作成
+              </button>
+            </div>
+            <div class="p-4">
+              <div id="admin-ad-banners-list">
+                <div class="text-center py-8 text-gray-500">
+                  ${i18n.t('common.loading')}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Blog Management Section -->
+          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+              <h2 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fas fa-blog mr-2 text-orange-600"></i>
                 ブログ管理
               </h2>
               <div class="flex gap-2">
-                <button onclick="showTagManagementModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
-                  <i class="fas fa-tags"></i>
+                <button onclick="showTagManagementModal()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors text-sm">
+                  <i class="fas fa-tags mr-1"></i>ジャンル管理
                 </button>
-                <button onclick="showBlogModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
-                  <i class="fas fa-plus mr-1"></i>
-                  新規作成
+                <button onclick="showBlogModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-plus mr-1"></i>新規作成
                 </button>
               </div>
             </div>
             <div class="p-4">
-              <div id="admin-blog-list" style="max-height: 400px; overflow-y: auto;">
-                <div style="text-align: center; padding: 40px; color: #666;">
+              <div id="admin-blog-list">
+                <div class="text-center py-8 text-gray-500">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
             </div>
           </div>
           
-          <!-- Testimonials Management Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-5 py-3 flex items-center justify-between">
-              <h2 class="text-base font-bold text-white flex items-center">
-                <i class="fas fa-mountain mr-2"></i>
+          <!-- Testimonials Management Section -->
+          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+              <h2 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fas fa-mountain mr-2 text-green-600"></i>
                 クライマーメッセージ管理
               </h2>
-              <button onclick="showTestimonialModal()" class="btn btn-sm bg-white/20 hover:bg-white/30 text-white border-none">
-                <i class="fas fa-plus mr-1"></i>
-                新規作成
+              <button onclick="showTestimonialModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                <i class="fas fa-plus mr-1"></i>新規作成
               </button>
             </div>
             <div class="p-4">
-              <div id="admin-testimonials-list" style="max-height: 400px; overflow-y: auto;">
-                <div style="text-align: center; padding: 40px; color: #666;">
+              <div id="admin-testimonials-list">
+                <div class="text-center py-8 text-gray-500">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
@@ -4276,13 +4385,22 @@ function showAnnouncementsModal() {
     if (e.target === modal) modal.remove();
   };
   
+  const genreLabels = {
+    '': i18n.t('announcements.all'),
+    'feature': i18n.t('announcements.feature'),
+    'maintenance': i18n.t('announcements.maintenance'),
+    'event': i18n.t('announcements.event'),
+    'campaign': i18n.t('announcements.campaign'),
+    'general': i18n.t('announcements.general')
+  };
+  
   modal.innerHTML = `
     <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
       <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
         <div class="flex justify-between items-center mb-3">
           <h2 class="text-xl font-bold text-gray-900">
             <i class="fas fa-bullhorn mr-2 text-purple-600"></i>
-            お知らせ一覧
+            ${i18n.t('announcements.modal_title')}
           </h2>
           <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 transition-colors">
             <i class="fas fa-times text-xl"></i>
@@ -4292,12 +4410,12 @@ function showAnnouncementsModal() {
         <!-- Genre Filters -->
         <div class="flex flex-wrap gap-2">
           ${renderFilterButtons('filterAnnouncements', state.announcementGenre, [
-            { value: '', label: 'すべて', icon: 'fas fa-th' },
-            { value: 'feature', label: '新機能', icon: 'fas fa-star' },
-            { value: 'maintenance', label: 'メンテナンス', icon: 'fas fa-tools' },
-            { value: 'event', label: 'イベント', icon: 'fas fa-calendar-alt' },
-            { value: 'campaign', label: 'キャンペーン', icon: 'fas fa-gift' },
-            { value: 'general', label: '一般', icon: 'fas fa-info-circle' }
+            { value: '', label: genreLabels[''], icon: 'fas fa-th' },
+            { value: 'feature', label: genreLabels['feature'], icon: 'fas fa-star' },
+            { value: 'maintenance', label: genreLabels['maintenance'], icon: 'fas fa-tools' },
+            { value: 'event', label: genreLabels['event'], icon: 'fas fa-calendar-alt' },
+            { value: 'campaign', label: genreLabels['campaign'], icon: 'fas fa-gift' },
+            { value: 'general', label: genreLabels['general'], icon: 'fas fa-info-circle' }
           ])}
         </div>
       </div>
@@ -4321,10 +4439,7 @@ function showAnnouncementsModal() {
                   a.genre === 'campaign' ? 'bg-pink-100 text-pink-700' : 
                   'bg-gray-100 text-gray-700'
                 }">
-                  ${a.genre === 'feature' ? '新機能' : 
-                    a.genre === 'maintenance' ? 'メンテナンス' : 
-                    a.genre === 'event' ? 'イベント' : 
-                    a.genre === 'campaign' ? 'キャンペーン' : '一般'}
+                  ${genreLabels[a.genre] || genreLabels['general']}
                 </span>
               </div>
               <p class="text-gray-600 text-xs leading-relaxed mb-2">${a.content}</p>
@@ -4338,7 +4453,7 @@ function showAnnouncementsModal() {
         ${state.announcements.length === 0 ? `
           <div class="text-center py-12">
             <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
-            <p class="text-gray-500 text-sm">お知らせはありません</p>
+            <p class="text-gray-500 text-sm">${i18n.t('announcements.no_items')}</p>
           </div>
         ` : ''}
       </div>
@@ -4411,56 +4526,58 @@ function renderLoadingSkeleton(count = 3) {
 }
 
 function renderUsersTable(users) {
-  const container = document.getElementById('admin-users-scroll');
+  const container = document.getElementById('admin-users-table');
   if (!container) return;
   
   if (users.length === 0) {
-    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">ユーザーがいません</div>';
+    container.innerHTML = '<div class="text-center py-8 text-gray-500">ユーザーがいません</div>';
     return;
   }
   
-  container.innerHTML = users.map(user => `
-    <div class="admin-card" style="min-width: 320px; max-width: 320px; animation: fadeInUp 0.4s ease-out;">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex-1">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs text-gray-500">#${user.id}</span>
-            ${user.is_admin ? '<span class="px-2 py-0.5 text-xs font-bold rounded" style="background: #fbbf24; color: #78350f;"><i class="fas fa-shield-alt mr-1"></i>管理者</span>' : ''}
-          </div>
-          <h4 class="font-bold text-gray-900 text-sm mb-1">${user.username}</h4>
-          <p class="text-xs text-gray-600 break-all">${user.email}</p>
-        </div>
-      </div>
-      
-      <div class="space-y-2 mb-3">
-        <div class="flex items-center justify-between text-xs">
-          <span class="text-gray-500">プラン:</span>
-          <span class="category-badge ${user.membership_type === 'premium' ? 'category-competition' : 'category-bouldering'}">
-            ${user.membership_type === 'premium' ? 'プレミアム' : '無料'}
-          </span>
-        </div>
-        <div class="flex items-center justify-between text-xs">
-          <span class="text-gray-500">登録日:</span>
-          <span class="text-gray-700">${formatDate(user.created_at)}</span>
-        </div>
-        ${user.notes ? `
-        <div class="text-xs">
-          <span class="text-gray-500 block mb-1">備考:</span>
-          <p class="text-gray-700 line-clamp-2" title="${user.notes}">${user.notes}</p>
-        </div>
-        ` : ''}
-      </div>
-      
-      <div class="flex gap-2">
-        <button onclick="editUser(${user.id})" class="btn btn-sm btn-secondary flex-1" title="編集">
-          <i class="fas fa-edit mr-1"></i>編集
-        </button>
-        <button onclick="deleteUser(${user.id}, '${user.email}')" class="btn btn-sm flex-1" style="background: #ef4444; color: white;" title="削除">
-          <i class="fas fa-trash mr-1"></i>削除
-        </button>
-      </div>
-    </div>
-  `).join('');
+  container.innerHTML = `
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ユーザー名</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">メールアドレス</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">プラン</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">権限</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">登録日</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">操作</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        ${users.map(user => `
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">#${user.id}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-900">${user.username}</div>
+              ${user.notes ? `<div class="text-xs text-gray-500 truncate max-w-xs" title="${user.notes}">${user.notes}</div>` : ''}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${user.email}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="px-2 py-1 text-xs font-semibold rounded ${user.membership_type === 'premium' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}">
+                ${user.membership_type === 'premium' ? 'プレミアム' : '無料'}
+              </span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              ${user.is_admin ? '<span class="px-2 py-1 text-xs font-semibold rounded bg-yellow-100 text-yellow-800"><i class="fas fa-shield-alt mr-1"></i>管理者</span>' : '<span class="text-sm text-gray-500">一般</span>'}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${formatDate(user.created_at)}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-right text-sm">
+              <button onclick="editUser(${user.id})" class="text-blue-600 hover:text-blue-800 mr-3" title="編集">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button onclick="deleteUser(${user.id}, '${user.email}')" class="text-red-600 hover:text-red-800" title="削除">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
 }
 
 function renderVideosCarousel(videos) {
@@ -4513,47 +4630,72 @@ function renderVideosCarousel(videos) {
 }
 
 function renderAnnouncementsCarousel(announcements) {
-  const container = document.getElementById('admin-announcements-scroll');
+  const container = document.getElementById('admin-announcements-table');
   if (!container) return;
   
   if (announcements.length === 0) {
-    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">お知らせがありません</div>';
+    container.innerHTML = '<div class="text-center py-8 text-gray-500">お知らせがありません</div>';
     return;
   }
   
-  container.innerHTML = announcements.map((ann, index) => `
-    <div class="admin-card" style="min-width: 320px; max-width: 320px; animation: fadeInUp 0.4s ease-out ${index * 0.05}s;">
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex-1">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-xs text-gray-500">#${ann.id}</span>
-            <span class="px-2 py-0.5 text-xs font-bold rounded ${
-              ann.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
-              ann.type === 'success' ? 'bg-green-100 text-green-800' : 
-              'bg-blue-100 text-blue-800'
-            }">
-              ${ann.type}
-            </span>
-          </div>
-          <h4 class="font-bold text-sm text-gray-900 mb-2">${ann.title}</h4>
-          <p class="text-xs text-gray-600 line-clamp-3">${ann.content}</p>
-        </div>
-      </div>
-      
-      <div class="text-xs text-gray-500 mb-3">
-        ${formatDate(ann.created_at)}
-      </div>
-      
-      <div class="flex gap-2">
-        <button onclick="editAnnouncement(${ann.id})" class="btn btn-sm btn-secondary flex-1">
-          <i class="fas fa-edit mr-1"></i>編集
-        </button>
-        <button onclick="deleteAnnouncement(${ann.id})" class="btn btn-sm flex-1" style="background: #ef4444; color: white;">
-          <i class="fas fa-trash mr-1"></i>削除
-        </button>
-      </div>
-    </div>
-  `).join('');
+  // Map genre values to Japanese labels
+  const genreLabels = {
+    'feature': '機能追加',
+    'maintenance': 'メンテナンス',
+    'event': 'イベント',
+    'campaign': 'キャンペーン',
+    'general': '一般'
+  };
+  
+  const genreColors = {
+    'feature': 'bg-blue-100 text-blue-800',
+    'maintenance': 'bg-yellow-100 text-yellow-800',
+    'event': 'bg-green-100 text-green-800',
+    'campaign': 'bg-purple-100 text-purple-800',
+    'general': 'bg-gray-100 text-gray-800'
+  };
+  
+  container.innerHTML = `
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ジャンル</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">タイトル</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">内容</th>
+          <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">作成日</th>
+          <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">操作</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        ${announcements.map(ann => `
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">#${ann.id}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="px-2 py-1 text-xs font-semibold rounded ${genreColors[ann.genre] || 'bg-gray-100 text-gray-800'}">
+                ${genreLabels[ann.genre] || ann.genre}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="text-sm font-medium text-gray-900 max-w-xs truncate" title="${ann.title}">${ann.title}</div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="text-sm text-gray-600 max-w-md truncate" title="${ann.content}">${ann.content}</div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${formatDate(ann.created_at)}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-right text-sm">
+              <button onclick="editAnnouncement(${ann.id})" class="text-blue-600 hover:text-blue-800 mr-3" title="編集">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button onclick="deleteAnnouncement(${ann.id})" class="text-red-600 hover:text-red-800" title="削除">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
 }
 
 async function editUser(userId) {

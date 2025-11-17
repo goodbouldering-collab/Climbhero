@@ -283,6 +283,7 @@ app.get('/api/videos', async (c) => {
   const category = c.req.query('category')
   const platform = c.req.query('platform')
   const search = c.req.query('search')
+  const lang = c.req.query('lang') || 'ja'
   const offset = (page - 1) * limit
 
   try {
@@ -317,8 +318,14 @@ app.get('/api/videos', async (c) => {
     const { results: countResult } = await env.DB.prepare(countQuery).bind(...countParams).all()
     const total = (countResult[0] as any).total
 
+    // Localize video titles
+    const localizedVideos = (videos as any[]).map((video: any) => ({
+      ...video,
+      title: getLocalizedField(video, 'title', lang)
+    }))
+
     return c.json({
-      videos,
+      videos: localizedVideos,
       pagination: {
         page,
         limit,
@@ -335,6 +342,7 @@ app.get('/api/videos', async (c) => {
 app.get('/api/videos/trending', async (c) => {
   const { env } = c
   const limit = parseInt(c.req.query('limit') || '10')
+  const lang = c.req.query('lang') || 'ja'
   
   try {
     // Query the trending_videos view
@@ -342,9 +350,15 @@ app.get('/api/videos/trending', async (c) => {
       SELECT * FROM trending_videos LIMIT ?
     `).bind(limit).all()
     
+    // Localize video titles
+    const localizedVideos = (trendingVideos as any[]).map((video: any) => ({
+      ...video,
+      title: getLocalizedField(video, 'title', lang)
+    }))
+    
     return c.json({
-      videos: trendingVideos || [],
-      count: trendingVideos?.length || 0
+      videos: localizedVideos || [],
+      count: localizedVideos?.length || 0
     })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
@@ -356,6 +370,7 @@ app.get('/api/videos/top-liked', async (c) => {
   const { env } = c
   const limit = parseInt(c.req.query('limit') || '20')
   const period = c.req.query('period') || 'all' // 'daily', 'weekly', 'monthly', '6months', '1year', 'all'
+  const lang = c.req.query('lang') || 'ja'
   
   try {
     let dateFilter = ''
@@ -385,9 +400,15 @@ app.get('/api/videos/top-liked', async (c) => {
       LIMIT ?
     `).bind(limit).all()
     
+    // Localize video titles
+    const localizedVideos = (topVideos as any[]).map((video: any) => ({
+      ...video,
+      title: getLocalizedField(video, 'title', lang)
+    }))
+    
     return c.json({
-      videos: topVideos || [],
-      count: topVideos?.length || 0,
+      videos: localizedVideos || [],
+      count: localizedVideos?.length || 0,
       period: period
     })
   } catch (error: any) {
@@ -399,6 +420,7 @@ app.get('/api/videos/top-liked', async (c) => {
 app.get('/api/videos/instagram', async (c) => {
   const { env } = c
   const limit = parseInt(c.req.query('limit') || '10')
+  const lang = c.req.query('lang') || 'ja'
   
   try {
     const { results: instagramVideos } = await env.DB.prepare(`
@@ -408,9 +430,15 @@ app.get('/api/videos/instagram', async (c) => {
       LIMIT ?
     `).bind(limit).all()
     
+    // Localize video titles
+    const localizedVideos = (instagramVideos as any[]).map((video: any) => ({
+      ...video,
+      title: getLocalizedField(video, 'title', lang)
+    }))
+    
     return c.json({
-      videos: instagramVideos || [],
-      count: instagramVideos?.length || 0
+      videos: localizedVideos || [],
+      count: localizedVideos?.length || 0
     })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
@@ -421,6 +449,7 @@ app.get('/api/videos/instagram', async (c) => {
 app.get('/api/videos/:id', async (c) => {
   const { env } = c
   const id = c.req.param('id')
+  const lang = c.req.query('lang') || 'ja'
 
   try {
     const video = await env.DB.prepare('SELECT * FROM videos WHERE id = ?').bind(id).first()
@@ -431,7 +460,13 @@ app.get('/api/videos/:id', async (c) => {
     // Increment views
     await env.DB.prepare('UPDATE videos SET views = views + 1 WHERE id = ?').bind(id).run()
     
-    return c.json(video)
+    // Localize video title
+    const localizedVideo = {
+      ...video,
+      title: getLocalizedField(video, 'title', lang)
+    }
+    
+    return c.json(localizedVideo)
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
