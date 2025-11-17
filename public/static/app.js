@@ -344,11 +344,6 @@ function renderHomePage() {
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3 text-base">
                 ${i18n.t('nav.login')}
               </button>
-              
-              <!-- Admin Quick Login Button -->
-              <button onclick="quickAdminLogin()" class="btn btn-sm px-3 text-base" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;" title="管理者としてログイン">
-                <i class="fas fa-crown text-yellow-300"></i>
-              </button>
             `}
           </div>
         </div>
@@ -1788,27 +1783,29 @@ function showAuthModal(type) {
       </form>
       
       ${type === 'login' ? `
-        <div class="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg">
-          <div class="flex items-start gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i class="fas fa-crown text-white"></i>
+        <div class="mt-4">
+          <div class="relative my-4">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300"></div>
             </div>
-            <div class="flex-1">
-              <p class="text-sm font-bold text-purple-900 mb-2">
-                管理者用アカウント
-              </p>
-              <div class="space-y-1 text-xs">
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-envelope text-purple-600"></i>
-                  <code class="bg-white px-2 py-1 rounded border border-purple-200 font-mono">admin@climbhero.com</code>
-                </div>
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-key text-purple-600"></i>
-                  <code class="bg-white px-2 py-1 rounded border border-purple-200 font-mono">Admin@2024</code>
-                </div>
-              </div>
+            <div class="relative flex justify-center text-xs">
+              <span class="px-3 bg-white text-gray-500 font-medium">管理者用</span>
             </div>
           </div>
+          
+          <button 
+            type="button"
+            onclick="quickAdminLogin()" 
+            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            <i class="fas fa-crown text-yellow-300 mr-2"></i>
+            👑 管理者としてログイン
+          </button>
+          
+          <p class="text-xs text-center text-gray-500 mt-2">
+            <i class="fas fa-info-circle mr-1"></i>
+            開発・テスト用の管理者アカウントで即座にログインします
+          </p>
         </div>
       ` : ''}
       
@@ -1870,9 +1867,12 @@ async function quickAdminLogin() {
     await axios.post('/api/auth/login', adminData);
     await checkAuth();
     
-    // Redirect to admin page
+    // Close auth modal
+    closeModal('auth-modal');
+    
+    // Redirect to app
     renderApp();
-    showToast('👑 管理者としてログインしました', 'success');
+    showToast('👑 管理者としてログインしました - マイページから管理画面へアクセスできます', 'success');
     
     // Navigate to mypage after short delay
     setTimeout(() => {
