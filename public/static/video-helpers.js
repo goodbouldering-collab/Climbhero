@@ -201,29 +201,34 @@ function renderEnhancedVideoEmbed(video) {
   
   // Special handling for different platforms
   let iframeAttrs = `
-    class="w-full h-full rounded-lg" 
     frameborder="0"
     allowfullscreen
   `;
   
   if (mediaSource === 'youtube' || mediaSource === 'youtube_shorts') {
     iframeAttrs += `
+      class="w-full h-full rounded-lg"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       referrerpolicy="strict-origin-when-cross-origin"
     `;
   } else if (mediaSource === 'vimeo') {
     iframeAttrs += `
+      class="w-full h-full rounded-lg"
       allow="autoplay; fullscreen; picture-in-picture"
     `;
   } else if (mediaSource === 'tiktok') {
+    // TikTok: Vertical video, use object-fit to contain within container
     iframeAttrs += `
+      class="w-full h-full rounded-lg"
       allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      style="width: 100%; height: 100%; border: none;"
+      style="width: 100%; height: 100%; border: none; object-fit: contain;"
     `;
   } else if (mediaSource === 'instagram') {
+    // Instagram Reels: Vertical video, centered and contained
     iframeAttrs += `
+      class="w-full h-full rounded-lg"
       scrolling="no"
-      style="width: 100%; height: 100%; border: none;"
+      style="width: 100%; height: 100%; border: none; object-fit: contain;"
     `;
   }
   

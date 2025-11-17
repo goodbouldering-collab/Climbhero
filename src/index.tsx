@@ -756,7 +756,13 @@ app.get('/api/rankings/:type', async (c) => {
       SELECT v.*, r.${scoreColumn} as score, r.last_updated
       FROM video_rankings r
       JOIN videos v ON r.video_id = v.id
-      ORDER BY r.${scoreColumn} DESC
+      ORDER BY 
+        CASE 
+          WHEN v.media_source IN ('instagram', 'tiktok', 'vimeo') THEN 0 
+          ELSE 1 
+        END ASC,
+        r.${scoreColumn} DESC,
+        RANDOM()
       LIMIT ?
     `).bind(limit).all()
 

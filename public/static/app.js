@@ -2104,9 +2104,23 @@ async function showVideoDetail(videoId) {
     const response = await axios.get(`/api/videos/${videoId}?lang=${lang}`);
     const video = response.data;
     
+    // Get platform-specific aspect ratio and container styles
+    const mediaSource = video.media_source || 'youtube';
+    let aspectRatioClass = 'aspect-video'; // Default 16:9 for YouTube/Vimeo
+    let containerStyle = '';
+    let maxWidth = 'max-w-4xl'; // Default
+    
+    // Platform-specific adjustments
+    if (mediaSource === 'tiktok' || mediaSource === 'instagram') {
+      // Vertical videos (9:16) - use fixed height with centered container
+      aspectRatioClass = '';
+      containerStyle = 'style="height: 600px; max-width: 340px; margin: 0 auto;"';
+      maxWidth = 'max-w-xl'; // Narrower modal for vertical videos
+    }
+    
     const modal = document.getElementById('video-modal');
     modal.innerHTML = `
-      <div class="modal-content max-w-4xl">
+      <div class="modal-content ${maxWidth}">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-2xl font-bold">${video.title}</h3>
           <button onclick="closeModal('video-modal')" class="text-gray-400 hover:text-gray-600">
@@ -2114,7 +2128,7 @@ async function showVideoDetail(videoId) {
           </button>
         </div>
         
-        <div class="aspect-video bg-gray-900 rounded-lg mb-4">
+        <div class="${aspectRatioClass} bg-gray-900 rounded-lg mb-4" ${containerStyle}>
           ${renderEnhancedVideoEmbed(video)}
         </div>
         
