@@ -17,7 +17,7 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://fe966ae4.project-02ceb497.pages.dev ⭐ **最新デプロイ（TikTok/Instagram最適化）**
+- **本番環境**: https://94b45ad8.project-02ceb497.pages.dev ⭐ **最新デプロイ（管理者クイックログイン追加）**
 - **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
 - **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
@@ -258,13 +258,25 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
 ### デフォルト管理者アカウント
 - **Email**: `admin@climbhero.com`
 - **Password**: `admin123`
-- **アクセス**: ログイン後、ヘッダーの「Admin」ボタンから
+
+### アクセス方法
+
+**方法1: クイックログイン（推奨）** 👑
+- ヘッダー右上の**王冠アイコンボタン**をクリック
+- 自動的に管理者としてログインし、マイページへ遷移
+- マイページの「クイックアクション」から管理画面へアクセス
+
+**方法2: 通常ログイン**
+- 「ログイン」ボタンから通常ログイン
+- マイページへ移動
+- 「👑 管理画面を開く」ボタンをクリック
 
 ### 管理者機能
 1. **ブログ管理** - 投稿作成、編集、削除
-2. **動画管理** - （開発中）
-3. **ユーザー管理** - （開発中）
-4. **サイト設定** - （開発中）
+2. **広告バナー管理** - バナー作成、編集、削除、統計確認
+3. **動画管理** - （開発中）
+4. **ユーザー管理** - （開発中）
+5. **サイト設定** - （開発中）
 
 ## 📡 APIエンドポイント
 
@@ -471,9 +483,9 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 14:30 JST
-**プロジェクト状態**: ✅ **本番稼働中（TikTok/Instagram最適化版）**
-**本番URL**: https://fe966ae4.project-02ceb497.pages.dev ⭐ 最新デプロイ（モーダル表示改善）
+**最終更新日**: 2025-11-17 20:10 JST
+**プロジェクト状態**: ✅ **本番稼働中（管理者クイックログイン実装版）**
+**本番URL**: https://94b45ad8.project-02ceb497.pages.dev ⭐ 最新デプロイ（管理者アクセス改善）
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
 
