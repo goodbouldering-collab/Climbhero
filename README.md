@@ -294,13 +294,15 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
 - `POST /api/videos/:id/like` - いいね/いいね解除
 - `POST /api/videos/:id/favorite` - お気に入り追加/削除
 
-### ランキングAPI
+### ランキングAPI 🎲 **プラットフォーム多様性対応**
 - `GET /api/rankings/daily` - デイリーランキング
 - `GET /api/rankings/weekly` - 週間ランキング
 - `GET /api/rankings/monthly` - 月間ランキング
 - `GET /api/rankings/yearly` - 年間ランキング
 - `GET /api/rankings/total` - 総合ランキング
   - Query: `?limit=20`
+  - **ソート戦略**: 非YouTubeプラットフォーム優先 → スコア降順 → ランダム
+  - ランキング内でもプラットフォームの多様性を確保
 
 ### ブログAPI
 - `GET /api/blog?lang={ja|en|zh|ko}` - ブログ記事一覧（多言語対応） 🌐 NEW
@@ -469,9 +471,9 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 06:15 JST
-**プロジェクト状態**: ✅ **本番稼働中（マルチプラットフォーム完全対応 + スマートランダム化）**
-**本番URL**: https://be86ed29.project-02ceb497.pages.dev ⭐ 最新デプロイ（ビデオ順序ランダム化対応）
+**最終更新日**: 2025-11-17 06:35 JST
+**プロジェクト状態**: ✅ **本番稼働中（完全最適化版）**
+**本番URL**: https://bec0dd19.project-02ceb497.pages.dev ⭐ 最新デプロイ（ランキング + モーダル最適化）
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
 
@@ -566,7 +568,7 @@ pm2 start ecosystem.config.cjs
 
 ## 🎉 最新アップデート (2025-11-17)
 
-### 🎲 スマートビデオ順序ランダム化機能実装
+### 🎲 スマートビデオ順序ランダム化 + ランキング改善 + モーダル最適化
 - ✅ **プラットフォーム優先度ソート**:
   - Instagram/TikTok/Vimeoを優先グループ（priority=0）に設定
   - YouTubeを後続グループ（priority=1）に設定
@@ -575,6 +577,20 @@ pm2 start ecosystem.config.cjs
   - `GET /api/videos`: 全動画一覧（ページネーション対応）
   - `GET /api/videos/trending`: 注目の動画（いいね増加率順 + ランダム化）
   - `GET /api/videos/instagram`: Instagram動画専用（ランダム化）
+  - `GET /api/rankings/*`: 全ランキング（デイリー/週間/月間/年間/総合）🆕
+- ✅ **ランキングAPI改善** 🆕:
+  - 非YouTubeプラットフォーム優先表示
+  - スコア降順 + ランダム化で多様性確保
+  - ランキング内でもプラットフォームの偏りを解消
+- ✅ **動画モーダル表示最適化** 🆕:
+  - **縦長動画対応**（TikTok、Instagram）:
+    - 固定高さ600px、幅340pxで中央配置
+    - モーダル幅を`max-w-xl`に縮小
+    - `object-fit: contain`で最適表示
+  - **横長動画対応**（YouTube、Vimeo）:
+    - 16:9アスペクト比維持（`aspect-video`）
+    - モーダル幅`max-w-4xl`で広々表示
+  - プラットフォームごとに最適化されたiframe属性
 - ✅ **SQLソート戦略**:
   ```sql
   ORDER BY 
@@ -582,13 +598,15 @@ pm2 start ecosystem.config.cjs
       WHEN media_source IN ('instagram', 'tiktok', 'vimeo') THEN 0 
       ELSE 1 
     END ASC,
+    score DESC,  -- ランキングのみ
     RANDOM()
   ```
 - ✅ **ユーザー体験向上**:
   - 毎回異なる動画順序で新鮮な閲覧体験
   - 多様なプラットフォームのコンテンツを先頭に表示
   - YouTube以外のプラットフォームの視認性向上
-- ✅ **本番環境テスト完了**: https://be86ed29.project-02ceb497.pages.dev
+  - 縦長動画が画面いっぱいに広がる問題を解決
+- ✅ **本番環境テスト完了**: https://bec0dd19.project-02ceb497.pages.dev
 
 ---
 
