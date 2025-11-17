@@ -17,7 +17,7 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://94b45ad8.project-02ceb497.pages.dev ⭐ **最新デプロイ（管理者クイックログイン追加）**
+- **本番環境**: https://9fa95b71.project-02ceb497.pages.dev ⭐ **最新デプロイ（管理者ログインUI改善）**
 - **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
 - **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
@@ -261,15 +261,17 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
 
 ### アクセス方法
 
-**方法1: クイックログイン（推奨）** 👑
-- ヘッダー右上の**王冠アイコンボタン**をクリック
-- 自動的に管理者としてログインし、マイページへ遷移
-- マイページの「クイックアクション」から管理画面へアクセス
+**方法1: モーダルからクイックログイン（推奨）** 👑
+1. ヘッダー右上の「ログイン」ボタンをクリック
+2. ログインモーダルの下部にある**「👑 管理者としてログイン」ボタン**をクリック
+3. 自動的に管理者としてログインし、マイページへ遷移
+4. マイページの「クイックアクション」から管理画面へアクセス
 
 **方法2: 通常ログイン**
-- 「ログイン」ボタンから通常ログイン
-- マイページへ移動
-- 「👑 管理画面を開く」ボタンをクリック
+1. 「ログイン」ボタンをクリック
+2. Email: `admin@climbhero.com` / Password: `admin123` を入力
+3. マイページへ移動
+4. 「👑 管理画面を開く」ボタンをクリック
 
 ### 管理者機能
 1. **ブログ管理** - 投稿作成、編集、削除
@@ -483,9 +485,9 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 20:10 JST
-**プロジェクト状態**: ✅ **本番稼働中（管理者クイックログイン実装版）**
-**本番URL**: https://94b45ad8.project-02ceb497.pages.dev ⭐ 最新デプロイ（管理者アクセス改善）
+**最終更新日**: 2025-11-17 20:30 JST
+**プロジェクト状態**: ✅ **本番稼働中（管理者ログインUI改善版）**
+**本番URL**: https://9fa95b71.project-02ceb497.pages.dev ⭐ 最新デプロイ（モーダル内クイックログイン）
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
 
