@@ -471,9 +471,9 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 06:50 JST
+**最終更新日**: 2025-11-17 07:05 JST
 **プロジェクト状態**: ✅ **本番稼働中（完全最適化版）**
-**本番URL**: https://fbf2c546.project-02ceb497.pages.dev ⭐ 最新デプロイ（モーダル統一化）
+**本番URL**: https://4d11eca4.project-02ceb497.pages.dev ⭐ 最新デプロイ（全プラットフォームiframe対応）
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 **参考サイト**: https://climbhero.info
 
@@ -568,7 +568,27 @@ pm2 start ecosystem.config.cjs
 
 ## 🎉 最新アップデート (2025-11-17)
 
-### 🎲 スマートビデオ順序ランダム化 + ランキング改善 + モーダル最適化
+### 🎬 全プラットフォームiframe埋め込み + URL自動検出 🆕
+
+**全プラットフォームで直接再生可能に！**
+- ✅ **iframe埋め込み統一**:
+  - YouTube、Vimeo、TikTok、Instagramすべてiframe埋め込みに対応
+  - モーダル内のネイティブ再生ボタンをクリックして直接視聴
+  - 外部リンクボタン不要、シームレスな再生体験
+- ✅ **縦長動画の最適化**:
+  - TikTok: max-width 325px、中央配置
+  - Instagram: max-width 328px、中央配置
+  - 16:9モーダル内で縦長iframeを適切に配置
+- ✅ **URL自動検出機能** 🤖:
+  - `detectMediaSource(url)`関数を新規実装
+  - URLから自動的にプラットフォームを判定（YouTube/Vimeo/TikTok/Instagram）
+  - 投稿時にメディアソースを指定不要
+  - URLを入力するだけで適切な埋め込み形式を自動適用
+- ✅ **Instagram拡張対応**:
+  - Reels（`/reel/`）だけでなく通常投稿（`/p/`）もサポート
+  - Instagram埋め込みの互換性向上
+
+### 🎲 スマートビデオ順序ランダム化 + ランキング改善
 - ✅ **プラットフォーム優先度ソート**:
   - Instagram/TikTok/Vimeoを優先グループ（priority=0）に設定
   - YouTubeを後続グループ（priority=1）に設定
@@ -582,19 +602,22 @@ pm2 start ecosystem.config.cjs
   - 非YouTubeプラットフォーム優先表示
   - スコア降順 + ランダム化で多様性確保
   - ランキング内でもプラットフォームの偏りを解消
-- ✅ **動画モーダル表示の統一** 🆕:
-  - **全プラットフォームで統一サイズ**:
+- ✅ **全プラットフォームでiframe埋め込み再生** 🆕:
+  - **統一モーダルサイズ**:
     - モーダル幅: `max-w-4xl`（全プラットフォーム共通）
     - アスペクト比: 16:9（`aspect-video`）
-  - **TikTok / Instagram**:
-    - サムネイル画像 + 中央配置の大きな再生ボタン
-    - ホバーエフェクト（拡大アニメーション）
-    - 外部リンクで新しいタブで開く
-    - YouTubeやVimeoと同じモーダルサイズで統一感
   - **YouTube / Vimeo**:
-    - iframe埋め込み再生（従来通り）
+    - フル幅iframe埋め込み（従来通り）
     - モーダル内で直接再生可能
-  - すべてのプラットフォームで一貫したUX
+  - **TikTok / Instagram**:
+    - 縦長iframe（TikTok: 325px、Instagram: 328px）を中央配置
+    - 各プラットフォームのネイティブ再生ボタン
+    - モーダル内でクリックして直接再生
+    - 外部ボタン不要、標準的な再生体験
+  - **URLから自動検出**:
+    - `detectMediaSource()`関数でURLから自動的にプラットフォーム判定
+    - YouTube、Vimeo、TikTok、Instagramを自動識別
+    - 投稿URLを入力するだけで適切な埋め込み形式を適用
 - ✅ **SQLソート戦略**:
   ```sql
   ORDER BY 
