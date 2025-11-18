@@ -53,7 +53,7 @@ const translations = {
     'video.more_info': 'もっと見る (全{count}件)',
     
     // Pricing Section
-    'pricing.title': 'プレミアムで、動画投稿❤️',
+    'pricing.title': 'プレミアムで動画投稿しよう',
     'pricing.trial': '15日間無料トライアル実施中',
     'pricing.free.title': '無料プラン',
     'pricing.free.price': '$0',
