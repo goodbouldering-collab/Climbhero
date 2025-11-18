@@ -2953,53 +2953,45 @@ function renderAdminPage() {
           <p class="text-sm text-gray-600">ClimbHeroの運営管理システム</p>
         </div>
 
-        <!-- Quick Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-xs text-gray-600 font-medium mb-1">総会員数</p>
-                <p class="text-2xl font-bold text-gray-800" id="stat-users">-</p>
-              </div>
-              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-users text-blue-600 text-xl"></i>
-              </div>
+        <!-- Quick Stats -->
+        <div class="flex flex-wrap gap-8 mb-6 justify-center">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-users text-blue-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-600 font-medium">総会員数</p>
+              <p class="text-2xl font-bold text-gray-800" id="stat-users">-</p>
             </div>
           </div>
           
-          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-xs text-gray-600 font-medium mb-1">動画数</p>
-                <p class="text-2xl font-bold text-gray-800" id="stat-videos">-</p>
-              </div>
-              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-video text-green-600 text-xl"></i>
-              </div>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-video text-green-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-600 font-medium">動画数</p>
+              <p class="text-2xl font-bold text-gray-800" id="stat-videos">-</p>
             </div>
           </div>
           
-          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-xs text-gray-600 font-medium mb-1">ブログ記事</p>
-                <p class="text-2xl font-bold text-gray-800" id="stat-blogs">-</p>
-              </div>
-              <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-blog text-orange-600 text-xl"></i>
-              </div>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-blog text-orange-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-600 font-medium">ブログ記事</p>
+              <p class="text-2xl font-bold text-gray-800" id="stat-blogs">-</p>
             </div>
           </div>
           
-          <div class="bg-white rounded-lg shadow border border-gray-200 p-5">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-xs text-gray-600 font-medium mb-1">お知らせ</p>
-                <p class="text-2xl font-bold text-gray-800" id="stat-announcements">-</p>
-              </div>
-              <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-bullhorn text-red-600 text-xl"></i>
-              </div>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-bullhorn text-red-600"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-600 font-medium">お知らせ</p>
+              <p class="text-2xl font-bold text-gray-800" id="stat-announcements">-</p>
             </div>
           </div>
         </div>
