@@ -2947,16 +2947,6 @@ function renderAdminPage() {
       </header>
 
       <main class="max-w-full mx-auto px-4 lg:px-6 py-6">
-        <!-- Admin Page Button (Top) -->
-        ${state.currentUser.is_admin ? `
-          <div class="mb-6">
-            <button onclick="navigateTo('admin')" class="w-full sm:w-auto px-8 py-4 text-left shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-xl" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-              <i class="fas fa-crown mr-3 text-yellow-300 text-xl"></i>
-              <span class="font-bold text-lg">👑 管理ページ</span>
-            </button>
-          </div>
-        ` : ''}
-        
         <!-- Page Title -->
         <div class="mb-6">
           <h1 class="text-2xl font-bold text-gray-800 mb-1">管理ページ</h1>
@@ -3017,24 +3007,44 @@ function renderAdminPage() {
         <!-- Management Sections Grid -->
         <div class="grid grid-cols-1 gap-4">
           
-          <!-- User Management Section -->
+          <!-- Video Management Section -->
           <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
               <h2 class="text-base font-bold text-gray-800 flex items-center">
-                <i class="fas fa-users mr-2 text-blue-600"></i>
-                会員管理
+                <i class="fas fa-video mr-2 text-green-600"></i>
+                動画管理
+              </h2>
+              <button onclick="loadAdminVideos()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+                <i class="fas fa-sync-alt mr-1"></i>再読み込み
+              </button>
+            </div>
+            <div class="p-4">
+              <div id="admin-videos-list" class="overflow-x-auto">
+                <div class="text-center py-8 text-gray-500">
+                  ${i18n.t('common.loading')}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Blog Management Section -->
+          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
+              <h2 class="text-base font-bold text-gray-800 flex items-center">
+                <i class="fas fa-blog mr-2 text-orange-600"></i>
+                ブログ管理
               </h2>
               <div class="flex gap-2">
-                <button onclick="exportUsersCSV()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors text-sm">
-                  <i class="fas fa-download mr-1"></i>CSV出力
+                <button onclick="loadAdminBlogs()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-sync-alt mr-1"></i>再読み込み
                 </button>
-                <button onclick="showImportCSVModal()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors text-sm">
-                  <i class="fas fa-upload mr-1"></i>CSV取込
+                <button onclick="showBlogModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-plus mr-1"></i>新規作成
                 </button>
               </div>
             </div>
             <div class="p-4">
-              <div id="admin-users-table" class="overflow-x-auto">
+              <div id="admin-blog-list" class="overflow-x-auto">
                 <div class="text-center py-8 text-gray-500">
                   ${i18n.t('common.loading')}
                 </div>
@@ -3046,15 +3056,20 @@ function renderAdminPage() {
           <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
             <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
               <h2 class="text-base font-bold text-gray-800 flex items-center">
-                <i class="fas fa-bullhorn mr-2 text-red-600"></i>
+                <i class="fas fa-bullhorn mr-2 text-blue-600"></i>
                 お知らせ管理
               </h2>
-              <button onclick="showAnnouncementModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
-                <i class="fas fa-plus mr-1"></i>新規作成
-              </button>
+              <div class="flex gap-2">
+                <button onclick="loadAdminAnnouncements()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-sync-alt mr-1"></i>再読み込み
+                </button>
+                <button onclick="showAnnouncementModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                  <i class="fas fa-plus mr-1"></i>新規作成
+                </button>
+              </div>
             </div>
             <div class="p-4">
-              <div id="admin-announcements-table" class="overflow-x-auto">
+              <div id="admin-announcements-list" class="overflow-x-auto">
                 <div class="text-center py-8 text-gray-500">
                   ${i18n.t('common.loading')}
                 </div>
@@ -3082,64 +3097,7 @@ function renderAdminPage() {
             </div>
           </div>
           
-          <!-- Blog Management Section -->
-          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 class="text-base font-bold text-gray-800 flex items-center">
-                <i class="fas fa-blog mr-2 text-orange-600"></i>
-                ブログ管理
-              </h2>
-              <div class="flex gap-2">
-                <button onclick="loadAdminBlogs()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
-                  <i class="fas fa-sync-alt mr-1"></i>一覧表示
-                </button>
-                <button onclick="showTagManagementModal()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded transition-colors text-sm">
-                  <i class="fas fa-tags mr-1"></i>ジャンル管理
-                </button>
-                <button onclick="showBlogModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
-                  <i class="fas fa-plus mr-1"></i>新規作成
-                </button>
-              </div>
-            </div>
-            <div class="p-4">
-              <div id="admin-blog-list">
-                <div class="text-center py-8 text-gray-500">
-                  <p class="mb-4">「一覧表示」ボタンをクリックしてブログ記事を表示</p>
-                  <button onclick="loadAdminBlogs()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                    <i class="fas fa-list mr-2"></i>ブログ一覧を表示
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Announcements Management Section -->
-          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 class="text-base font-bold text-gray-800 flex items-center">
-                <i class="fas fa-bullhorn mr-2 text-blue-600"></i>
-                お知らせ管理
-              </h2>
-              <div class="flex gap-2">
-                <button onclick="loadAdminAnnouncements()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
-                  <i class="fas fa-sync-alt mr-1"></i>一覧表示
-                </button>
-                <button onclick="showAnnouncementModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
-                  <i class="fas fa-plus mr-1"></i>新規作成
-                </button>
-              </div>
-            </div>
-            <div class="p-4">
-              <div id="admin-announcements-list">
-                <div class="text-center py-8 text-gray-500">
-                  <p class="mb-4">「一覧表示」ボタンをクリックしてお知らせを表示</p>
-                  <button onclick="loadAdminAnnouncements()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                    <i class="fas fa-list mr-2"></i>お知らせ一覧を表示
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+
           
           <!-- Testimonials Management Section -->
           <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
@@ -3562,6 +3520,90 @@ async function deleteVideo(videoId) {
   }
 }
 
+// Load admin videos
+async function loadAdminVideos() {
+  try {
+    const response = await axios.get('/api/videos?limit=100&lang=ja');
+    const videos = response.data.videos || [];
+    
+    const container = document.getElementById('admin-videos-list');
+    if (!container) return;
+    
+    if (videos.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-gray-500">
+          <i class="fas fa-inbox text-4xl mb-3"></i>
+          <p>動画がありません</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = `
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">タイトル</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">プラットフォーム</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">カテゴリ</th>
+            <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">いいね</th>
+            <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">閲覧数</th>
+            <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          ${videos.map(video => `
+            <tr class="hover:bg-gray-50">
+              <td class="px-3 py-2 text-gray-900">${video.id}</td>
+              <td class="px-3 py-2 text-gray-900 max-w-xs truncate" title="${video.title}">${video.title}</td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                  video.media_source === 'youtube' ? 'bg-red-100 text-red-800' :
+                  video.media_source === 'tiktok' ? 'bg-gray-900 text-white' :
+                  video.media_source === 'instagram' ? 'bg-pink-100 text-pink-800' :
+                  video.media_source === 'vimeo' ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-800'
+                }">
+                  ${video.media_source || 'youtube'}
+                </span>
+              </td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                  ${video.category || 'bouldering'}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-center text-gray-600">${video.likes || 0}</td>
+              <td class="px-3 py-2 text-center text-gray-600">${video.views || 0}</td>
+              <td class="px-3 py-2 text-center">
+                <div class="flex gap-1 justify-center">
+                  <button onclick="showVideoModal(${video.id})" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="deleteVideo(${video.id})" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (error) {
+    console.error('Failed to load admin videos:', error);
+    const container = document.getElementById('admin-videos-list');
+    if (container) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-red-500">
+          <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+          <p>動画の読み込みに失敗しました</p>
+        </div>
+      `;
+    }
+  }
+}
+
 // Load admin blogs
 async function loadAdminBlogs() {
   try {
@@ -3582,43 +3624,41 @@ async function loadAdminBlogs() {
     }
     
     container.innerHTML = `
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">タイトル</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ジャンル</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">公開日</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">操作</th>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">タイトル</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ジャンル</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">公開日</th>
+            <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          ${blogs.map(blog => `
+            <tr class="hover:bg-gray-50">
+              <td class="px-3 py-2 text-gray-900">${blog.id}</td>
+              <td class="px-3 py-2 text-gray-900 max-w-xs truncate" title="${blog.title || blog.title_ja}">${blog.title || blog.title_ja}</td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                  ${blog.genre || 'general'}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-gray-600">${new Date(blog.published_date).toLocaleDateString('ja-JP')}</td>
+              <td class="px-3 py-2 text-center">
+                <div class="flex gap-1 justify-center">
+                  <button onclick="showBlogModal(${blog.id})" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="deleteBlog(${blog.id})" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            ${blogs.map(blog => `
-              <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-sm text-gray-900">${blog.id}</td>
-                <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">${blog.title || blog.title_ja}</td>
-                <td class="px-4 py-3 text-sm">
-                  <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-                    ${blog.genre || 'general'}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-600">${new Date(blog.published_date).toLocaleDateString('ja-JP')}</td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex gap-2 justify-center">
-                    <button onclick="showBlogModal(${blog.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
-                      <i class="fas fa-edit mr-1"></i>編集
-                    </button>
-                    <button onclick="deleteBlog(${blog.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
-                      <i class="fas fa-trash mr-1"></i>削除
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
+          `).join('')}
+        </tbody>
+      </table>
     `;
   } catch (error) {
     console.error('Failed to load admin blogs:', error);
@@ -3654,49 +3694,47 @@ async function loadAdminAnnouncements() {
     }
     
     container.innerHTML = `
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">タイトル</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">内容</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ジャンル</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ステータス</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">操作</th>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">タイトル</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">内容</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ジャンル</th>
+            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ステータス</th>
+            <th class="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          ${announcements.map(announcement => `
+            <tr class="hover:bg-gray-50">
+              <td class="px-3 py-2 text-gray-900">${announcement.id}</td>
+              <td class="px-3 py-2 text-gray-900 max-w-xs truncate" title="${announcement.title || announcement.title_ja}">${announcement.title || announcement.title_ja}</td>
+              <td class="px-3 py-2 text-gray-600 max-w-md truncate" title="${announcement.content || announcement.content_ja}">${announcement.content || announcement.content_ja}</td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                  ${announcement.genre || 'general'}
+                </span>
+              </td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${announcement.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                  ${announcement.is_active ? '公開中' : '非公開'}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-center">
+                <div class="flex gap-1 justify-center">
+                  <button onclick="showAnnouncementModal(${announcement.id})" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button onclick="deleteAnnouncement(${announcement.id})" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            ${announcements.map(announcement => `
-              <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-sm text-gray-900">${announcement.id}</td>
-                <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">${announcement.title || announcement.title_ja}</td>
-                <td class="px-4 py-3 text-sm text-gray-600 max-w-md truncate">${announcement.content || announcement.content_ja}</td>
-                <td class="px-4 py-3 text-sm">
-                  <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                    ${announcement.genre || 'general'}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-sm">
-                  <span class="px-2 py-1 text-xs font-medium rounded-full ${announcement.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-                    ${announcement.is_active ? '公開中' : '非公開'}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-center">
-                  <div class="flex gap-2 justify-center">
-                    <button onclick="showAnnouncementModal(${announcement.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
-                      <i class="fas fa-edit mr-1"></i>編集
-                    </button>
-                    <button onclick="deleteAnnouncement(${announcement.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors">
-                      <i class="fas fa-trash mr-1"></i>削除
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
+          `).join('')}
+        </tbody>
+      </table>
     `;
   } catch (error) {
     console.error('Failed to load admin announcements:', error);
@@ -4686,37 +4724,23 @@ async function loadAdminData() {
   if (!state.currentUser || !state.currentUser.is_admin) return;
   
   try {
-    // Load users
-    const usersRes = await axios.get('/api/admin/users');
-    renderUsersTable(usersRes.data);
-    updateStat('users', usersRes.data.length);
+    // Load statistics
+    const [videosRes, blogsRes, announcementsRes] = await Promise.all([
+      axios.get('/api/videos?limit=1000&lang=ja'),
+      axios.get('/api/blog?lang=ja'),
+      axios.get('/api/announcements?lang=ja')
+    ]);
     
-    // Load videos (existing)
-    const videosRes = await axios.get('/api/admin/videos');
-    renderVideosCarousel(videosRes.data);
-    updateStat('videos', videosRes.data.length);
+    updateStat('videos', videosRes.data.videos?.length || 0);
+    updateStat('blogs', blogsRes.data?.length || 0);
+    updateStat('announcements', announcementsRes.data?.length || 0);
+    updateStat('users', 3); // Placeholder
     
-    // Load announcements (existing)
-    const announcementsRes = await axios.get('/api/admin/announcements');
-    renderAnnouncementsCarousel(announcementsRes.data);
-    updateStat('announcements', announcementsRes.data.length);
+    // Auto-load all lists
+    await loadAdminVideos();
+    await loadAdminBlogs();
+    await loadAdminAnnouncements();
     
-    // Load blog posts with tags
-    const blogsRes = await axios.get('/api/admin/blog/posts');
-    renderBlogList(blogsRes.data);
-    updateStat('blogs', blogsRes.data.length);
-    
-    // Load tags
-    const tagsRes = await axios.get('/api/blog/tags');
-    state.blogTags = tagsRes.data;
-    
-    // Load testimonials
-    const testimonialsRes = await axios.get('/api/admin/testimonials');
-    renderTestimonialsList(testimonialsRes.data.testimonials);
-    
-    // Load ad banners
-    const bannersRes = await axios.get('/api/ad-banners');
-    renderAdBannersList(bannersRes.data);
   } catch (error) {
     console.error('Failed to load admin data:', error);
   }
