@@ -163,13 +163,13 @@ async function loadInitialData() {
   try {
     const lang = state.currentLanguage || 'ja'
     const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes, topLikedRes, adBannersHeroRes, adBannersBlogRes, blogGenresRes] = await Promise.all([
-      axios.get('/api/videos?limit=20'),
+      axios.get(`/api/videos?limit=20&lang=${lang}`),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get(`/api/blog?lang=${lang}`),
       axios.get(`/api/announcements?lang=${lang}`),
-      axios.get('/api/videos/trending?limit=10'),
+      axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
       axios.get('/api/testimonials'),
-      axios.get('/api/videos/top-liked?limit=20&period=all'),
+      axios.get(`/api/videos/top-liked?limit=20&period=all&lang=${lang}`),
       axios.get('/api/ad-banners?position=hero_bottom'),
       axios.get('/api/ad-banners?position=blog_top'),
       axios.get('/api/blog/genres')
@@ -3515,7 +3515,8 @@ async function deleteVideo(videoId) {
 // Load admin videos
 async function loadAdminVideos() {
   try {
-    const response = await axios.get('/api/videos?limit=100&lang=ja');
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/videos?limit=100&lang=${lang}`);
     const videos = response.data.videos || [];
     
     const container = document.getElementById('admin-videos-list');
@@ -3599,7 +3600,8 @@ async function loadAdminVideos() {
 // Load admin blogs
 async function loadAdminBlogs() {
   try {
-    const response = await axios.get('/api/blog?lang=ja');
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/blog?lang=${lang}`);
     const blogs = response.data;
     
     const container = document.getElementById('admin-blog-list');
@@ -3669,7 +3671,8 @@ async function loadAdminBlogs() {
 // Load admin announcements
 async function loadAdminAnnouncements() {
   try {
-    const response = await axios.get('/api/announcements?lang=ja');
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/announcements?lang=${lang}`);
     const announcements = response.data;
     
     const container = document.getElementById('admin-announcements-list');
@@ -4717,10 +4720,11 @@ async function loadAdminData() {
   
   try {
     // Load statistics
+    const lang = state.currentLanguage || 'ja';
     const [videosRes, blogsRes, announcementsRes] = await Promise.all([
-      axios.get('/api/videos?limit=1000&lang=ja'),
-      axios.get('/api/blog?lang=ja'),
-      axios.get('/api/announcements?lang=ja')
+      axios.get(`/api/videos?limit=1000&lang=${lang}`),
+      axios.get(`/api/blog?lang=${lang}`),
+      axios.get(`/api/announcements?lang=${lang}`)
     ]);
     
     updateStat('videos', videosRes.data.videos?.length || 0);
