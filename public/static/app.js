@@ -440,7 +440,7 @@ function renderHomePage() {
               ${state.announcements.length > 2 ? `
                 <div class="text-center mt-4">
                   <a href="javascript:void(0)" onclick="showAnnouncementsModal()" class="text-white text-sm font-semibold hover:text-gray-200 hover:underline transition-all">
-                    もっと見る (全${state.announcements.length}件)
+                    ${i18n.t('announcement.view_all_count').replace('{count}', state.announcements.length)}
                   </a>
                 </div>
               ` : ''}
@@ -904,7 +904,7 @@ function renderFooter() {
               ClimbHero
             </h5>
             <p class="text-sm mb-4">
-              クライミングコミュニティのための動画共有プラットフォーム
+              ${i18n.t('footer.description')}
             </p>
             <div class="flex gap-3">
               <a href="https://twitter.com/climbhero" target="_blank" class="text-gray-400 hover:text-white" title="Twitter">
@@ -924,33 +924,33 @@ function renderFooter() {
           
           <!-- Quick Links -->
           <div>
-            <h5 class="text-white font-bold mb-4">クイックリンク</h5>
+            <h5 class="text-white font-bold mb-4">${i18n.t('footer.quick_links')}</h5>
             <ul class="space-y-2 text-sm">
-              <li><a href="#home" class="hover:text-white">ホーム</a></li>
-              <li><a href="#about" class="hover:text-white">ClimbHeroについて</a></li>
-              <li><a href="#api" class="hover:text-white"><i class="fas fa-code mr-1"></i>API</a></li>
-              <li><a href="#" onclick="showPricingModal(); return false;" class="hover:text-white">料金プラン</a></li>
-              <li><a href="#contact" class="hover:text-white">お問い合わせ</a></li>
+              <li><a href="#home" class="hover:text-white">${i18n.t('footer.home')}</a></li>
+              <li><a href="#about" class="hover:text-white">${i18n.t('footer.about')}</a></li>
+              <li><a href="#api" class="hover:text-white"><i class="fas fa-code mr-1"></i>${i18n.t('footer.api')}</a></li>
+              <li><a href="#" onclick="showPricingModal(); return false;" class="hover:text-white">${i18n.t('footer.pricing')}</a></li>
+              <li><a href="#contact" class="hover:text-white">${i18n.t('footer.contact')}</a></li>
             </ul>
           </div>
           
           <!-- Legal -->
           <div>
-            <h5 class="text-white font-bold mb-4">法的情報</h5>
+            <h5 class="text-white font-bold mb-4">${i18n.t('footer.legal')}</h5>
             <ul class="space-y-2 text-sm">
-              <li><a href="#terms" class="hover:text-white">利用規約</a></li>
-              <li><a href="#privacy" class="hover:text-white">プライバシーポリシー</a></li>
-              <li><a href="#about" class="hover:text-white">運営会社</a></li>
-              <li><a href="#contact" class="hover:text-white">お問い合わせ</a></li>
+              <li><a href="#terms" class="hover:text-white">${i18n.t('footer.terms')}</a></li>
+              <li><a href="#privacy" class="hover:text-white">${i18n.t('footer.privacy')}</a></li>
+              <li><a href="#about" class="hover:text-white">${i18n.t('footer.company')}</a></li>
+              <li><a href="#contact" class="hover:text-white">${i18n.t('footer.contact')}</a></li>
             </ul>
           </div>
           
           <!-- Contact & Support -->
           <div>
-            <h5 class="text-white font-bold mb-4">サポート</h5>
+            <h5 class="text-white font-bold mb-4">${i18n.t('footer.support')}</h5>
             <p class="text-sm mb-3">
               <i class="fas fa-clock mr-2 text-purple-400"></i>
-              <strong>平日 10:00-18:00</strong>
+              <strong>${i18n.t('footer.support_hours')}</strong>
             </p>
             <p class="text-sm mb-3">
               <i class="fas fa-user-tie mr-2 text-purple-400"></i>
@@ -966,7 +966,7 @@ function renderFooter() {
             </p>
             <p class="text-sm">
               <i class="fas fa-envelope mr-2 text-purple-400"></i>
-              <a href="#contact" class="hover:text-white">お問い合わせフォーム</a>
+              <a href="#contact" class="hover:text-white">${i18n.t('footer.contact_form')}</a>
             </p>
           </div>
         </div>
@@ -974,7 +974,7 @@ function renderFooter() {
         <div class="border-t border-gray-800 pt-8 text-center text-sm">
           <p>&copy; 2025 ClimbHero. All rights reserved.</p>
           <p class="mt-2 text-xs text-gray-500">
-            Powered by AI-driven video classification | Built with ❤️ for climbers
+            ${i18n.t('footer.powered_by')}
           </p>
         </div>
       </div>

@@ -51,6 +51,10 @@ const translations = {
     'video.open_on': '{platform}で開く',
     'video.external_notice': '※ この動画は外部サイトで再生されます',
     'video.more_info': 'もっと見る (全{count}件)',
+    'video.favorite': 'お気に入り',
+    'video.like': 'いいね',
+    'video.like_tooltip': 'いいね',
+    'video.favorite_tooltip': 'お気に入り',
     
     // Pricing Section
     'pricing.title': 'プレミアムで動画投稿しよう',
@@ -73,6 +77,13 @@ const translations = {
     'pricing.premium.detail3': '広告非表示',
     'pricing.premium.detail4': 'AIグレード判定＆優先サポート',
     'pricing.cta': '今すぐ始める',
+    'pricing.trial_note': '15日間の無料トライアル後、自動的に月額$20が請求されます。いつでもキャンセル可能です。',
+    'pricing.trial_start': '15日間無料で始める',
+    'pricing.upgrade_now': '今すぐアップグレード',
+    'pricing.premium_only': '動画投稿はプレミアム限定',
+    'pricing.premium_desc': 'プレミアムプランで無制限に動画を投稿できます',
+    'pricing.premium_benefits': 'プレミアムプランの特典',
+    'pricing.trial_badge': '✨ 15日間無料トライアル',
     
     // Auth Modal
     'auth.login.title': 'ログイン',
@@ -148,6 +159,24 @@ const translations = {
     'detail.category': 'カテゴリー',
     'detail.close': '閉じる',
     
+    // Common UI
+    'common.view_more': 'もっと見る',
+    'common.view_all': 'すべて表示',
+    'common.close': '閉じる',
+    'common.cancel': 'キャンセル',
+    'common.save': '保存',
+    'common.edit': '編集',
+    'common.delete': '削除',
+    'common.add': '追加',
+    'common.confirm': '確認',
+    'common.back': '戻る',
+    'common.submit': '送信',
+    'common.update': '更新',
+    'common.upgrade': 'アップグレード',
+    'common.downgrade': 'ダウングレード',
+    'common.items': '件',
+    'common.all_items': '全{count}件',
+    
     // Toast Messages
     'toast.like_success': 'いいねしました！',
     'toast.like_remaining': 'あと{count}回いいねできます',
@@ -162,13 +191,37 @@ const translations = {
     'toast.auth_error': '認証に失敗しました',
     'toast.logout_success': 'ログアウトしました',
     'toast.logout_confirm': 'ログアウトしますか？',
+    'toast.profile_updated': 'プロフィールを更新しました',
+    'toast.password_updated': 'パスワードを更新しました',
+    'toast.video_updated': '動画を更新しました',
+    'toast.announcement_updated': 'お知らせを更新しました',
+    'toast.user_updated': 'ユーザー情報を更新しました',
+    'toast.blog_updated': 'ブログを更新しました',
+    'toast.banner_updated': '広告バナーを更新しました',
     
     // Footer
+    'footer.description': 'クライミングコミュニティのための動画共有プラットフォーム',
+    'footer.quick_links': 'クイックリンク',
+    'footer.home': 'ホーム',
     'footer.about': 'ClimbHeroについて',
+    'footer.api': 'API',
+    'footer.pricing': '料金プラン',
+    'footer.contact_form': 'お問い合わせ',
+    'footer.legal': '法的情報',
     'footer.terms': '利用規約',
     'footer.privacy': 'プライバシーポリシー',
+    'footer.company': '運営会社',
     'footer.contact': 'お問い合わせ',
+    'footer.support': 'サポート',
+    'footer.support_hours': '平日 10:00-18:00',
+    'footer.supervisor': '監修',
+    'footer.supervisor_name': 'クライミングルプロジェクト',
+    'footer.supervisor_address': '〒224-0054 神奈川県横浜市都筑区佐江戸町417',
+    'footer.producer': '製作者',
+    'footer.producer_name': 'グッぼる ボルダリングカフェ',
+    'footer.producer_address': '〒522-0043 滋賀県彦根市小泉町34-8',
     'footer.copyright': '© 2024 ClimbHero. All rights reserved.',
+    'footer.powered_by': 'Powered by AI-driven video classification | Built with ❤️ for climbers',
     
     // Admin Panel
     'admin.title': '管理画面',
@@ -241,6 +294,8 @@ const translations = {
     // Announcements
     'announcement.title': 'お知らせ',
     'announcement.no_announcements': 'お知らせはありません',
+    'announcement.view_more': 'もっと見る',
+    'announcement.view_all_count': 'もっと見る (全{count}件)',
     
     // Stripe Settings
     'stripe.title': 'Stripe決済設定',
@@ -602,6 +657,10 @@ const translations = {
     'video.open_on': 'Open on {platform}',
     'video.external_notice': '* This video will be played on an external site',
     'video.more_info': 'More ({count} total)',
+    'video.favorite': 'Favorite',
+    'video.like': 'Like',
+    'video.like_tooltip': 'Like',
+    'video.favorite_tooltip': 'Favorite',
     
     // Pricing Section
     'pricing.title': 'Premium: Video Posts❤️',
@@ -624,6 +683,13 @@ const translations = {
     'pricing.premium.detail3': 'Ad-Free Experience',
     'pricing.premium.detail4': 'AI Grading & Priority Support',
     'pricing.cta': 'Get Started',
+    'pricing.trial_note': 'After 15-day free trial, $20/month will be charged automatically. Cancel anytime.',
+    'pricing.trial_start': 'Start 15-day Free Trial',
+    'pricing.upgrade_now': 'Upgrade Now',
+    'pricing.premium_only': 'Video Upload: Premium Only',
+    'pricing.premium_desc': 'Upload unlimited videos with Premium Plan',
+    'pricing.premium_benefits': 'Premium Benefits',
+    'pricing.trial_badge': '✨ 15-day Free Trial',
     
     // Auth Modal
     'auth.login.title': 'Login',
@@ -699,6 +765,24 @@ const translations = {
     'detail.category': 'Category',
     'detail.close': 'Close',
     
+    // Common UI
+    'common.view_more': 'View More',
+    'common.view_all': 'View All',
+    'common.close': 'Close',
+    'common.cancel': 'Cancel',
+    'common.save': 'Save',
+    'common.edit': 'Edit',
+    'common.delete': 'Delete',
+    'common.add': 'Add',
+    'common.confirm': 'Confirm',
+    'common.back': 'Back',
+    'common.submit': 'Submit',
+    'common.update': 'Update',
+    'common.upgrade': 'Upgrade',
+    'common.downgrade': 'Downgrade',
+    'common.items': ' items',
+    'common.all_items': 'All {count} items',
+    
     // Toast Messages
     'toast.like_success': 'Liked!',
     'toast.like_remaining': '{count} likes remaining',
@@ -713,13 +797,37 @@ const translations = {
     'toast.auth_error': 'Authentication failed',
     'toast.logout_success': 'Logged out successfully',
     'toast.logout_confirm': 'Are you sure you want to logout?',
+    'toast.profile_updated': 'Profile updated successfully',
+    'toast.password_updated': 'Password updated successfully',
+    'toast.video_updated': 'Video updated successfully',
+    'toast.announcement_updated': 'Announcement updated successfully',
+    'toast.user_updated': 'User information updated successfully',
+    'toast.blog_updated': 'Blog updated successfully',
+    'toast.banner_updated': 'Banner updated successfully',
     
     // Footer
+    'footer.description': 'Video sharing platform for the climbing community',
+    'footer.quick_links': 'Quick Links',
+    'footer.home': 'Home',
     'footer.about': 'About ClimbHero',
+    'footer.api': 'API',
+    'footer.pricing': 'Pricing',
+    'footer.contact_form': 'Contact Form',
+    'footer.legal': 'Legal',
     'footer.terms': 'Terms of Service',
     'footer.privacy': 'Privacy Policy',
+    'footer.company': 'Company',
     'footer.contact': 'Contact',
+    'footer.support': 'Support',
+    'footer.support_hours': 'Weekdays 10:00-18:00',
+    'footer.supervisor': 'Supervised by',
+    'footer.supervisor_name': 'Climbing-ru Project',
+    'footer.supervisor_address': '417 Saedo-cho, Tsuzuki-ku, Yokohama, Kanagawa 224-0054',
+    'footer.producer': 'Produced by',
+    'footer.producer_name': 'Gubboru Bouldering Cafe',
+    'footer.producer_address': '34-8 Koizumi-cho, Hikone, Shiga 522-0043',
     'footer.copyright': '© 2024 ClimbHero. All rights reserved.',
+    'footer.powered_by': 'Powered by AI-driven video classification | Built with ❤️ for climbers',
     
     // Admin Panel
     'admin.title': 'Admin Panel',
@@ -792,6 +900,8 @@ const translations = {
     // Announcements
     'announcement.title': 'Announcements',
     'announcement.no_announcements': 'No announcements',
+    'announcement.view_more': 'View More',
+    'announcement.view_all_count': 'View More (All {count} items)',
     
     // Stripe Settings
     'stripe.title': 'Stripe Payment Settings',
@@ -1150,6 +1260,15 @@ const translations = {
     'video.duration': '时长',
     'video.like_btn': '点赞',
     'video.liked': '已点赞',
+    'video.favorite_btn': '收藏',
+    'video.watch_on': '在{platform}上观看',
+    'video.open_on': '在{platform}上打开',
+    'video.external_notice': '* 此视频将在外部网站播放',
+    'video.more_info': '更多（共{count}个）',
+    'video.favorite': '收藏',
+    'video.like': '点赞',
+    'video.like_tooltip': '点赞',
+    'video.favorite_tooltip': '收藏',
     
     // Pricing Section
     'pricing.title': '高级会员，上传视频❤️',
@@ -1172,6 +1291,13 @@ const translations = {
     'pricing.premium.detail3': '无广告体验',
     'pricing.premium.detail4': 'AI等级评定及优先支持',
     'pricing.cta': '开始使用',
+    'pricing.trial_note': '15天免费试用后，将自动按月收取$20。随时可取消。',
+    'pricing.trial_start': '开始15天免费试用',
+    'pricing.upgrade_now': '立即升级',
+    'pricing.premium_only': '视频上传：仅限高级会员',
+    'pricing.premium_desc': '通过高级计划无限上传视频',
+    'pricing.premium_benefits': '高级会员福利',
+    'pricing.trial_badge': '✨ 15天免费试用',
     
     // Auth Modal
     'auth.login.title': '登录',
@@ -1200,6 +1326,24 @@ const translations = {
     'upload.analyzing': '分析中...',
     'upload.uploading': '上传中...',
     
+    // Common UI
+    'common.view_more': '查看更多',
+    'common.view_all': '查看全部',
+    'common.close': '关闭',
+    'common.cancel': '取消',
+    'common.save': '保存',
+    'common.edit': '编辑',
+    'common.delete': '删除',
+    'common.add': '添加',
+    'common.confirm': '确认',
+    'common.back': '返回',
+    'common.submit': '提交',
+    'common.update': '更新',
+    'common.upgrade': '升级',
+    'common.downgrade': '降级',
+    'common.items': '项',
+    'common.all_items': '全部{count}项',
+    
     // Toast Messages
     'toast.like_success': '已点赞！',
     'toast.like_remaining': '剩余{count}次点赞',
@@ -1214,13 +1358,43 @@ const translations = {
     'toast.auth_error': '认证失败',
     'toast.logout_success': '已退出登录',
     'toast.logout_confirm': '确定要退出登录吗？',
+    'toast.profile_updated': '资料已更新',
+    'toast.password_updated': '密码已更新',
+    'toast.video_updated': '视频已更新',
+    'toast.announcement_updated': '公告已更新',
+    'toast.user_updated': '用户信息已更新',
+    'toast.blog_updated': '博客已更新',
+    'toast.banner_updated': '横幅已更新',
     
     // Footer
     'footer.about': '关于ClimbHero',
     'footer.terms': '服务条款',
+    'footer.description': '攀岩社区的视频分享平台',
+    'footer.quick_links': '快速链接',
+    'footer.home': '首页',
+    'footer.api': 'API',
+    'footer.pricing': '定价方案',
+    'footer.contact_form': '联系表单',
+    'footer.legal': '法律信息',
     'footer.privacy': '隐私政策',
+    'footer.company': '公司',
     'footer.contact': '联系我们',
+    'footer.support': '支持',
+    'footer.support_hours': '工作日 10:00-18:00',
+    'footer.supervisor': '监修',
+    'footer.supervisor_name': 'Climbing-ru 项目',
+    'footer.supervisor_address': '神奈川县横滨市都筑区佐江户町417',
+    'footer.producer': '制作者',
+    'footer.producer_name': 'Gubboru 抱石咖啡',
+    'footer.producer_address': '滋贺县彦根市小泉町34-8',
     'footer.copyright': '© 2024 ClimbHero. 保留所有权利。',
+    'footer.powered_by': 'Powered by AI-driven video classification | Built with ❤️ for climbers',
+    
+    // Announcements
+    'announcement.title': '公告',
+    'announcement.no_announcements': '暂无公告',
+    'announcement.view_more': '查看更多',
+    'announcement.view_all_count': '查看更多（全部{count}项）',
     
     // Admin Panel
     'admin.title': '管理后台',
