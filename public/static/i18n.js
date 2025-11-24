@@ -15,7 +15,7 @@ const translations = {
     
     // Hero Section
     'hero.title': 'クライミング動画共有プラットフォーム',
-    'hero.subtitle': 'ClimbHero - 世界中のクライミング動画を発見し、共有しよう',
+    'hero.subtitle': 'ClimbHero - 世界中のクライミング動画を発見し共有しよう',
     'hero.upload': '動画を投稿',
     'hero.premium_badge': 'Premium',
     
@@ -549,6 +549,7 @@ const translations = {
     // Recommended Videos
     'section.recommended': 'おすすめ動画',
     'section.featured': '注目動画',
+    'section.favorites': 'お気に入り動画',
     
     // Announcement Banner
     'announcement.latest': '最新のお知らせ',
@@ -1155,6 +1156,7 @@ const translations = {
     // Recommended Videos
     'section.recommended': 'Recommended Videos',
     'section.featured': 'Featured Videos',
+    'section.favorites': 'Favorite Videos',
     
     // Announcement Banner
     'announcement.latest': 'Latest Announcements',
@@ -1244,6 +1246,9 @@ const translations = {
     'section.gear': '装备',
     'section.rankings': '排行榜',
     'section.blog': '博客文章',
+    'section.recommended': '推荐视频',
+    'section.featured': '精选视频',
+    'section.favorites': '收藏视频',
     
     // Rankings Tab
     'ranking.daily': '每日',
@@ -1527,6 +1532,9 @@ const translations = {
     'section.gear': '장비',
     'section.rankings': '랭킹',
     'section.blog': '블로그 게시물',
+    'section.recommended': '추천 동영상',
+    'section.featured': '주요 동영상',
+    'section.favorites': '즐겨찾기 동영상',
     
     // Rankings Tab
     'ranking.daily': '일간',

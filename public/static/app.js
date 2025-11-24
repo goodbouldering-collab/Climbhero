@@ -635,6 +635,32 @@ function renderHomePage() {
         </div>
       </section>
       
+      <!-- Favorites Section - User's Favorite Videos -->
+      ${state.currentUser && state.userFavorites && state.userFavorites.length > 0 ? `
+      <section class="py-6 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-4">
+            <div class="section-title">
+              <i class="fas fa-star text-yellow-500"></i>
+              <span>${i18n.t('section.favorites')}</span>
+            </div>
+          </div>
+          
+          <div class="carousel-container" id="favorites-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('favorites-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="favorites-scroll">
+              ${state.userFavorites.map(video => renderVideoCardWide(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('favorites-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      ` : ''}
+      
       <!-- Rankings Section - いいね数ランキング -->
       ${state.topLikedVideos && state.topLikedVideos.length > 0 ? `
       <section class="py-6 bg-white">
@@ -6214,6 +6240,9 @@ function openVideoModal(video) {
   
   if (video.platform === 'youtube') {
     embedHtml = `<iframe width="100%" height="500" src="https://www.youtube.com/embed/${video.video_id_external}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  } else if (video.platform === 'youtube_shorts') {
+    // YouTube Shorts embed (vertical format)
+    embedHtml = `<iframe width="100%" height="600" src="https://www.youtube.com/embed/${video.video_id_external}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
   } else if (video.platform === 'vimeo') {
     embedHtml = `<iframe width="100%" height="500" src="https://player.vimeo.com/video/${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
   } else if (video.platform === 'instagram') {
@@ -6222,6 +6251,9 @@ function openVideoModal(video) {
   } else if (video.platform === 'tiktok') {
     // TikTok embed using iframe format
     embedHtml = `<iframe width="100%" height="600" src="https://www.tiktok.com/embed/v2/${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  } else if (video.platform === 'x') {
+    // X (Twitter) embed using iframe format
+    embedHtml = `<iframe width="100%" height="600" src="https://platform.twitter.com/embed/Tweet.html?id=${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
   } else {
     embedHtml = `<p>このプラットフォームの埋め込みは対応していません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
   }
@@ -6243,6 +6275,30 @@ function openVideoModal(video) {
       ${video.tags ? `<p><strong>タグ:</strong> ${video.tags}</p>` : ''}
       <p><strong>投稿者 ID:</strong> ${video.uploader_id || 'Unknown'}</p>
       <p><strong>閲覧数:</strong> ${video.views || 0}</p>
+      
+      <!-- Like and Favorite Buttons in Modal -->
+      ${state.currentUser ? `
+        <div class="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+          <button 
+            onclick="handleLikeClick(${video.id})" 
+            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              video.user_liked ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
+            }">
+            <i class="${video.user_liked ? 'fas' : 'far'} fa-heart"></i>
+            <span>${i18n.t('video.like')}</span>
+            <span class="font-bold">${video.likes_count || 0}</span>
+          </button>
+          
+          <button 
+            onclick="handleFavoriteClick(${video.id})" 
+            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              video.user_favorited ? 'bg-yellow-100 text-yellow-600' : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-600'
+            }">
+            <i class="${video.user_favorited ? 'fas' : 'far'} fa-star"></i>
+            <span>${i18n.t('video.favorite')}</span>
+          </button>
+        </div>
+      ` : ''}
     </div>
   `;
   
