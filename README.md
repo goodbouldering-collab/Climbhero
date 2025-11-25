@@ -7,6 +7,8 @@
 ### 主な特徴
 
 - **マルチプラットフォーム対応**: YouTube、YouTube Shorts、TikTok、Instagram、Vimeo、X (Twitter)の動画を完全サポート 🎥
+- **世界ニュース自動収集・翻訳**: 毎日15:00に世界中のクライミングニュースを収集し、4言語にAI翻訳 🌍🤖
+- **リアルタイム翻訳**: オンデマンドで記事をユーザーの言語に自動翻訳（Gemini API）
 - **スマートサムネイル生成**: プラットフォームごとに最適化されたサムネイル表示
 - **横カルーセルUI**: 全セクションで滑らかなスクロール体験
 - **拡張ランキング**: デイリー・週間・月間・年間の4期間対応
@@ -18,7 +20,7 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://cc1a99e3.project-02ceb497.pages.dev ⭐ **最新デプロイ（フロントエンド表示修正 + 全プラットフォームサンプル完備）**
+- **本番環境**: https://63c5279c.project-02ceb497.pages.dev ⭐ **最新デプロイ（世界ニュース自動収集・AI翻訳機能追加）**
 - **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
 - **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
@@ -375,6 +377,71 @@ pm2 logs webapp --nostream
 # サービス再起動
 pm2 restart webapp
 ```
+
+### 🌍 世界ニュース自動収集・翻訳システム
+
+**ClimbHeroは世界中のクライミングニュースを自動収集し、4言語にAI翻訳します。**
+
+#### 特徴
+
+- **毎日自動巡回**: 毎日15:00（UTC）に世界のクライミングメディアから最新記事を収集
+- **4言語対応**: 日本語・英語・中国語・韓国語に自動翻訳（Gemini API使用）
+- **オンデマンド翻訳**: 記事を初回リクエスト時に翻訳し、結果をキャッシュ
+- **AIジャンル分類**: 記事を自動的にカテゴリ分け（達成・イベント・施設・研究等）
+- **重複防止**: URL単位で重複記事をスキップ
+
+#### ニュースソース
+
+- **Rock and Ice**: https://rockandice.com/feed/
+- **Climbing Magazine**: https://www.climbing.com/feed/
+- **UKClimbing**: https://www.ukclimbing.com/news/rss.php
+
+#### API エンドポイント
+
+```bash
+# 手動でニュースクロール実行（管理者用）
+curl -X POST http://localhost:3000/api/admin/news/crawl-now
+
+# 記事をオンデマンドで翻訳（ユーザー用）
+curl http://localhost:3000/api/news/1/translate/zh  # 中国語
+curl http://localhost:3000/api/news/2/translate/ko  # 韓国語
+curl http://localhost:3000/api/news/3/translate/en  # 英語
+```
+
+#### 環境変数設定
+
+**Gemini API Keyが必要です**:
+
+```bash
+# ローカル開発用
+echo "GEMINI_API_KEY=your-gemini-api-key" > .dev.vars
+
+# 本番環境用（Cloudflare Pages）
+npx wrangler secret put GEMINI_API_KEY --project-name project-02ceb497
+```
+
+#### スケジュール設定
+
+Cloudflare Cron Triggersで自動実行されます：
+
+- **頻度**: 毎日
+- **時刻**: 15:00 UTC（日本時間 0:00）
+- **設定ファイル**: `wrangler.toml`
+
+```toml
+[triggers]
+crons = ["0 15 * * *"]
+```
+
+#### 動作フロー
+
+1. **15:00 UTC**: Cloudflare Cron Triggerが自動起動
+2. **RSS取得**: 3つのメディアから最新記事を取得（最大20件）
+3. **重複チェック**: URLで既存記事をチェック
+4. **AI翻訳**: Gemini APIで4言語に並行翻訳
+5. **ジャンル分類**: AI が記事をカテゴリ分類
+6. **データベース保存**: 翻訳結果とメタデータを保存
+7. **統計更新**: 最終クロール時刻を記録
 
 ### 📦 サンプルデータ管理（重要）
 
