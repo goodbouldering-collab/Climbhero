@@ -6897,7 +6897,7 @@ function renderNewsCard(article) {
             ${article.source_name ? `<span><i class="fas fa-newspaper"></i> ${article.source_name}</span>` : ''}
           </div>
           <div class="mt-2 flex items-center justify-between">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
                 ${i18n.t(`news.category.${article.category}`)}
               </span>
@@ -6912,6 +6912,12 @@ function renderNewsCard(article) {
                 class="text-xs px-2 py-1 rounded-full transition-colors ${isFavorited ? 'bg-yellow-50 text-yellow-600' : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-600'}"
                 title="${isFavorited ? 'お気に入り済み' : 'お気に入り'}">
                 <i class="fas fa-star"></i>
+              </button>
+              <button 
+                onclick="event.stopPropagation(); translateNews(${article.id})" 
+                class="text-xs px-2 py-1 rounded-full transition-colors bg-purple-50 text-purple-600 hover:bg-purple-100"
+                title="現在の言語に翻訳">
+                <i class="fas fa-language"></i>
               </button>
             </div>
             <span class="text-xs text-gray-400">
@@ -7351,7 +7357,33 @@ function formatTimeAgo(date) {
   return `${seconds}秒前`;
 }
 
-// Expose news functions to global scope
+// ============ News Translation Function ============
+async function translateNews(articleId) {
+  try {
+    const lang = state.currentLanguage || 'ja';
+    showToast('翻訳中...', 'info');
+    
+    const response = await axios.get(`/api/news/${articleId}/translate/${lang}`);
+    const translatedArticle = response.data;
+    
+    // Update article in state
+    const articleIndex = state.newsArticles.findIndex(a => a.id === articleId);
+    if (articleIndex !== -1) {
+      state.newsArticles[articleIndex] = {
+        ...state.newsArticles[articleIndex],
+        ...translatedArticle
+      };
+    }
+    
+    showToast('翻訳が完了しました', 'success');
+    renderNewsSection();
+  } catch (error) {
+    console.error('Translation error:', error);
+    showToast('翻訳に失敗しました', 'error');
+  }
+}
+
+// Expose all functions to global scope
 window.filterNewsByCategory = filterNewsByCategory;
 window.filterNewsByGenre = filterNewsByGenre;
 window.renderNewsCard = renderNewsCard;
@@ -7360,3 +7392,6 @@ window.toggleNewsFavorite = toggleNewsFavorite;
 window.toggleBlogLike = toggleBlogLike;
 window.toggleBlogFavorite = toggleBlogFavorite;
 window.renderFavoritesPage = renderFavoritesPage;
+window.translateNews = translateNews;
+window.showAnnouncementsModal = showAnnouncementsModal;
+window.filterAnnouncements = filterAnnouncements;
