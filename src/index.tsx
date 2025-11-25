@@ -1,12 +1,16 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { setCookie, getCookie } from 'hono/cookie'
+import { serveStatic } from 'hono/cloudflare-workers'
 
 type Bindings = {
   DB: D1Database;
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
+
+// Serve static files from public/static directory
+app.use('/static/*', serveStatic({ root: './public' }))
 
 // Enable CORS for API routes
 app.use('/api/*', cors())
@@ -4669,5 +4673,43 @@ async function generateMockNewsArticles(db: D1Database, settings: any): Promise<
   
   return inserted
 }
+
+// ============ Default Route (Frontend) ============
+app.get('*', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ClimbHero - クライミング動画共有プラットフォーム</title>
+        <meta name="description" content="世界中のクライミング動画を共有・発見。YouTube、Instagram、TikTok、Vimeo対応">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body class="bg-gray-50">
+        <div id="app">
+            <div class="min-h-screen flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-mountain text-6xl text-blue-600 mb-4"></i>
+                    <h1 class="text-4xl font-bold text-gray-800 mb-2">ClimbHero</h1>
+                    <p class="text-gray-600">クライミング動画共有プラットフォーム</p>
+                    <div class="mt-6">
+                        <i class="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
+                        <p class="text-sm text-gray-500 mt-2">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/i18n.js"></script>
+        <script src="/static/video-helpers.js"></script>
+        <script src="/static/app.js"></script>
+    </body>
+    </html>
+  `)
+})
 
 export default app
