@@ -1,0 +1,40 @@
+{
+  "name": "webapp",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:sandbox": "wrangler pages dev dist --d1=webapp-production --local --ip 0.0.0.0 --port 3000",
+    "build": "vite build && mkdir -p dist/static dist/.well-known && cp -r public/static/* dist/static/ && cp public/favicon-*.png public/apple-touch-icon.png public/android-chrome-*.png public/site.webmanifest public/openapi.json public/robots.txt public/sitemap.xml public/llmo.txt dist/ && cp public/.well-known/ai-plugin.json dist/.well-known/",
+    "preview": "wrangler pages dev dist",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name project-02ceb497",
+    "deploy:prod": "npm run build && wrangler pages deploy dist --project-name project-02ceb497",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "db:migrate:local": "wrangler d1 migrations apply webapp-production --local",
+    "db:migrate:prod": "wrangler d1 migrations apply webapp-production",
+    "db:seed": "wrangler d1 execute webapp-production --local --file=./seed.sql",
+    "db:seed:videos": "wrangler d1 execute webapp-production --local --file=./seed_real_videos.sql",
+    "db:seed:news": "wrangler d1 execute webapp-production --local --file=./seed_news_mock.sql",
+    "db:seed:all": "npm run db:seed:videos && npm run db:seed:news",
+    "db:seed:prod": "wrangler d1 execute webapp-production --remote --file=./seed_real_videos.sql && wrangler d1 execute webapp-production --remote --file=./seed_news_mock.sql",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:migrate:local && npm run db:seed:all",
+    "db:verify": "node scripts/verify-samples.js",
+    "backup": "node scripts/backup.js",
+    "backup:auto": "npm run backup && git add backups/ && git commit -m 'chore: auto backup' || true",
+    "predeploy": "npm run backup:auto && npm run build",
+    "clean-port": "fuser -k 3000/tcp 2>/dev/null || true",
+    "test": "curl http://localhost:3000",
+    "genspark:build": "bash genspark-build.sh",
+    "genspark:verify": "node -e \"console.log('✓ GenSpark config verified'); process.exit(require('fs').existsSync('.genspark/config.json') ? 0 : 1)\""
+  },
+  "dependencies": {
+    "hono": "^4.10.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251014.0",
+    "@hono/vite-build": "^1.2.0",
+    "@hono/vite-cloudflare-pages": "^0.4.2",
+    "@hono/vite-dev-server": "^0.18.2",
+    "vite": "^6.3.5",
+    "wrangler": "^4.4.0"
+  }
+}

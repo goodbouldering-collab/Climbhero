@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "project-02ceb497",
+  "compatibility_date": "2025-10-26",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webapp-production",
+      "database_id": "2faec3c4-115c-434f-9144-af1380440b7c",
+      "preview_database_id": "local-dev"
+    }
+  ]
+  // Note: Cron Triggers are configured via Cloudflare Dashboard
+  // for Pages Functions. Schedule: "0 15 * * *" (Daily at 15:00 JST)
+  // Trigger endpoint: /api/admin/news/crawl
+}
