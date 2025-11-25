@@ -20,7 +20,7 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://63c5279c.project-02ceb497.pages.dev ⭐ **最新デプロイ（世界ニュース自動収集・AI翻訳機能追加）**
+- **本番環境**: https://605dd06d.project-02ceb497.pages.dev ⭐ **最新デプロイ（ニュース・ブログのいいね＆お気に入り機能追加）**
 - **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
 - **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
@@ -90,7 +90,12 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
 - ✅ **レスポンシブデザイン** - PC/タブレット/モバイル対応
 - ✅ **ヒーローセクション** - グラデーション背景 + CTA
 - ✅ **動画詳細モーダル** - YouTube/Vimeo: iframe埋め込み、TikTok/Instagram: サムネイル+外部リンク 📱
-- ✅ **いいね・お気に入り機能**
+- ✅ **いいね・お気に入り機能** 💖 NEW
+  - **動画**: いいね・お気に入り対応
+  - **ブログ**: いいね・お気に入り対応
+  - **ニュース**: いいね・お気に入り対応
+  - **統合お気に入り一覧**: 動画・ブログ・ニュースを時系列でミックス表示
+  - **カウント表示**: 各コンテンツタイプ別の件数表示
 - ✅ **ユーザー認証** - ログイン/登録
 - ✅ **動画投稿フォーム** - モーダル形式
 - ✅ **ブログ記事詳細ページ**
@@ -377,6 +382,96 @@ pm2 logs webapp --nostream
 # サービス再起動
 pm2 restart webapp
 ```
+
+### 💖 いいね・お気に入り機能
+
+**動画・ブログ・ニュースの全コンテンツに対応**
+
+#### API エンドポイント
+
+**ニュース記事**:
+```bash
+# いいね追加
+curl -X POST http://localhost:3000/api/news/1/like \
+  -H "Cookie: session_token=YOUR_TOKEN"
+
+# いいね削除
+curl -X DELETE http://localhost:3000/api/news/1/like \
+  -H "Cookie: session_token=YOUR_TOKEN"
+
+# お気に入り追加
+curl -X POST http://localhost:3000/api/news/1/favorite \
+  -H "Cookie: session_token=YOUR_TOKEN"
+
+# お気に入り削除
+curl -X DELETE http://localhost:3000/api/news/1/favorite \
+  -H "Cookie: session_token=YOUR_TOKEN"
+```
+
+**ブログ記事**:
+```bash
+# いいね追加
+curl -X POST http://localhost:3000/api/blog/1/like \
+  -H "Cookie: session_token=YOUR_TOKEN"
+
+# いいね削除
+curl -X DELETE http://localhost:3000/api/blog/1/like \
+  -H "Cookie: session_token=YOUR_TOKEN"
+
+# お気に入り追加
+curl -X POST http://localhost:3000/api/blog/1/favorite \
+  -H "Cookie: session_token=YOUR_TOKEN"
+
+# お気に入り削除
+curl -X DELETE http://localhost:3000/api/blog/1/favorite \
+  -H "Cookie: session_token=YOUR_TOKEN"
+```
+
+**統合お気に入り一覧**:
+```bash
+# 全お気に入り取得（動画・ブログ・ニュースをミックス）
+curl http://localhost:3000/api/favorites?lang=ja \
+  -H "Cookie: session_token=YOUR_TOKEN"
+
+# レスポンス例
+{
+  "favorites": [
+    {
+      "id": 5,
+      "title": "最新V14セッション",
+      "content_type": "video",
+      "favorited_at": "2025-11-25 10:30:00"
+    },
+    {
+      "id": 3,
+      "title": "クライミングシューズの選び方",
+      "content_type": "blog",
+      "favorited_at": "2025-11-25 10:15:00"
+    },
+    {
+      "id": 1,
+      "title": "Adam Ondra V17完登",
+      "content_type": "news",
+      "favorited_at": "2025-11-25 10:00:00"
+    }
+  ],
+  "counts": {
+    "videos": 15,
+    "blogs": 8,
+    "news": 12,
+    "total": 35
+  }
+}
+```
+
+#### 特徴
+
+- **認証必須**: 全てのいいね・お気に入り操作は認証が必要
+- **重複防止**: 同じコンテンツに複数回いいね/お気に入りできない
+- **自動カウント**: いいね数は自動的にカウントアップ/ダウン
+- **時系列表示**: お気に入り一覧は最新順にソート
+- **多言語対応**: ブログとニュースは指定言語で表示
+- **ミックス表示**: 動画・ブログ・ニュースを1つの一覧で管理
 
 ### 🌍 世界ニュース自動収集・翻訳システム
 
