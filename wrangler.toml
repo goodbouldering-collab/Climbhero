@@ -1,0 +1,16 @@
+# Cloudflare Workers Configuration for Cron Triggers
+# This file defines the scheduled tasks for news crawling
+
+name = "project-02ceb497"
+main = "src/index.tsx"
+compatibility_date = "2025-10-26"
+
+# Cron Triggers - Daily at 15:00 (3 PM) UTC
+[triggers]
+crons = ["0 15 * * *"]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "webapp-production"
+database_id = "2faec3c4-115c-434f-9144-af1380440b7c"

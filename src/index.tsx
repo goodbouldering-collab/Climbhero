@@ -5,6 +5,7 @@ import { serveStatic } from 'hono/cloudflare-workers'
 
 type Bindings = {
   DB: D1Database;
+  GEMINI_API_KEY?: string;
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -4674,6 +4675,144 @@ async function generateMockNewsArticles(db: D1Database, settings: any): Promise<
   return inserted
 }
 
+// ============ News Crawler API ============
+
+// Manual trigger for news crawl
+app.post('/api/admin/news/crawl-now', async (c) => {
+  const { env } = c
+  
+  try {
+    const { crawlNews, translateArticle, classifyGenre } = await import('./news-crawler')
+    
+    const geminiApiKey = env.GEMINI_API_KEY
+    
+    if (!geminiApiKey) {
+      return c.json({ error: 'Gemini API key not configured. Set GEMINI_API_KEY environment variable.' }, 500)
+    }
+    
+    console.log('🕷️  Starting news crawl...')
+    const articles = await crawlNews()
+    
+    let insertedCount = 0
+    
+    for (const article of articles) {
+      try {
+        const existing = await env.DB.prepare(
+          'SELECT id FROM news_articles WHERE url = ?'
+        ).bind(article.url).first()
+        
+        if (existing) {
+          console.log(`⏭️  Skip: ${article.title}`)
+          continue
+        }
+        
+        console.log(`🌐 Translating: ${article.title}`)
+        const translated = await translateArticle(article, geminiApiKey)
+        const genre = await classifyGenre(article.title, article.summary, geminiApiKey)
+        
+        await env.DB.prepare(`
+          INSERT INTO news_articles (
+            title, title_en, title_zh, title_ko,
+            summary, summary_en, summary_zh, summary_ko,
+            url, source_name, image_url, published_date,
+            category, genre, language
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          translated.title.ja, translated.title.en, translated.title.zh, translated.title.ko,
+          translated.summary.ja, translated.summary.en, translated.summary.zh, translated.summary.ko,
+          article.url, article.source_name,
+          article.image_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800',
+          article.published_date || new Date().toISOString(),
+          'news', genre, article.language
+        ).run()
+        
+        insertedCount++
+        console.log(`✅ Stored: ${article.title}`)
+        
+      } catch (error) {
+        console.error(`❌ Error: ${article.title}`, error)
+      }
+    }
+    
+    await env.DB.prepare(
+      'UPDATE news_crawler_settings SET last_crawl_at = CURRENT_TIMESTAMP WHERE id = 1'
+    ).run()
+    
+    return c.json({
+      success: true,
+      crawled: articles.length,
+      inserted: insertedCount,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// On-demand translation endpoint
+app.get('/api/news/:id/translate/:lang', async (c) => {
+  const { env } = c
+  const id = c.req.param('id')
+  const lang = c.req.param('lang') as 'ja' | 'en' | 'zh' | 'ko'
+  
+  try {
+    const article = await env.DB.prepare(
+      'SELECT * FROM news_articles WHERE id = ? AND is_active = 1'
+    ).bind(id).first() as any
+    
+    if (!article) return c.json({ error: 'Not found' }, 404)
+    
+    const titleField = lang === 'ja' ? 'title' : `title_${lang}`
+    const summaryField = lang === 'ja' ? 'summary' : `summary_${lang}`
+    
+    if (article[titleField] && article[summaryField]) {
+      return c.json({
+        id: article.id,
+        title: article[titleField],
+        summary: article[summaryField],
+        url: article.url,
+        source_name: article.source_name,
+        image_url: article.image_url,
+        published_date: article.published_date,
+        category: article.category,
+        genre: article.genre,
+        language: lang
+      })
+    }
+    
+    const { translateText } = await import('./news-crawler')
+    const geminiApiKey = env.GEMINI_API_KEY
+    
+    if (!geminiApiKey) return c.json({ error: 'Translation unavailable' }, 500)
+    
+    const sourceLang = article.language || 'en'
+    const translatedTitle = await translateText(article.title, sourceLang, lang, geminiApiKey)
+    const translatedSummary = await translateText(article.summary, sourceLang, lang, geminiApiKey)
+    
+    await env.DB.prepare(`
+      UPDATE news_articles 
+      SET ${titleField} = ?, ${summaryField} = ?
+      WHERE id = ?
+    `).bind(translatedTitle, translatedSummary, id).run()
+    
+    return c.json({
+      id: article.id,
+      title: translatedTitle,
+      summary: translatedSummary,
+      url: article.url,
+      source_name: article.source_name,
+      image_url: article.image_url,
+      published_date: article.published_date,
+      category: article.category,
+      genre: article.genre,
+      language: lang,
+      translated_on_demand: true
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // ============ Default Route (Frontend) ============
 app.get('*', (c) => {
   return c.html(`
@@ -4712,4 +4851,65 @@ app.get('*', (c) => {
   `)
 })
 
+// Scheduled event handler (for Cloudflare Cron Triggers)
+export const scheduled = async (event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) => {
+    // Daily news crawl at 15:00
+    console.log('⏰ Scheduled news crawl triggered:', new Date().toISOString())
+    
+    try {
+      const { crawlNews, translateArticle, classifyGenre } = await import('./news-crawler')
+      
+      const geminiApiKey = env.GEMINI_API_KEY
+      if (!geminiApiKey) {
+        console.error('❌ Gemini API key not configured')
+        return
+      }
+      
+      const articles = await crawlNews()
+      let insertedCount = 0
+      
+      for (const article of articles) {
+        try {
+          const existing = await env.DB.prepare(
+            'SELECT id FROM news_articles WHERE url = ?'
+          ).bind(article.url).first()
+          
+          if (existing) continue
+          
+          const translated = await translateArticle(article, geminiApiKey)
+          const genre = await classifyGenre(article.title, article.summary, geminiApiKey)
+          
+          await env.DB.prepare(`
+            INSERT INTO news_articles (
+              title, title_en, title_zh, title_ko,
+              summary, summary_en, summary_zh, summary_ko,
+              url, source_name, image_url, published_date,
+              category, genre, language
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            translated.title.ja, translated.title.en, translated.title.zh, translated.title.ko,
+            translated.summary.ja, translated.summary.en, translated.summary.zh, translated.summary.ko,
+            article.url, article.source_name,
+            article.image_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800',
+            article.published_date || new Date().toISOString(),
+            'news', genre, article.language
+          ).run()
+          
+          insertedCount++
+        } catch (error) {
+          console.error('Error processing article:', error)
+        }
+      }
+      
+      await env.DB.prepare(
+        'UPDATE news_crawler_settings SET last_crawl_at = CURRENT_TIMESTAMP WHERE id = 1'
+      ).run()
+      
+      console.log(`✅ Scheduled crawl complete: ${insertedCount}/${articles.length} articles`)
+    } catch (error) {
+      console.error('❌ Scheduled crawl error:', error)
+    }
+}
+
+// Export Hono app
 export default app
