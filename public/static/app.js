@@ -11,6 +11,11 @@ const state = {
   blogTags: [],
   blogGenres: [],
   currentBlogGenre: '', // Genre filter for blog posts
+  newsArticles: [],
+  newsCategories: [],
+  newsGenres: [],
+  currentNewsCategory: '', // Category filter for news
+  currentNewsGenre: '', // Genre filter for news
   announcements: [],
   announcementGenre: '', // 'feature', 'maintenance', 'event', 'campaign', 'general', ''
   testimonials: [],
@@ -162,7 +167,7 @@ function updateHeroSlide() {
 async function loadInitialData() {
   try {
     const lang = state.currentLanguage || 'ja'
-    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes, topLikedRes, adBannersHeroRes, adBannersBlogRes, blogGenresRes] = await Promise.all([
+    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes, topLikedRes, adBannersHeroRes, adBannersBlogRes, blogGenresRes, newsRes, newsCategoriesRes] = await Promise.all([
       axios.get(`/api/videos?limit=20&lang=${lang}`),
       axios.get('/api/rankings/weekly?limit=20'),
       axios.get(`/api/blog?lang=${lang}`),
@@ -172,7 +177,9 @@ async function loadInitialData() {
       axios.get(`/api/videos/top-liked?limit=20&period=all&lang=${lang}`),
       axios.get('/api/ad-banners?position=hero_bottom'),
       axios.get('/api/ad-banners?position=blog_top'),
-      axios.get('/api/blog/genres')
+      axios.get('/api/blog/genres'),
+      axios.get(`/api/news?limit=10&lang=${lang}`),
+      axios.get('/api/news/meta/categories')
     ]);
     
     state.videos = videosRes.data.videos || [];
@@ -186,6 +193,9 @@ async function loadInitialData() {
     state.adBanners.hero_bottom = adBannersHeroRes.data || [];
     state.adBanners.blog_top = adBannersBlogRes.data || [];
     state.blogGenres = blogGenresRes.data || [];
+    state.newsArticles = newsRes.data.articles || [];
+    state.newsCategories = newsCategoriesRes.data.categories || [];
+    state.newsGenres = newsCategoriesRes.data.genres || [];
     
     // Load user like status and favorites for all videos
     if (state.currentUser) {
@@ -807,6 +817,50 @@ function renderHomePage() {
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('favorites-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
             </button>
+          </div>
+        </div>
+      </section>
+      ` : ''}
+
+      <!-- Climbing News Section -->
+      ${state.newsArticles && state.newsArticles.length > 0 ? `
+      <section class="py-6 bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-4">
+            <div class="section-title">
+              <i class="fas fa-globe text-blue-600"></i>
+              <span>${i18n.t('news.title')}</span>
+            </div>
+            <div class="section-action" onclick="window.location.hash='news'">
+              ${i18n.t('common.view_all')} <i class="fas fa-arrow-right"></i>
+            </div>
+          </div>
+          
+          <p class="text-sm text-gray-600 mb-4">${i18n.t('news.subtitle')}</p>
+          
+          <div id="news-section-content">
+            <!-- Category Filters -->
+            ${state.newsCategories && state.newsCategories.length > 0 ? renderFilterButtons('filterNewsByCategory', state.currentNewsCategory, [
+              { value: '', label: i18n.t('news.category.all'), icon: 'fas fa-th' },
+              ...state.newsCategories.map(c => ({
+                value: c.category,
+                label: i18n.t(`news.category.${c.category}`),
+                icon: getCategoryIcon(c.category)
+              }))
+            ]) : ''}
+            
+            <!-- Horizontal Carousel -->
+            <div class="carousel-container" id="news-carousel">
+              <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('news-carousel', -1)">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <div class="horizontal-scroll" id="news-scroll">
+                ${state.newsArticles.map(article => renderNewsCard(article)).join('')}
+              </div>
+              <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('news-carousel', 1)">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -6783,3 +6837,135 @@ function renderVideosPage() {
     </div>
   `;
 }
+
+// ============ News Functions ============
+
+// Render news card
+function renderNewsCard(article) {
+  const truncatedSummary = article.summary ? article.summary.substring(0, 120) + '...' : ''
+  const publishedDate = article.published_date ? formatDate(article.published_date) : ''
+  
+  return `
+    <div class="scroll-item">
+      <div class="video-card-compact" onclick="window.open('${article.url}', '_blank')">
+        ${article.image_url ? `
+          <div class="video-thumbnail">
+            <img src="${article.image_url}" alt="${article.title}" class="w-full h-full object-cover">
+            ${article.genre ? `
+              <span class="absolute top-2 right-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
+                ${i18n.t(`news.genre.${article.genre}`)}
+              </span>
+            ` : ''}
+          </div>
+        ` : `
+          <div class="video-thumbnail" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)"></div>
+        `}
+        <div class="video-info-compact">
+          <div class="video-title-compact line-clamp-2 font-bold">${article.title}</div>
+          <p class="text-xs text-gray-600 line-clamp-3 mb-2 leading-relaxed">${truncatedSummary}</p>
+          <div class="video-meta-compact text-xs">
+            <span><i class="fas fa-calendar"></i> ${publishedDate}</span>
+            ${article.source_name ? `<span><i class="fas fa-newspaper"></i> ${article.source_name}</span>` : ''}
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <span class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
+              ${i18n.t(`news.category.${article.category}`)}
+            </span>
+            <span class="text-xs text-gray-400">
+              <i class="fas fa-external-link-alt"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Filter news by category
+async function filterNewsByCategory(category) {
+  state.currentNewsCategory = category;
+  
+  try {
+    const lang = state.currentLanguage || 'ja';
+    const categoryParam = category ? `&category=${category}` : '';
+    const response = await axios.get(`/api/news?limit=20&lang=${lang}${categoryParam}`);
+    state.newsArticles = response.data.articles || [];
+    
+    // Re-render news section
+    renderNewsSection();
+  } catch (error) {
+    console.error('Error filtering news:', error);
+    showToast(i18n.t('toast.data_load_error'), 'error');
+  }
+}
+
+// Filter news by genre
+async function filterNewsByGenre(genre) {
+  state.currentNewsGenre = genre;
+  
+  try {
+    const lang = state.currentLanguage || 'ja';
+    const genreParam = genre ? `&genre=${genre}` : '';
+    const response = await axios.get(`/api/news?limit=20&lang=${lang}${genreParam}`);
+    state.newsArticles = response.data.articles || [];
+    
+    // Re-render news section
+    renderNewsSection();
+  } catch (error) {
+    console.error('Error filtering news:', error);
+    showToast(i18n.t('toast.data_load_error'), 'error');
+  }
+}
+
+// Re-render news section
+function renderNewsSection() {
+  const newsContent = document.getElementById('news-section-content');
+  if (!newsContent) return;
+  
+  newsContent.innerHTML = `
+    <!-- Category Filters -->
+    ${state.newsCategories && state.newsCategories.length > 0 ? renderFilterButtons('filterNewsByCategory', state.currentNewsCategory, [
+      { value: '', label: i18n.t('news.category.all'), icon: 'fas fa-th' },
+      ...state.newsCategories.map(c => ({
+        value: c.category,
+        label: i18n.t(`news.category.${c.category}`),
+        icon: getCategoryIcon(c.category)
+      }))
+    ]) : ''}
+    
+    <!-- Horizontal Carousel -->
+    <div class="carousel-container" id="news-carousel">
+      <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('news-carousel', -1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="horizontal-scroll" id="news-scroll">
+        ${state.newsArticles.map(article => renderNewsCard(article)).join('')}
+      </div>
+      <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('news-carousel', 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  `;
+  
+  // Re-initialize carousel
+  initializeCarousels();
+}
+
+// Get category icon
+function getCategoryIcon(category) {
+  const icons = {
+    bouldering: 'fas fa-mountain',
+    lead: 'fas fa-sort-up',
+    alpine: 'fas fa-mountain',
+    competition: 'fas fa-trophy',
+    news: 'fas fa-newspaper',
+    gear: 'fas fa-toolbox',
+    other: 'fas fa-ellipsis-h'
+  };
+  return icons[category] || 'fas fa-circle';
+}
+
+// Expose news functions to global scope
+window.filterNewsByCategory = filterNewsByCategory;
+window.filterNewsByGenre = filterNewsByGenre;
+window.renderNewsCard = renderNewsCard;

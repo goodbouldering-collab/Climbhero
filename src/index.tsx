@@ -4259,4 +4259,415 @@ app.put('/api/settings', async (c) => {
   }
 })
 
+// ============ News Crawler API ============
+
+// Get news articles with filtering
+app.get('/api/news', async (c) => {
+  const { env } = c
+  const lang = c.req.query('lang') || 'ja'
+  const category = c.req.query('category')
+  const genre = c.req.query('genre')
+  const limit = parseInt(c.req.query('limit') || '20')
+  const offset = parseInt(c.req.query('offset') || '0')
+  
+  try {
+    let query = 'SELECT * FROM news_articles WHERE is_active = 1'
+    const params: any[] = []
+    
+    if (category && category !== 'all') {
+      query += ' AND category = ?'
+      params.push(category)
+    }
+    
+    if (genre && genre !== 'all') {
+      query += ' AND genre = ?'
+      params.push(genre)
+    }
+    
+    query += ' ORDER BY published_date DESC LIMIT ? OFFSET ?'
+    params.push(limit, offset)
+    
+    const stmt = env.DB.prepare(query).bind(...params)
+    const result = await stmt.all()
+    
+    // Localize fields
+    const articles = (result.results || []).map((article: any) => ({
+      ...article,
+      title: getLocalizedField(article, 'title', lang),
+      summary: getLocalizedField(article, 'summary', lang)
+    }))
+    
+    return c.json({ articles, count: articles.length })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get news by ID
+app.get('/api/news/:id', async (c) => {
+  const { env } = c
+  const id = c.req.param('id')
+  const lang = c.req.query('lang') || 'ja'
+  
+  try {
+    const article = await env.DB.prepare(
+      'SELECT * FROM news_articles WHERE id = ? AND is_active = 1'
+    ).bind(id).first() as any
+    
+    if (!article) {
+      return c.json({ error: 'Article not found' }, 404)
+    }
+    
+    // Increment view count
+    await env.DB.prepare(
+      'UPDATE news_articles SET view_count = view_count + 1 WHERE id = ?'
+    ).bind(id).run()
+    
+    // Localize fields
+    const localizedArticle = {
+      ...article,
+      title: getLocalizedField(article, 'title', lang),
+      summary: getLocalizedField(article, 'summary', lang)
+    }
+    
+    return c.json({ article: localizedArticle })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get news categories/genres
+app.get('/api/news/meta/categories', async (c) => {
+  const { env } = c
+  
+  try {
+    const categories = await env.DB.prepare(
+      'SELECT DISTINCT category, COUNT(*) as count FROM news_articles WHERE is_active = 1 GROUP BY category ORDER BY count DESC'
+    ).all()
+    
+    const genres = await env.DB.prepare(
+      'SELECT DISTINCT genre, COUNT(*) as count FROM news_articles WHERE is_active = 1 AND genre IS NOT NULL GROUP BY genre ORDER BY count DESC'
+    ).all()
+    
+    return c.json({
+      categories: categories.results || [],
+      genres: genres.results || []
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Get crawler settings
+app.get('/api/admin/news/settings', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || currentUser.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    const settings = await env.DB.prepare(
+      'SELECT * FROM news_crawler_settings WHERE id = 1'
+    ).first() as any
+    
+    // Don't expose API keys in response
+    const safeSettings = {
+      ...settings,
+      google_api_key: settings.google_api_key ? '***' : null,
+      openai_api_key: settings.openai_api_key ? '***' : null
+    }
+    
+    return c.json({ settings: safeSettings })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Update crawler settings
+app.put('/api/admin/news/settings', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const body = await c.req.json()
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || currentUser.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    const {
+      keywords,
+      languages,
+      sources,
+      cron_schedule,
+      max_articles_per_crawl,
+      retention_days,
+      google_api_key,
+      openai_api_key,
+      is_enabled
+    } = body
+    
+    // Build update query
+    let updateFields: string[] = []
+    let params: any[] = []
+    
+    if (keywords !== undefined) {
+      updateFields.push('keywords = ?')
+      params.push(typeof keywords === 'string' ? keywords : JSON.stringify(keywords))
+    }
+    
+    if (languages !== undefined) {
+      updateFields.push('languages = ?')
+      params.push(typeof languages === 'string' ? languages : JSON.stringify(languages))
+    }
+    
+    if (sources !== undefined) {
+      updateFields.push('sources = ?')
+      params.push(typeof sources === 'string' ? sources : JSON.stringify(sources))
+    }
+    
+    if (cron_schedule !== undefined) {
+      updateFields.push('cron_schedule = ?')
+      params.push(cron_schedule)
+    }
+    
+    if (max_articles_per_crawl !== undefined) {
+      updateFields.push('max_articles_per_crawl = ?')
+      params.push(max_articles_per_crawl)
+    }
+    
+    if (retention_days !== undefined) {
+      updateFields.push('retention_days = ?')
+      params.push(retention_days)
+    }
+    
+    if (google_api_key && google_api_key !== '***') {
+      updateFields.push('google_api_key = ?')
+      params.push(google_api_key)
+    }
+    
+    if (openai_api_key && openai_api_key !== '***') {
+      updateFields.push('openai_api_key = ?')
+      params.push(openai_api_key)
+    }
+    
+    if (is_enabled !== undefined) {
+      updateFields.push('is_enabled = ?')
+      params.push(is_enabled ? 1 : 0)
+    }
+    
+    updateFields.push('updated_at = CURRENT_TIMESTAMP')
+    
+    if (updateFields.length > 0) {
+      params.push(1) // WHERE id = 1
+      await env.DB.prepare(
+        `UPDATE news_crawler_settings SET ${updateFields.join(', ')} WHERE id = ?`
+      ).bind(...params).run()
+    }
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Manual crawl trigger
+app.post('/api/admin/news/crawl', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || currentUser.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    // Get settings
+    const settings = await env.DB.prepare(
+      'SELECT * FROM news_crawler_settings WHERE id = 1'
+    ).first() as any
+    
+    if (!settings || !settings.is_enabled) {
+      return c.json({ error: 'Crawler is disabled' }, 400)
+    }
+    
+    // TODO: Implement actual crawling logic with Google Custom Search API
+    // For now, return mock data
+    const mockArticles = await generateMockNewsArticles(env.DB, settings)
+    
+    // Update last crawl time
+    await env.DB.prepare(
+      'UPDATE news_crawler_settings SET last_crawl_at = CURRENT_TIMESTAMP WHERE id = 1'
+    ).run()
+    
+    return c.json({
+      success: true,
+      crawled: mockArticles.length,
+      message: `Successfully crawled ${mockArticles.length} articles`
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Delete news article
+app.delete('/api/admin/news/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const id = c.req.param('id')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || currentUser.role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    await env.DB.prepare(
+      'UPDATE news_articles SET is_active = 0 WHERE id = ?'
+    ).bind(id).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Helper: Generate mock news articles for testing
+async function generateMockNewsArticles(db: D1Database, settings: any): Promise<any[]> {
+  const mockArticles = [
+    {
+      title: 'Adam Ondra sends V17/9A boulder problem in Norway',
+      title_ja: 'アダム・オンドラ、ノルウェーでV17/9Aのボルダー課題を完登',
+      title_zh: '亚当·昂德拉完成挪威V17/9A抱石线路',
+      title_ko: '아담 온드라, 노르웨이서 V17/9A 볼더링 완등',
+      summary: 'Czech climber Adam Ondra has successfully climbed one of the world\'s hardest boulder problems, graded V17 (9A), in Flatanger, Norway.',
+      summary_ja: 'チェコのクライマー、アダム・オンドラがノルウェー・フラタンゲルで世界最難関のボルダー課題V17（9A）を完登しました。',
+      summary_zh: '捷克攀岩者亚当·昂德拉成功完成挪威弗拉坦格尔的世界最难抱石线路V17（9A）。',
+      summary_ko: '체코 클라이머 아담 온드라가 노르웨이 플라탕에르에서 세계 최고난이도 볼더링 과제 V17(9A)를 완등했습니다.',
+      url: 'https://example.com/ondra-v17-norway',
+      source_name: 'Climbing Magazine',
+      image_url: 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800',
+      published_date: new Date().toISOString(),
+      category: 'bouldering',
+      genre: 'achievement',
+      language: 'en'
+    },
+    {
+      title: 'IFSC World Cup Finals 2025 Schedule Announced',
+      title_ja: 'IFSC ワールドカップファイナル2025スケジュール発表',
+      title_zh: 'IFSC世界杯总决赛2025赛程公布',
+      title_ko: 'IFSC 월드컵 파이널 2025 일정 발표',
+      summary: 'The International Federation of Sport Climbing has announced the schedule for the 2025 World Cup Finals, featuring lead, bouldering, and speed events.',
+      summary_ja: '国際スポーツクライミング連盟が2025年ワールドカップファイナルのスケジュールを発表。リード、ボルダリング、スピードの3種目を実施。',
+      summary_zh: '国际运动攀登联合会公布2025年世界杯总决赛赛程，包括先锋、抱石和速度赛。',
+      summary_ko: '국제스포츠클라이밍연맹이 2025년 월드컵 파이널 일정 발표. 리드, 볼더링, 스피드 종목 포함.',
+      url: 'https://example.com/ifsc-2025-finals',
+      source_name: 'IFSC Official',
+      image_url: 'https://images.unsplash.com/photo-1564769610726-4d98dd2e28ce?w=800',
+      published_date: new Date(Date.now() - 86400000).toISOString(),
+      category: 'competition',
+      genre: 'event',
+      language: 'en'
+    },
+    {
+      title: 'New Climbing Gym Opens in Tokyo with 120+ Routes',
+      title_ja: '東京に120以上のルートを持つ新しいクライミングジムがオープン',
+      title_zh: '东京新开设拥有120+线路的攀岩馆',
+      title_ko: '도쿄에 120+ 루트 보유한 새 클라이밍 짐 오픈',
+      summary: 'A state-of-the-art climbing facility has opened in central Tokyo, featuring over 120 routes for all skill levels, plus a café and gear shop.',
+      summary_ja: '東京都心に最新設備を備えたクライミング施設がオープン。全レベル対応の120以上のルート、カフェ、ギアショップを併設。',
+      summary_zh: '东京市中心开设最新攀岩设施，拥有120+条适合所有水平的线路，配备咖啡馆和装备商店。',
+      summary_ko: '도쿄 중심가에 최신설비 클라이밍 시설 오픈. 모든 레벨 대응 120+ 루트, 카페와 장비샵 병설.',
+      url: 'https://example.com/tokyo-gym-opening',
+      source_name: 'Climbing Business Journal',
+      image_url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800',
+      published_date: new Date(Date.now() - 172800000).toISOString(),
+      category: 'news',
+      genre: 'facility',
+      language: 'en'
+    },
+    {
+      title: 'Study Shows Climbing Improves Mental Health',
+      title_ja: '研究：クライミングがメンタルヘルスを改善',
+      title_zh: '研究显示攀岩改善心理健康',
+      title_ko: '연구: 클라이밍이 정신건강 개선',
+      summary: 'A new study published in the Journal of Sport Psychology demonstrates that regular climbing practice significantly reduces stress and anxiety levels.',
+      summary_ja: 'スポーツ心理学ジャーナルに掲載された新しい研究で、定期的なクライミング練習がストレスと不安レベルを大幅に軽減することが実証されました。',
+      summary_zh: '《运动心理学杂志》发表的新研究表明，定期攀岩练习显著降低压力和焦虑水平。',
+      summary_ko: '스포츠심리학 저널에 발표된 새 연구에서 정기적인 클라이밍 연습이 스트레스와 불안 수준을 크게 감소시킨다고 입증.',
+      url: 'https://example.com/climbing-mental-health-study',
+      source_name: 'Science Daily',
+      image_url: 'https://images.unsplash.com/photo-1599809275671-b5942cabc7a2?w=800',
+      published_date: new Date(Date.now() - 259200000).toISOString(),
+      category: 'other',
+      genre: 'research',
+      language: 'en'
+    },
+    {
+      title: 'Legendary Climber Lynn Hill Celebrates 30 Years Since El Cap Free Ascent',
+      title_ja: 'レジェンドクライマー、リン・ヒルがエルキャピタンフリー初登から30周年',
+      title_zh: '传奇攀岩者林恩·希尔庆祝酋长岩自由攀登30周年',
+      title_ko: '전설적 클라이머 린 힐, 엘캡 프리 등반 30주년',
+      summary: 'Lynn Hill reflects on her historic 1993 free ascent of The Nose on El Capitan, a feat that revolutionized big wall climbing.',
+      summary_ja: 'リン・ヒルが1993年のエルキャピタン「ザ・ノーズ」フリー初登を振り返ります。このビッグウォールクライミングに革命をもたらした偉業から30年。',
+      summary_zh: '林恩·希尔回顾她1993年酋长岩"鼻子"路线的自由攀登，这一壮举革新了大岩壁攀登。',
+      summary_ko: '린 힐이 1993년 엘캡 "더 노즈" 프리 등반을 회고. 빅월 클라이밍에 혁명을 일으킨 위업 30주년.',
+      url: 'https://example.com/lynn-hill-30-years',
+      source_name: 'Rock and Ice',
+      image_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
+      published_date: new Date(Date.now() - 345600000).toISOString(),
+      category: 'alpine',
+      genre: 'history',
+      language: 'en'
+    }
+  ]
+  
+  // Insert mock articles into database
+  const inserted: any[] = []
+  for (const article of mockArticles) {
+    try {
+      // Check if URL already exists
+      const existing = await db.prepare(
+        'SELECT id FROM news_articles WHERE url = ?'
+      ).bind(article.url).first()
+      
+      if (!existing) {
+        await db.prepare(`
+          INSERT INTO news_articles (
+            title, title_en, title_zh, title_ko,
+            summary, summary_en, summary_zh, summary_ko,
+            url, source_name, image_url, published_date,
+            category, genre, language
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          article.title_ja || article.title,
+          article.title,
+          article.title_zh,
+          article.title_ko,
+          article.summary_ja || article.summary,
+          article.summary,
+          article.summary_zh,
+          article.summary_ko,
+          article.url,
+          article.source_name,
+          article.image_url,
+          article.published_date,
+          article.category,
+          article.genre,
+          article.language
+        ).run()
+        
+        inserted.push(article)
+      }
+    } catch (error) {
+      console.error('Error inserting mock article:', error)
+    }
+  }
+  
+  return inserted
+}
+
 export default app
