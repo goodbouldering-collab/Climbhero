@@ -4363,6 +4363,291 @@ app.get('/api/news/meta/categories', async (c) => {
   }
 })
 
+// ============ News Article Likes & Favorites ============
+
+// Like a news article
+app.post('/api/news/:id/like', async (c) => {
+  const { env } = c
+  const articleId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    await env.DB.prepare(
+      'INSERT OR IGNORE INTO news_likes (user_id, article_id) VALUES (?, ?)'
+    ).bind((user as any).id, articleId).run()
+    
+    await env.DB.prepare(
+      'UPDATE news_articles SET like_count = like_count + 1 WHERE id = ?'
+    ).bind(articleId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Unlike a news article
+app.delete('/api/news/:id/like', async (c) => {
+  const { env } = c
+  const articleId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    const result = await env.DB.prepare(
+      'DELETE FROM news_likes WHERE user_id = ? AND article_id = ?'
+    ).bind((user as any).id, articleId).run()
+    
+    if (result.meta.changes > 0) {
+      await env.DB.prepare(
+        'UPDATE news_articles SET like_count = MAX(like_count - 1, 0) WHERE id = ?'
+      ).bind(articleId).run()
+    }
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Favorite a news article
+app.post('/api/news/:id/favorite', async (c) => {
+  const { env } = c
+  const articleId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    await env.DB.prepare(
+      'INSERT OR IGNORE INTO news_favorites (user_id, article_id) VALUES (?, ?)'
+    ).bind((user as any).id, articleId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Unfavorite a news article
+app.delete('/api/news/:id/favorite', async (c) => {
+  const { env } = c
+  const articleId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    await env.DB.prepare(
+      'DELETE FROM news_favorites WHERE user_id = ? AND article_id = ?'
+    ).bind((user as any).id, articleId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Blog Post Likes & Favorites ============
+
+// Like a blog post
+app.post('/api/blog/:id/like', async (c) => {
+  const { env } = c
+  const postId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    await env.DB.prepare(
+      'INSERT OR IGNORE INTO blog_likes (user_id, post_id) VALUES (?, ?)'
+    ).bind((user as any).id, postId).run()
+    
+    await env.DB.prepare(
+      'UPDATE blog_posts SET likes = likes + 1 WHERE id = ?'
+    ).bind(postId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Unlike a blog post
+app.delete('/api/blog/:id/like', async (c) => {
+  const { env } = c
+  const postId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    const result = await env.DB.prepare(
+      'DELETE FROM blog_likes WHERE user_id = ? AND post_id = ?'
+    ).bind((user as any).id, postId).run()
+    
+    if (result.meta.changes > 0) {
+      await env.DB.prepare(
+        'UPDATE blog_posts SET likes = MAX(likes - 1, 0) WHERE id = ?'
+      ).bind(postId).run()
+    }
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Favorite a blog post
+app.post('/api/blog/:id/favorite', async (c) => {
+  const { env } = c
+  const postId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    await env.DB.prepare(
+      'INSERT OR IGNORE INTO blog_favorites (user_id, post_id) VALUES (?, ?)'
+    ).bind((user as any).id, postId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Unfavorite a blog post
+app.delete('/api/blog/:id/favorite', async (c) => {
+  const { env } = c
+  const postId = c.req.param('id')
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    await env.DB.prepare(
+      'DELETE FROM blog_favorites WHERE user_id = ? AND post_id = ?'
+    ).bind((user as any).id, postId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Unified Favorites (Videos + Blog + News) ============
+
+// Get all user favorites (mixed content)
+app.get('/api/favorites', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const lang = c.req.query('lang') || 'ja'
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    // Get favorited videos
+    const videos = await env.DB.prepare(`
+      SELECT v.*, 'video' as content_type, vf.created_at as favorited_at
+      FROM user_video_favorites vf
+      JOIN videos v ON vf.video_id = v.id
+      WHERE vf.user_id = ?
+      ORDER BY vf.created_at DESC
+    `).bind((user as any).id).all()
+    
+    // Get favorited blog posts
+    const titleCol = lang === 'ja' ? 'title' : `title_${lang}`
+    const summaryCol = lang === 'ja' ? 'summary' : `summary_${lang}`
+    
+    const blogs = await env.DB.prepare(`
+      SELECT 
+        bp.id, 
+        bp.${titleCol} as title,
+        bp.${summaryCol} as summary,
+        bp.slug, bp.category, bp.thumbnail_url,
+        bp.published_date, bp.views, bp.likes,
+        'blog' as content_type,
+        bf.created_at as favorited_at
+      FROM blog_favorites bf
+      JOIN blog_posts bp ON bf.post_id = bp.id
+      WHERE bf.user_id = ? AND bp.status = 'published'
+      ORDER BY bf.created_at DESC
+    `).bind((user as any).id).all()
+    
+    // Get favorited news articles
+    const newsTitleCol = lang === 'ja' ? 'title' : `title_${lang}`
+    const newsSummaryCol = lang === 'ja' ? 'summary' : `summary_${lang}`
+    
+    const news = await env.DB.prepare(`
+      SELECT 
+        na.id,
+        na.${newsTitleCol} as title,
+        na.${newsSummaryCol} as summary,
+        na.url, na.source_name, na.image_url,
+        na.published_date, na.category, na.genre,
+        na.like_count,
+        'news' as content_type,
+        nf.created_at as favorited_at
+      FROM news_favorites nf
+      JOIN news_articles na ON nf.article_id = na.id
+      WHERE nf.user_id = ? AND na.is_active = 1
+      ORDER BY nf.created_at DESC
+    `).bind((user as any).id).all()
+    
+    // Combine all favorites and sort by favorited_at
+    const allFavorites = [
+      ...(videos.results || []),
+      ...(blogs.results || []),
+      ...(news.results || [])
+    ].sort((a: any, b: any) => {
+      return new Date(b.favorited_at).getTime() - new Date(a.favorited_at).getTime()
+    })
+    
+    return c.json({
+      favorites: allFavorites,
+      counts: {
+        videos: videos.results?.length || 0,
+        blogs: blogs.results?.length || 0,
+        news: news.results?.length || 0,
+        total: allFavorites.length
+      }
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // Admin: Get crawler settings
 app.get('/api/admin/news/settings', async (c) => {
   const { env } = c
