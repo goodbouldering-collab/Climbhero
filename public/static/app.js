@@ -1343,6 +1343,10 @@ function extractYouTubeId(url) {
 
 // ============ Blog Card ============
 function renderBlogCard(post) {
+  const isLiked = post.is_liked || false
+  const isFavorited = post.is_favorited || false
+  const likeCount = post.like_count || 0
+  
   return `
     <div class="scroll-item">
       <div class="video-card-compact" onclick="navigateTo('blog/${post.id}')">
@@ -1358,7 +1362,21 @@ function renderBlogCard(post) {
           <p class="text-xs text-gray-600 line-clamp-2 mb-2 leading-relaxed">${post.content.substring(0, 80)}...</p>
           <div class="video-meta-compact">
             <span><i class="fas fa-calendar"></i> ${formatDate(post.published_date)}</span>
-            <span><i class="fas fa-newspaper"></i> ニュース</span>
+            <span><i class="fas fa-newspaper"></i> ブログ</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <button 
+              onclick="event.stopPropagation(); toggleBlogLike(${post.id})" 
+              class="text-xs px-2 py-1 rounded-full transition-colors ${isLiked ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'}"
+              title="${isLiked ? 'いいね済み' : 'いいね'}">
+              <i class="fas fa-heart"></i> <span id="blog-like-count-${post.id}">${likeCount}</span>
+            </button>
+            <button 
+              onclick="event.stopPropagation(); toggleBlogFavorite(${post.id})" 
+              class="text-xs px-2 py-1 rounded-full transition-colors ${isFavorited ? 'bg-yellow-50 text-yellow-600' : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-600'}"
+              title="${isFavorited ? 'お気に入り済み' : 'お気に入り'}">
+              <i class="fas fa-star"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -6844,6 +6862,9 @@ function renderVideosPage() {
 function renderNewsCard(article) {
   const truncatedSummary = article.summary ? article.summary.substring(0, 120) + '...' : ''
   const publishedDate = article.published_date ? formatDate(article.published_date) : ''
+  const isLiked = article.is_liked || false
+  const isFavorited = article.is_favorited || false
+  const likeCount = article.like_count || 0
   
   return `
     <div class="scroll-item">
@@ -6868,9 +6889,23 @@ function renderNewsCard(article) {
             ${article.source_name ? `<span><i class="fas fa-newspaper"></i> ${article.source_name}</span>` : ''}
           </div>
           <div class="mt-2 flex items-center justify-between">
-            <span class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
-              ${i18n.t(`news.category.${article.category}`)}
-            </span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
+                ${i18n.t(`news.category.${article.category}`)}
+              </span>
+              <button 
+                onclick="event.stopPropagation(); toggleNewsLike(${article.id})" 
+                class="text-xs px-2 py-1 rounded-full transition-colors ${isLiked ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'}"
+                title="${isLiked ? 'いいね済み' : 'いいね'}">
+                <i class="fas fa-heart"></i> <span id="news-like-count-${article.id}">${likeCount}</span>
+              </button>
+              <button 
+                onclick="event.stopPropagation(); toggleNewsFavorite(${article.id})" 
+                class="text-xs px-2 py-1 rounded-full transition-colors ${isFavorited ? 'bg-yellow-50 text-yellow-600' : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-600'}"
+                title="${isFavorited ? 'お気に入り済み' : 'お気に入り'}">
+                <i class="fas fa-star"></i>
+              </button>
+            </div>
             <span class="text-xs text-gray-400">
               <i class="fas fa-external-link-alt"></i>
             </span>
@@ -6965,7 +7000,141 @@ function getCategoryIcon(category) {
   return icons[category] || 'fas fa-circle';
 }
 
+// ============ News Like & Favorite Functions ============
+async function toggleNewsLike(articleId) {
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  try {
+    const article = state.newsArticles.find(a => a.id === articleId);
+    if (!article) return;
+    
+    if (article.is_liked) {
+      await axios.delete(`/api/news/${articleId}/like`);
+      article.is_liked = false;
+      article.like_count = Math.max((article.like_count || 0) - 1, 0);
+      showToast('いいねを取り消しました', 'info');
+    } else {
+      await axios.post(`/api/news/${articleId}/like`);
+      article.is_liked = true;
+      article.like_count = (article.like_count || 0) + 1;
+      showToast('いいねしました', 'success');
+    }
+    
+    // Update like count display
+    const likeCountEl = document.getElementById(`news-like-count-${articleId}`);
+    if (likeCountEl) {
+      likeCountEl.textContent = article.like_count;
+    }
+    
+    // Re-render news section
+    renderNewsSection();
+  } catch (error) {
+    console.error('Error toggling news like:', error);
+    showToast('操作に失敗しました', 'error');
+  }
+}
+
+async function toggleNewsFavorite(articleId) {
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  try {
+    const article = state.newsArticles.find(a => a.id === articleId);
+    if (!article) return;
+    
+    if (article.is_favorited) {
+      await axios.delete(`/api/news/${articleId}/favorite`);
+      article.is_favorited = false;
+      showToast('お気に入りから削除しました', 'info');
+    } else {
+      await axios.post(`/api/news/${articleId}/favorite`);
+      article.is_favorited = true;
+      showToast('お気に入りに追加しました', 'success');
+    }
+    
+    // Re-render news section
+    renderNewsSection();
+  } catch (error) {
+    console.error('Error toggling news favorite:', error);
+    showToast('操作に失敗しました', 'error');
+  }
+}
+
+// ============ Blog Like & Favorite Functions ============
+async function toggleBlogLike(postId) {
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  try {
+    const post = state.blogPosts.find(p => p.id === postId);
+    if (!post) return;
+    
+    if (post.is_liked) {
+      await axios.delete(`/api/blog/${postId}/like`);
+      post.is_liked = false;
+      post.like_count = Math.max((post.like_count || 0) - 1, 0);
+      showToast('いいねを取り消しました', 'info');
+    } else {
+      await axios.post(`/api/blog/${postId}/like`);
+      post.is_liked = true;
+      post.like_count = (post.like_count || 0) + 1;
+      showToast('いいねしました', 'success');
+    }
+    
+    // Update like count display
+    const likeCountEl = document.getElementById(`blog-like-count-${postId}`);
+    if (likeCountEl) {
+      likeCountEl.textContent = post.like_count;
+    }
+    
+    // Re-render blog section
+    renderBlogSection();
+  } catch (error) {
+    console.error('Error toggling blog like:', error);
+    showToast('操作に失敗しました', 'error');
+  }
+}
+
+async function toggleBlogFavorite(postId) {
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  
+  try {
+    const post = state.blogPosts.find(p => p.id === postId);
+    if (!post) return;
+    
+    if (post.is_favorited) {
+      await axios.delete(`/api/blog/${postId}/favorite`);
+      post.is_favorited = false;
+      showToast('お気に入りから削除しました', 'info');
+    } else {
+      await axios.post(`/api/blog/${postId}/favorite`);
+      post.is_favorited = true;
+      showToast('お気に入りに追加しました', 'success');
+    }
+    
+    // Re-render blog section
+    renderBlogSection();
+  } catch (error) {
+    console.error('Error toggling blog favorite:', error);
+    showToast('操作に失敗しました', 'error');
+  }
+}
+
 // Expose news functions to global scope
 window.filterNewsByCategory = filterNewsByCategory;
 window.filterNewsByGenre = filterNewsByGenre;
 window.renderNewsCard = renderNewsCard;
+window.toggleNewsLike = toggleNewsLike;
+window.toggleNewsFavorite = toggleNewsFavorite;
+window.toggleBlogLike = toggleBlogLike;
+window.toggleBlogFavorite = toggleBlogFavorite;
