@@ -20,7 +20,7 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://0a51af0b.project-02ceb497.pages.dev ⭐ **最新デプロイ（キャッシュバスティング実装・全機能動作確認済み）**
+- **本番環境**: https://603b1a4a.project-02ceb497.pages.dev ⭐ **最新デプロイ（管理者認証修正・コンテンツ管理UI実装）**
 - **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai ⚡ **統合お気に入り一覧実装済み**
 - **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
