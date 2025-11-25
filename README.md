@@ -6,18 +6,20 @@
 
 ### 主な特徴
 
-- **マルチプラットフォーム対応**: YouTube、TikTok、Instagram、Vimeoの動画を完全サポート 🎥 NEW
+- **マルチプラットフォーム対応**: YouTube、YouTube Shorts、TikTok、Instagram、Vimeo、X (Twitter)の動画を完全サポート 🎥
 - **スマートサムネイル生成**: プラットフォームごとに最適化されたサムネイル表示
 - **横カルーセルUI**: 全セクションで滑らかなスクロール体験
 - **拡張ランキング**: デイリー・週間・月間・年間の4期間対応
-- **充実のサンプルデータ**: 25本の動画（4プラットフォーム）と5本のブログ記事
+- **充実のサンプルデータ**: 10本の動画（6プラットフォーム）と5本のニュース記事（永続化済み）📦
+- **自動バックアップシステム**: デプロイ前に自動でバックアップを作成してGitHub同期 🔄
 - **プレミアムプラン**: $20/月 + 15日間無料トライアル
 - **完全なフッター**: 会社情報、リンク、連絡先を網羅
 - **動画投稿機能**: URLを入力するだけで簡単投稿
 
 ## 🌐 公開URL
 
-- **本番環境**: https://9fa95b71.project-02ceb497.pages.dev ⭐ **最新デプロイ（管理者ログインUI改善）**
+- **本番環境**: https://cc1a99e3.project-02ceb497.pages.dev ⭐ **最新デプロイ（フロントエンド表示修正 + 全プラットフォームサンプル完備）**
+- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai
 - **本番URL（メイン）**: https://project-02ceb497.pages.dev
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
 - **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
@@ -425,12 +427,21 @@ npm run deploy  # 自動的にbackup:autoが実行されます
   - 完全4言語翻訳
   - AIジャンル分類
 
-#### GitHub Actions 自動デプロイ
+#### デプロイ時の自動化
 
-`.github/workflows/deploy.yml`により、以下が自動実行されます：
+`npm run deploy`により、以下が自動実行されます：
 
-1. **自動バックアップ**: デプロイ前にbackups/ディレクトリに保存
-2. **データベースマイグレーション**: 本番環境に自動適用
+1. **自動バックアップ**: `predeploy`フックでbackups/ディレクトリに保存
+2. **Git自動コミット**: バックアップファイルを自動的にGitHubに同期
+3. **プロジェクトビルド**: Viteによる最適化ビルド
+4. **Cloudflareデプロイ**: 本番環境に自動デプロイ
+
+**注意**: データベースマイグレーションは手動で実行する必要があります：
+```bash
+npm run db:migrate:prod     # 本番マイグレーション
+npm run db:seed:prod        # 本番サンプルデータ投入
+npm run db:verify -- --remote  # 本番データ検証
+```
 3. **サンプルデータ投入**: 本番環境に自動適用
 4. **Cloudflareデプロイ**: 本番環境に自動デプロイ
 
