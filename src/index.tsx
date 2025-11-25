@@ -915,8 +915,12 @@ app.get('/api/blog', async (c) => {
   const { env } = c
   const lang = c.req.query('lang') || 'ja'
   const genre = c.req.query('genre') || ''
+  const sessionToken = getCookie(c, 'session_token')
 
   try {
+    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const userId = user ? (user as any).id : null
+    
     let query = 'SELECT * FROM blog_posts'
     const params: any[] = []
     
@@ -929,11 +933,36 @@ app.get('/api/blog', async (c) => {
     
     const { results: posts } = await env.DB.prepare(query).bind(...params).all()
     
+    // Get like counts for all posts
+    const likeCounts = await env.DB.prepare(
+      'SELECT post_id, COUNT(*) as count FROM blog_likes GROUP BY post_id'
+    ).all()
+    const likeCountMap = new Map((likeCounts.results || []).map((lc: any) => [lc.post_id, lc.count]))
+    
+    // Get user's likes and favorites if authenticated
+    let userLikes: Set<number> = new Set()
+    let userFavorites: Set<number> = new Set()
+    
+    if (userId) {
+      const likes = await env.DB.prepare(
+        'SELECT post_id FROM blog_likes WHERE user_id = ?'
+      ).bind(userId).all()
+      userLikes = new Set((likes.results || []).map((l: any) => l.post_id))
+      
+      const favorites = await env.DB.prepare(
+        'SELECT post_id FROM blog_favorites WHERE user_id = ?'
+      ).bind(userId).all()
+      userFavorites = new Set((favorites.results || []).map((f: any) => f.post_id))
+    }
+    
     // Return language-specific fields based on lang parameter (supports ja/en/zh/ko)
     const localizedPosts = (posts as any[]).map((post: any) => ({
       ...post,
       title: getLocalizedField(post, 'title', lang),
-      content: getLocalizedField(post, 'content', lang)
+      content: getLocalizedField(post, 'content', lang),
+      like_count: likeCountMap.get(post.id) || 0,
+      is_liked: userLikes.has(post.id),
+      is_favorited: userFavorites.has(post.id)
     }))
     
     return c.json(localizedPosts)
@@ -947,6 +976,7 @@ app.get('/api/blog/:id', async (c) => {
   const { env } = c
   const id = c.req.param('id')
   const lang = c.req.query('lang') || 'ja'
+  const sessionToken = getCookie(c, 'session_token')
 
   try {
     // Check if id is a slug (contains hyphens) or numeric ID
@@ -960,11 +990,38 @@ app.get('/api/blog/:id', async (c) => {
       return c.json({ error: 'Blog post not found' }, 404)
     }
     
+    // Get like count
+    const likeCount = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM blog_likes WHERE post_id = ?'
+    ).bind(post.id).first() as any
+    
+    // Check if user liked/favorited
+    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const userId = user ? (user as any).id : null
+    
+    let is_liked = false
+    let is_favorited = false
+    
+    if (userId) {
+      const liked = await env.DB.prepare(
+        'SELECT 1 FROM blog_likes WHERE user_id = ? AND post_id = ?'
+      ).bind(userId, post.id).first()
+      is_liked = !!liked
+      
+      const favorited = await env.DB.prepare(
+        'SELECT 1 FROM blog_favorites WHERE user_id = ? AND post_id = ?'
+      ).bind(userId, post.id).first()
+      is_favorited = !!favorited
+    }
+    
     // Return language-specific fields (supports ja/en/zh/ko)
     const localizedPost = {
       ...post,
       title: getLocalizedField(post, 'title', lang),
-      content: getLocalizedField(post, 'content', lang)
+      content: getLocalizedField(post, 'content', lang),
+      like_count: likeCount?.count || 0,
+      is_liked,
+      is_favorited
     }
     
     return c.json(localizedPost)
@@ -4274,8 +4331,12 @@ app.get('/api/news', async (c) => {
   const genre = c.req.query('genre')
   const limit = parseInt(c.req.query('limit') || '20')
   const offset = parseInt(c.req.query('offset') || '0')
+  const sessionToken = getCookie(c, 'session_token')
   
   try {
+    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const userId = user ? (user as any).id : null
+    
     let query = 'SELECT * FROM news_articles WHERE is_active = 1'
     const params: any[] = []
     
@@ -4295,11 +4356,29 @@ app.get('/api/news', async (c) => {
     const stmt = env.DB.prepare(query).bind(...params)
     const result = await stmt.all()
     
-    // Localize fields
+    // Get user's likes and favorites if authenticated
+    let userLikes: Set<number> = new Set()
+    let userFavorites: Set<number> = new Set()
+    
+    if (userId) {
+      const likes = await env.DB.prepare(
+        'SELECT article_id FROM news_likes WHERE user_id = ?'
+      ).bind(userId).all()
+      userLikes = new Set((likes.results || []).map((l: any) => l.article_id))
+      
+      const favorites = await env.DB.prepare(
+        'SELECT article_id FROM news_favorites WHERE user_id = ?'
+      ).bind(userId).all()
+      userFavorites = new Set((favorites.results || []).map((f: any) => f.article_id))
+    }
+    
+    // Localize fields and add user interaction status
     const articles = (result.results || []).map((article: any) => ({
       ...article,
       title: getLocalizedField(article, 'title', lang),
-      summary: getLocalizedField(article, 'summary', lang)
+      summary: getLocalizedField(article, 'summary', lang),
+      is_liked: userLikes.has(article.id),
+      is_favorited: userFavorites.has(article.id)
     }))
     
     return c.json({ articles, count: articles.length })
@@ -4313,6 +4392,7 @@ app.get('/api/news/:id', async (c) => {
   const { env } = c
   const id = c.req.param('id')
   const lang = c.req.query('lang') || 'ja'
+  const sessionToken = getCookie(c, 'session_token')
   
   try {
     const article = await env.DB.prepare(
@@ -4328,11 +4408,32 @@ app.get('/api/news/:id', async (c) => {
       'UPDATE news_articles SET view_count = view_count + 1 WHERE id = ?'
     ).bind(id).run()
     
+    // Check if user liked/favorited
+    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const userId = user ? (user as any).id : null
+    
+    let is_liked = false
+    let is_favorited = false
+    
+    if (userId) {
+      const liked = await env.DB.prepare(
+        'SELECT 1 FROM news_likes WHERE user_id = ? AND article_id = ?'
+      ).bind(userId, id).first()
+      is_liked = !!liked
+      
+      const favorited = await env.DB.prepare(
+        'SELECT 1 FROM news_favorites WHERE user_id = ? AND article_id = ?'
+      ).bind(userId, id).first()
+      is_favorited = !!favorited
+    }
+    
     // Localize fields
     const localizedArticle = {
       ...article,
       title: getLocalizedField(article, 'title', lang),
-      summary: getLocalizedField(article, 'summary', lang)
+      summary: getLocalizedField(article, 'summary', lang),
+      is_liked,
+      is_favorited
     }
     
     return c.json({ article: localizedArticle })
@@ -4481,10 +4582,6 @@ app.post('/api/blog/:id/like', async (c) => {
       'INSERT OR IGNORE INTO blog_likes (user_id, post_id) VALUES (?, ?)'
     ).bind((user as any).id, postId).run()
     
-    await env.DB.prepare(
-      'UPDATE blog_posts SET likes = likes + 1 WHERE id = ?'
-    ).bind(postId).run()
-    
     return c.json({ success: true })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
@@ -4506,12 +4603,6 @@ app.delete('/api/blog/:id/like', async (c) => {
     const result = await env.DB.prepare(
       'DELETE FROM blog_likes WHERE user_id = ? AND post_id = ?'
     ).bind((user as any).id, postId).run()
-    
-    if (result.meta.changes > 0) {
-      await env.DB.prepare(
-        'UPDATE blog_posts SET likes = MAX(likes - 1, 0) WHERE id = ?'
-      ).bind(postId).run()
-    }
     
     return c.json({ success: true })
   } catch (error: any) {
@@ -4579,29 +4670,29 @@ app.get('/api/favorites', async (c) => {
   try {
     // Get favorited videos
     const videos = await env.DB.prepare(`
-      SELECT v.*, 'video' as content_type, vf.created_at as favorited_at
-      FROM user_video_favorites vf
-      JOIN videos v ON vf.video_id = v.id
-      WHERE vf.user_id = ?
-      ORDER BY vf.created_at DESC
+      SELECT v.*, 'video' as content_type, f.created_at as favorited_at
+      FROM favorites f
+      JOIN videos v ON f.video_id = v.id
+      WHERE f.user_id = ?
+      ORDER BY f.created_at DESC
     `).bind((user as any).id).all()
     
     // Get favorited blog posts
     const titleCol = lang === 'ja' ? 'title' : `title_${lang}`
-    const summaryCol = lang === 'ja' ? 'summary' : `summary_${lang}`
+    const contentCol = lang === 'ja' ? 'content' : `content_${lang}`
     
     const blogs = await env.DB.prepare(`
       SELECT 
         bp.id, 
         bp.${titleCol} as title,
-        bp.${summaryCol} as summary,
-        bp.slug, bp.category, bp.thumbnail_url,
-        bp.published_date, bp.views, bp.likes,
+        bp.${contentCol} as content,
+        bp.slug, bp.image_url,
+        bp.published_date,
         'blog' as content_type,
         bf.created_at as favorited_at
       FROM blog_favorites bf
       JOIN blog_posts bp ON bf.post_id = bp.id
-      WHERE bf.user_id = ? AND bp.status = 'published'
+      WHERE bf.user_id = ?
       ORDER BY bf.created_at DESC
     `).bind((user as any).id).all()
     
