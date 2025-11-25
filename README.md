@@ -346,8 +346,8 @@ npm install
 # データベースマイグレーション
 npm run db:migrate:local
 
-# シードデータ投入
-npm run db:seed
+# サンプルデータ投入（全プラットフォーム対応）
+npm run db:seed:all
 
 # ビルド
 npm run build
@@ -373,6 +373,68 @@ pm2 logs webapp --nostream
 # サービス再起動
 pm2 restart webapp
 ```
+
+### 📦 サンプルデータ管理（重要）
+
+**サンプルデータの永続化**: すべてのプラットフォーム（YouTube, YouTube Shorts, Vimeo, Instagram, TikTok, X）のサンプルデータは永続的に維持されます。
+
+#### サンプルデータコマンド
+
+```bash
+# 動画サンプル投入（全プラットフォーム）
+npm run db:seed:videos
+
+# ニュースサンプル投入
+npm run db:seed:news
+
+# すべてのサンプルデータ投入
+npm run db:seed:all
+
+# サンプルデータ検証（ローカル）
+npm run db:verify
+
+# サンプルデータ検証（本番）
+npm run db:verify -- --remote
+```
+
+#### 自動バックアップシステム
+
+```bash
+# 手動バックアップ作成
+npm run backup
+
+# 自動バックアップ + Git コミット
+npm run backup:auto
+
+# デプロイ前自動バックアップ（predeploy hook）
+npm run deploy  # 自動的にbackup:autoが実行されます
+```
+
+#### サンプルデータファイル
+
+- `seed_real_videos.sql`: 全プラットフォームの動画サンプル（10件）
+  - YouTube: 実在する動画ID
+  - YouTube Shorts: 実在する動画ID
+  - Vimeo: 実在する動画ID
+  - Instagram Reels: 埋め込み対応形式
+  - TikTok: 動画ID
+  - X (Twitter): ツイートID
+
+- `seed_news_mock.sql`: クライミングニュースサンプル（5件）
+  - 全カテゴリ対応
+  - 完全4言語翻訳
+  - AIジャンル分類
+
+#### GitHub Actions 自動デプロイ
+
+`.github/workflows/deploy.yml`により、以下が自動実行されます：
+
+1. **自動バックアップ**: デプロイ前にbackups/ディレクトリに保存
+2. **データベースマイグレーション**: 本番環境に自動適用
+3. **サンプルデータ投入**: 本番環境に自動適用
+4. **Cloudflareデプロイ**: 本番環境に自動デプロイ
+
+**重要**: GitHubにプッシュするだけで、すべてのサンプルデータが自動的に本番環境に同期されます。
 
 ## 🌍 デプロイ
 
