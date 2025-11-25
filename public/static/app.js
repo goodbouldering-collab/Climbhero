@@ -330,6 +330,8 @@ function renderApp() {
     initializeCarousels();
   } else if (state.currentView === 'videos') {
     root.innerHTML = renderVideosPage();
+  } else if (state.currentView === 'favorites') {
+    renderFavoritesPage();
   } else if (state.currentView === 'upload') {
     root.innerHTML = renderUploadPage();
   } else if (state.currentView === 'settings') {
@@ -389,14 +391,20 @@ function renderHomePage() {
             </div>
             
             ${state.currentUser ? `
-              <!-- Logout Button -->
-              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
-                ログアウト
+              <!-- Favorites Button -->
+              <button onclick="navigateTo('favorites')" class="btn btn-sm btn-secondary px-3 text-base flex items-center gap-1">
+                <i class="fas fa-star text-yellow-500"></i>
+                <span class="hidden sm:inline">お気に入り</span>
               </button>
               
               <!-- My Page Button -->
               <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3 text-base">
                 マイページ
+              </button>
+              
+              <!-- Logout Button -->
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
+                ログアウト
               </button>
             ` : `
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3 text-base">
@@ -7130,6 +7138,219 @@ async function toggleBlogFavorite(postId) {
   }
 }
 
+// ============ Unified Favorites Page ============
+async function renderFavoritesPage() {
+  const root = document.getElementById('root');
+  
+  if (!state.currentUser) {
+    showAuthModal('login');
+    navigateTo('home');
+    return;
+  }
+  
+  // Show loading state
+  root.innerHTML = `
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div class="text-center">
+        <i class="fas fa-spinner fa-spin text-4xl text-purple-600 mb-4"></i>
+        <p class="text-gray-600">お気に入りを読み込み中...</p>
+      </div>
+    </div>
+  `;
+  
+  try {
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/favorites?lang=${lang}`);
+    const { favorites, counts } = response.data;
+    
+    root.innerHTML = `
+      <!-- Simple Header -->
+      <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between">
+            <button onclick="navigateTo('home')" class="text-gray-600 hover:text-gray-900">
+              <i class="fas fa-arrow-left mr-2"></i>ホームに戻る
+            </button>
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-star text-yellow-500"></i>
+              お気に入り一覧
+            </h1>
+            <div class="w-24"></div>
+          </div>
+        </div>
+      </header>
+      
+      <main class="bg-gray-50 min-h-screen py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <!-- Summary Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+              <div class="text-3xl font-bold text-purple-600">${counts.total}</div>
+              <div class="text-sm text-gray-600 mt-1">合計</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+              <div class="text-3xl font-bold text-red-600">${counts.videos}</div>
+              <div class="text-sm text-gray-600 mt-1">動画</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+              <div class="text-3xl font-bold text-indigo-600">${counts.blogs}</div>
+              <div class="text-sm text-gray-600 mt-1">ブログ</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+              <div class="text-3xl font-bold text-blue-600">${counts.news}</div>
+              <div class="text-sm text-gray-600 mt-1">ニュース</div>
+            </div>
+          </div>
+          
+          <!-- Favorites List -->
+          ${favorites.length === 0 ? `
+            <div class="bg-white rounded-lg shadow p-12 text-center">
+              <i class="fas fa-star text-6xl text-gray-300 mb-4"></i>
+              <h3 class="text-xl font-bold text-gray-700 mb-2">お気に入りがありません</h3>
+              <p class="text-gray-500 mb-6">動画、ブログ、ニュースをお気に入りに追加してみましょう！</p>
+              <button onclick="navigateTo('home')" class="btn btn-primary">
+                コンテンツを探す
+              </button>
+            </div>
+          ` : `
+            <div class="space-y-4">
+              ${favorites.map(item => renderFavoriteItem(item)).join('')}
+            </div>
+          `}
+        </div>
+      </main>
+    `;
+  } catch (error) {
+    console.error('Error loading favorites:', error);
+    root.innerHTML = `
+      <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div class="text-center">
+          <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">エラーが発生しました</h3>
+          <p class="text-gray-600 mb-6">お気に入りの読み込みに失敗しました</p>
+          <button onclick="navigateTo('home')" class="btn btn-primary">
+            ホームに戻る
+          </button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderFavoriteItem(item) {
+  const { content_type, favorited_at } = item;
+  const timeAgo = formatTimeAgo(new Date(favorited_at));
+  
+  if (content_type === 'video') {
+    const thumbnail = getThumbnailUrl(item.media_source, item.thumbnail_url, item.external_video_id);
+    return `
+      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer" onclick="openVideoModal(${item.id})">
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-40 h-24 bg-gray-200 rounded overflow-hidden">
+            <img src="${thumbnail}" alt="${item.title}" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="text-lg font-bold text-gray-900 line-clamp-2">${item.title}</h3>
+              <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full flex-shrink-0">
+                <i class="fas fa-video"></i> 動画
+              </span>
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2 mb-2">${item.description || ''}</p>
+            <div class="flex items-center gap-4 text-xs text-gray-500">
+              <span><i class="fas fa-heart text-red-500"></i> ${item.likes || 0}</span>
+              <span><i class="fas fa-eye"></i> ${item.views || 0}</span>
+              <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (content_type === 'blog') {
+    return `
+      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer" onclick="navigateTo('blog/${item.id}')">
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-40 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded overflow-hidden">
+            ${item.image_url ? `
+              <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
+            ` : `
+              <div class="w-full h-full flex items-center justify-center">
+                <i class="fas fa-blog text-4xl text-indigo-400"></i>
+              </div>
+            `}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="text-lg font-bold text-gray-900 line-clamp-2">${item.title}</h3>
+              <span class="ml-2 px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full flex-shrink-0">
+                <i class="fas fa-blog"></i> ブログ
+              </span>
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2 mb-2">${stripHtml(item.content || '').substring(0, 120)}...</p>
+            <div class="flex items-center gap-4 text-xs text-gray-500">
+              <span><i class="fas fa-calendar"></i> ${formatDate(item.published_date)}</span>
+              <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (content_type === 'news') {
+    return `
+      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer" onclick="window.open('${item.url}', '_blank')">
+        <div class="flex gap-4">
+          <div class="flex-shrink-0 w-40 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded overflow-hidden">
+            ${item.image_url ? `
+              <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
+            ` : `
+              <div class="w-full h-full flex items-center justify-center">
+                <i class="fas fa-newspaper text-4xl text-blue-400"></i>
+              </div>
+            `}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="text-lg font-bold text-gray-900 line-clamp-2">${item.title}</h3>
+              <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full flex-shrink-0">
+                <i class="fas fa-newspaper"></i> ニュース
+              </span>
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2 mb-2">${item.summary || ''}</p>
+            <div class="flex items-center gap-4 text-xs text-gray-500">
+              <span><i class="fas fa-heart text-red-500"></i> ${item.like_count || 0}</span>
+              <span><i class="fas fa-external-link-alt"></i> ${item.source_name || ''}</span>
+              <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  return '';
+}
+
+// Helper functions
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
+function formatTimeAgo(date) {
+  const now = new Date();
+  const diff = now - date;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) return `${days}日前`;
+  if (hours > 0) return `${hours}時間前`;
+  if (minutes > 0) return `${minutes}分前`;
+  return `${seconds}秒前`;
+}
+
 // Expose news functions to global scope
 window.filterNewsByCategory = filterNewsByCategory;
 window.filterNewsByGenre = filterNewsByGenre;
@@ -7138,3 +7359,4 @@ window.toggleNewsLike = toggleNewsLike;
 window.toggleNewsFavorite = toggleNewsFavorite;
 window.toggleBlogLike = toggleBlogLike;
 window.toggleBlogFavorite = toggleBlogFavorite;
+window.renderFavoritesPage = renderFavoritesPage;
