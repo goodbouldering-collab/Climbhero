@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-11-25T14:37:51.520Z",
+  "files": [
+    "seed_real_videos.sql",
+    "seed_news_mock.sql",
+    "wrangler.jsonc",
+    "package.json",
+    "ecosystem.config.cjs",
+    ".gitignore",
+    "migrations",
+    "public/static",
+    "src"
+  ],
+  "project": "ClimbHero",
+  "version": "1.0.0"
+}
