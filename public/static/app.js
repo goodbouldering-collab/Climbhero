@@ -2942,6 +2942,48 @@ function renderMyPage() {
           
           <!-- Right Column: Account Info & Actions -->
           <div class="space-y-6">
+            ${state.currentUser.is_admin ? `
+            <!-- Content Management Card (Admin Only) -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                  <i class="fas fa-edit mr-2"></i>
+                  コンテンツ管理
+                </h3>
+              </div>
+              <div class="p-4 space-y-2">
+                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center justify-between">
+                  <span class="flex items-center">
+                    <i class="fas fa-newspaper text-purple-600 mr-3"></i>
+                    <span class="font-semibold text-gray-900">ニュース管理</span>
+                  </span>
+                  <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-between">
+                  <span class="flex items-center">
+                    <i class="fas fa-blog text-blue-600 mr-3"></i>
+                    <span class="font-semibold text-gray-900">ブログ管理</span>
+                  </span>
+                  <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center justify-between">
+                  <span class="flex items-center">
+                    <i class="fas fa-video text-red-600 mr-3"></i>
+                    <span class="font-semibold text-gray-900">動画管理</span>
+                  </span>
+                  <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors flex items-center justify-between">
+                  <span class="flex items-center">
+                    <i class="fas fa-bullhorn text-green-600 mr-3"></i>
+                    <span class="font-semibold text-gray-900">お知らせ管理</span>
+                  </span>
+                  <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+              </div>
+            </div>
+            ` : ''}
+            
             <!-- Account Status Card -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">

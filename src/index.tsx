@@ -90,20 +90,40 @@ app.post('/api/auth/login', async (c) => {
   }
 
   try {
-    // Check for hardcoded admin credentials (support both 'admin' and 'admin@climbhero.com')
+    // Check for admin credentials and auto-create admin account if needed
     if ((email === 'admin' || email === 'admin@climbhero.com') && password === 'admin123') {
-      const sessionToken = generateSessionToken()
+      const adminEmail = 'admin@climbhero.com'
       
-      // Set admin session cookie
-      setCookie(c, 'session_token', sessionToken, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 60 * 60 * 24 * 30,
-        sameSite: 'Lax'
-      })
+      // Check if admin exists in DB
+      let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(adminEmail).first() as any
       
-      // Store admin session in memory (for development)
-      setCookie(c, 'admin_session', 'true', {
+      if (!adminUser) {
+        // Create admin account
+        const passwordHash = hashPassword('admin123')
+        const sessionToken = generateSessionToken()
+        
+        const result = await env.DB.prepare(
+          'INSERT INTO users (email, username, password_hash, session_token, membership_type, is_admin) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(adminEmail, 'Administrator', passwordHash, sessionToken, 'premium', 1).run()
+        
+        adminUser = {
+          id: result.meta.last_row_id,
+          email: adminEmail,
+          username: 'Administrator',
+          membership_type: 'premium',
+          is_admin: 1,
+          session_token: sessionToken
+        }
+      } else {
+        // Update session token
+        const sessionToken = generateSessionToken()
+        await env.DB.prepare(
+          'UPDATE users SET session_token = ?, last_login = CURRENT_TIMESTAMP WHERE id = ?'
+        ).bind(sessionToken, adminUser.id).run()
+        adminUser.session_token = sessionToken
+      }
+      
+      setCookie(c, 'session_token', adminUser.session_token, {
         httpOnly: true,
         secure: true,
         maxAge: 60 * 60 * 24 * 30,
@@ -113,10 +133,10 @@ app.post('/api/auth/login', async (c) => {
       return c.json({
         success: true,
         user: {
-          id: 0,
-          email: email === 'admin' ? 'admin' : 'admin@climbhero.com',
-          username: 'Administrator',
-          membership_type: 'admin',
+          id: adminUser.id,
+          email: adminUser.email,
+          username: adminUser.username,
+          membership_type: adminUser.membership_type,
           is_admin: true
         }
       })
