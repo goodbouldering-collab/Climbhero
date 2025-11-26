@@ -3,6 +3,8 @@ const state = {
   currentUser: null,
   videos: [],
   favorites: [],
+  allFavorites: [],
+  favoriteCounts: { total: 0, videos: 0, blogs: 0, news: 0 },
   trendingVideos: [],
   topLikedVideos: [],
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
