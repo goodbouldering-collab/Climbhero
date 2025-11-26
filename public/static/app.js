@@ -4350,90 +4350,149 @@ function renderContactPage() {
         <div class="bg-white rounded-lg shadow-sm p-8">
           <h1 class="text-3xl font-bold text-gray-900 mb-4">
             <i class="fas fa-envelope mr-3 text-purple-600"></i>
-            お問い合わせ
+            ${i18n.t('contact.title')}
           </h1>
-          <p class="text-gray-600 mb-8">
-            ご質問、ご意見、パートナーシップに関するお問い合わせは、下記フォームよりご連絡ください。
+          <p class="text-gray-600 mb-2">
+            ${i18n.t('contact.subtitle')}
+          </p>
+          <p class="text-sm text-red-500 mb-8">
+            ${i18n.t('contact.required')}
           </p>
           
           <!-- Contact Form -->
           <form id="contactForm" class="space-y-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                お名前 <span class="text-red-500">*</span>
-              </label>
-              <input 
-                type="text" 
-                id="contact_name" 
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="山田 太郎"
-              >
+            <!-- Honeypot (hidden field for spam protection) -->
+            <div class="hidden" aria-hidden="true">
+              <input type="text" name="website" id="contact_honeypot" tabindex="-1" autocomplete="off">
             </div>
             
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                メールアドレス <span class="text-red-500">*</span>
-              </label>
-              <input 
-                type="email" 
-                id="contact_email" 
-                required
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="email@example.com"
-              >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Name -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  ${i18n.t('contact.name')} <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="contact_name" 
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="${i18n.t('contact.name_placeholder')}"
+                >
+              </div>
+              
+              <!-- Email -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  ${i18n.t('contact.email')} <span class="text-red-500">*</span>
+                </label>
+                <input 
+                  type="email" 
+                  id="contact_email" 
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="${i18n.t('contact.email_placeholder')}"
+                >
+              </div>
             </div>
             
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Phone (optional) -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  ${i18n.t('contact.phone')}
+                </label>
+                <input 
+                  type="tel" 
+                  id="contact_phone" 
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="${i18n.t('contact.phone_placeholder')}"
+                >
+              </div>
+              
+              <!-- Category -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  ${i18n.t('contact.category')} <span class="text-red-500">*</span>
+                </label>
+                <select 
+                  id="contact_category" 
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="general">${i18n.t('contact.category_general')}</option>
+                  <option value="support">${i18n.t('contact.category_support')}</option>
+                  <option value="feedback">${i18n.t('contact.category_feedback')}</option>
+                  <option value="business">${i18n.t('contact.category_business')}</option>
+                  <option value="press">${i18n.t('contact.category_press')}</option>
+                  <option value="other">${i18n.t('contact.category_other')}</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Subject -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                件名
+                ${i18n.t('contact.subject')} <span class="text-red-500">*</span>
               </label>
               <input 
                 type="text" 
                 id="contact_subject" 
+                required
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="お問い合わせの件名"
+                placeholder="${i18n.t('contact.subject_placeholder')}"
               >
             </div>
             
+            <!-- Message -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                お問い合わせ内容 <span class="text-red-500">*</span>
+                ${i18n.t('contact.message')} <span class="text-red-500">*</span>
               </label>
               <textarea 
                 id="contact_message" 
                 required
                 rows="8"
+                minlength="10"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="お問い合わせ内容をご記入ください"
+                placeholder="${i18n.t('contact.message_placeholder')}"
               ></textarea>
             </div>
             
+            <!-- Privacy Notice -->
             <div class="bg-gray-50 p-4 rounded-lg">
               <p class="text-sm text-gray-600">
-                <i class="fas fa-info-circle mr-2 text-purple-600"></i>
-                ご入力いただいた個人情報は、お問い合わせ対応のみに使用し、
-                <a href="#privacy" class="text-purple-600 hover:underline">プライバシーポリシー</a>
-                に基づき適切に管理いたします。
+                <i class="fas fa-shield-alt mr-2 text-purple-600"></i>
+                ${i18n.t('contact.privacy_notice')}
+                <a href="#privacy" class="text-purple-600 hover:underline ml-1">${i18n.t('footer.privacy')}</a>
               </p>
             </div>
             
+            <!-- Submit Buttons -->
             <div class="flex gap-4">
               <button 
                 type="submit" 
-                class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-medium"
+                id="contact_submit_btn"
+                class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <i class="fas fa-paper-plane mr-2"></i>
-                送信する
+                <span id="contact_submit_text">${i18n.t('contact.submit')}</span>
               </button>
               <a 
                 href="#home" 
                 class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-medium text-center"
               >
-                キャンセル
+                ${i18n.t('common.cancel')}
               </a>
             </div>
           </form>
+          
+          <!-- Success Message (hidden by default) -->
+          <div id="contact_success" class="hidden mt-8 p-6 bg-green-50 border border-green-200 rounded-lg text-center">
+            <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+            <h3 class="text-xl font-bold text-green-800 mb-2">${i18n.t('contact.success')}</h3>
+            <p class="text-green-700">${i18n.t('contact.success_detail')}</p>
+          </div>
         </div>
         
         <!-- Contact Information -->
@@ -4441,29 +4500,35 @@ function renderContactPage() {
           <div class="bg-white rounded-lg shadow-sm p-6">
             <h3 class="font-bold text-gray-900 mb-4">
               <i class="fas fa-clock mr-2 text-purple-600"></i>
-              サポート時間
+              ${i18n.t('footer.support')}
             </h3>
-            <p class="text-gray-600">平日 10:00-18:00</p>
+            <p class="text-gray-600">${i18n.t('footer.support_hours')}</p>
             <p class="text-sm text-gray-500 mt-2">
-              ※土日祝日は休業日となります
+              ${i18n.getCurrentLanguage() === 'ja' ? '※土日祝日は休業日となります' : 
+                i18n.getCurrentLanguage() === 'ko' ? '※주말 및 공휴일은 휴무입니다' :
+                i18n.getCurrentLanguage() === 'zh' ? '※周末及节假日休息' :
+                '※Closed on weekends and holidays'}
             </p>
           </div>
           
           <div class="bg-white rounded-lg shadow-sm p-6">
             <h3 class="font-bold text-gray-900 mb-4">
               <i class="fas fa-map-marker-alt mr-2 text-purple-600"></i>
-              所在地
+              ${i18n.getCurrentLanguage() === 'ja' ? '所在地' : 
+                i18n.getCurrentLanguage() === 'ko' ? '위치' :
+                i18n.getCurrentLanguage() === 'zh' ? '地址' :
+                'Location'}
             </h3>
             <div class="text-gray-600 space-y-3">
               <div>
-                <p class="font-semibold text-purple-600 mb-1">監修</p>
-                <p class="text-sm">クライミングルプロジェクト</p>
-                <p class="text-xs">〒224-0054<br>神奈川県横浜市都筑区佐江戸町417</p>
+                <p class="font-semibold text-purple-600 mb-1">${i18n.t('footer.supervisor')}</p>
+                <p class="text-sm">${i18n.t('footer.supervisor_name')}</p>
+                <p class="text-xs">${i18n.t('footer.supervisor_address')}</p>
               </div>
               <div>
-                <p class="font-semibold text-purple-600 mb-1">製作者</p>
-                <p class="text-sm">グッぼる ボルダリングカフェ</p>
-                <p class="text-xs">〒522-0043<br>滋賀県彦根市小泉町34-8</p>
+                <p class="font-semibold text-purple-600 mb-1">${i18n.t('footer.producer')}</p>
+                <p class="text-sm">${i18n.t('footer.producer_name')}</p>
+                <p class="text-xs">${i18n.t('footer.producer_address')}</p>
               </div>
             </div>
           </div>
@@ -4472,7 +4537,7 @@ function renderContactPage() {
         <div class="mt-8 text-center">
           <a href="#home" class="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium">
             <i class="fas fa-arrow-left"></i>
-            ホームに戻る
+            ${i18n.t('footer.home')}
           </a>
         </div>
       </div>
@@ -4755,31 +4820,78 @@ async function testApi(url) {
 async function handleContactSubmit(e) {
   e.preventDefault();
   
-  const name = document.getElementById('contact_name').value;
-  const email = document.getElementById('contact_email').value;
-  const subject = document.getElementById('contact_subject').value;
-  const message = document.getElementById('contact_message').value;
+  const submitBtn = document.getElementById('contact_submit_btn');
+  const submitText = document.getElementById('contact_submit_text');
+  const form = document.getElementById('contactForm');
+  const successDiv = document.getElementById('contact_success');
+  
+  // Get form values
+  const name = document.getElementById('contact_name').value.trim();
+  const email = document.getElementById('contact_email').value.trim();
+  const phone = document.getElementById('contact_phone')?.value.trim() || '';
+  const category = document.getElementById('contact_category')?.value || 'general';
+  const subject = document.getElementById('contact_subject').value.trim();
+  const message = document.getElementById('contact_message').value.trim();
+  const honeypot = document.getElementById('contact_honeypot')?.value || '';
+  const language = i18n.getCurrentLanguage();
+  
+  // Disable button and show loading state
+  submitBtn.disabled = true;
+  submitText.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>${i18n.t('contact.submitting')}`;
   
   try {
     const response = await axios.post('/api/contact', {
       name,
       email,
+      phone,
+      category,
       subject,
-      message
+      message,
+      honeypot,
+      language
     });
     
-    showToast(response.data.message || 'お問い合わせを受け付けました', 'success');
+    // Show success message
+    const lang = i18n.getCurrentLanguage();
+    const successMsg = lang === 'ja' ? response.data.message_ja :
+                       lang === 'zh' ? response.data.message_zh :
+                       lang === 'ko' ? response.data.message_ko :
+                       response.data.message;
     
-    // Clear form
-    document.getElementById('contactForm').reset();
+    showToast(successMsg || i18n.t('contact.success'), 'success');
     
-    // Redirect to home after 2 seconds
+    // Hide form and show success message
+    form.style.display = 'none';
+    successDiv.classList.remove('hidden');
+    
+    // Scroll to success message
+    successDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Redirect to home after 3 seconds
     setTimeout(() => {
       window.location.hash = 'home';
-    }, 2000);
+    }, 3000);
+    
   } catch (error) {
     console.error('Failed to submit contact form:', error);
-    showToast('送信に失敗しました。もう一度お試しください。', 'error');
+    
+    // Get localized error message
+    const errorResponse = error.response?.data;
+    const lang = i18n.getCurrentLanguage();
+    let errorMsg = i18n.t('contact.error');
+    
+    if (errorResponse) {
+      errorMsg = lang === 'ja' ? (errorResponse.error_ja || errorResponse.error) :
+                 lang === 'zh' ? (errorResponse.error_zh || errorResponse.error) :
+                 lang === 'ko' ? (errorResponse.error_ko || errorResponse.error) :
+                 errorResponse.error;
+    }
+    
+    showToast(errorMsg, 'error');
+    
+    // Re-enable button
+    submitBtn.disabled = false;
+    submitText.innerHTML = `<i class="fas fa-paper-plane mr-2"></i>${i18n.t('contact.submit')}`;
   }
 }
 

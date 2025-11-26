@@ -3548,31 +3548,6 @@ app.put('/api/admin/contests/:id', async (c) => {
   }
 })
 
-// ============ Contact Form API ============
-
-// Submit contact form
-app.post('/api/contact', async (c) => {
-  const { env } = c
-  const { name, email, subject, message } = await c.req.json()
-  
-  if (!name || !email || !message) {
-    return c.json({ error: 'Name, email, and message are required' }, 400)
-  }
-  
-  try {
-    // In production, send email via SendGrid/Mailgun
-    // For now, just log to database (you could create a contact_messages table)
-    console.log('Contact form submission:', { name, email, subject, message })
-    
-    return c.json({
-      success: true,
-      message: 'お問い合わせを受け付けました。2営業日以内にご連絡いたします。'
-    })
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500)
-  }
-})
-
 // ============ Static Pages API ============
 
 // Get Terms of Service
@@ -5804,6 +5779,422 @@ export const scheduled = async (event: ScheduledEvent, env: Bindings, ctx: Execu
       console.error('❌ Scheduled crawl error:', error)
     }
 }
+
+// ===========================================
+// CONTACT INQUIRY API ENDPOINTS
+// ===========================================
+
+// Submit contact inquiry (public endpoint)
+app.post('/api/contact', async (c) => {
+  const { env } = c
+  
+  try {
+    const body = await c.req.json()
+    const { name, email, phone, category, subject, message, honeypot, language } = body
+    
+    // Honeypot check (spam protection)
+    if (honeypot && honeypot.trim() !== '') {
+      // Silently accept but don't save (spam bot detected)
+      return c.json({ success: true, message: 'Thank you for your message.' })
+    }
+    
+    // Validation
+    if (!name || !email || !subject || !message) {
+      return c.json({ error: 'Missing required fields' }, 400)
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return c.json({ error: 'Invalid email format' }, 400)
+    }
+    
+    // Rate limiting check
+    const clientIP = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown'
+    
+    // Check rate limit (max 5 submissions per hour per IP or email)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    
+    const ipCount = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM contact_inquiries WHERE ip_address = ? AND created_at > ?'
+    ).bind(clientIP, oneHourAgo).first() as any
+    
+    const emailCount = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM contact_inquiries WHERE email = ? AND created_at > ?'
+    ).bind(email, oneHourAgo).first() as any
+    
+    if ((ipCount?.count || 0) >= 5 || (emailCount?.count || 0) >= 5) {
+      return c.json({ 
+        error: 'Too many submissions. Please try again later.',
+        error_ja: '送信回数が上限に達しました。しばらくしてからお試しください。',
+        error_zh: '提交次数过多，请稍后再试。',
+        error_ko: '제출 횟수가 너무 많습니다. 나중에 다시 시도해 주세요.'
+      }, 429)
+    }
+    
+    // Get user ID if logged in
+    const sessionToken = getCookie(c, 'session_token')
+    let userId = null
+    if (sessionToken) {
+      const user = await getUserFromSession(env.DB, sessionToken)
+      if (user) {
+        userId = (user as any).id
+      }
+    }
+    
+    // Insert inquiry
+    const result = await env.DB.prepare(`
+      INSERT INTO contact_inquiries (
+        name, email, phone, category, subject, message,
+        user_id, language, ip_address, user_agent, status, priority
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', 'normal')
+    `).bind(
+      name,
+      email,
+      phone || null,
+      category || 'general',
+      subject,
+      message,
+      userId,
+      language || 'ja',
+      clientIP,
+      c.req.header('User-Agent') || null
+    ).run()
+    
+    return c.json({ 
+      success: true, 
+      message: 'Your inquiry has been submitted successfully.',
+      message_ja: 'お問い合わせを受け付けました。',
+      message_zh: '您的咨询已成功提交。',
+      message_ko: '문의가 성공적으로 접수되었습니다.',
+      inquiry_id: result.meta.last_row_id
+    })
+  } catch (error: any) {
+    console.error('Contact submission error:', error)
+    return c.json({ error: 'Failed to submit inquiry' }, 500)
+  }
+})
+
+// Admin: Get all inquiries
+app.get('/api/admin/inquiries', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || (currentUser as any).role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    const status = c.req.query('status')
+    const category = c.req.query('category')
+    const page = parseInt(c.req.query('page') || '1')
+    const limit = parseInt(c.req.query('limit') || '20')
+    const offset = (page - 1) * limit
+    
+    let whereConditions: string[] = []
+    let params: any[] = []
+    
+    if (status && status !== 'all') {
+      whereConditions.push('status = ?')
+      params.push(status)
+    }
+    
+    if (category && category !== 'all') {
+      whereConditions.push('category = ?')
+      params.push(category)
+    }
+    
+    const whereClause = whereConditions.length > 0 
+      ? 'WHERE ' + whereConditions.join(' AND ')
+      : ''
+    
+    // Get total count
+    const countResult = await env.DB.prepare(
+      `SELECT COUNT(*) as total FROM contact_inquiries ${whereClause}`
+    ).bind(...params).first() as any
+    
+    // Get inquiries
+    const inquiries = await env.DB.prepare(`
+      SELECT 
+        ci.*,
+        u.username as user_name,
+        admin.username as assigned_name
+      FROM contact_inquiries ci
+      LEFT JOIN users u ON ci.user_id = u.id
+      LEFT JOIN users admin ON ci.assigned_to = admin.id
+      ${whereClause}
+      ORDER BY 
+        CASE ci.status 
+          WHEN 'new' THEN 1 
+          WHEN 'in_progress' THEN 2 
+          WHEN 'read' THEN 3 
+          ELSE 4 
+        END,
+        CASE ci.priority
+          WHEN 'urgent' THEN 1
+          WHEN 'high' THEN 2
+          WHEN 'normal' THEN 3
+          ELSE 4
+        END,
+        ci.created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(...params, limit, offset).all()
+    
+    // Get stats
+    const stats = await env.DB.prepare(`
+      SELECT 
+        status,
+        COUNT(*) as count
+      FROM contact_inquiries
+      GROUP BY status
+    `).all()
+    
+    return c.json({
+      inquiries: inquiries.results,
+      pagination: {
+        page,
+        limit,
+        total: countResult?.total || 0,
+        pages: Math.ceil((countResult?.total || 0) / limit)
+      },
+      stats: stats.results
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Get single inquiry
+app.get('/api/admin/inquiries/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const inquiryId = c.req.param('id')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || (currentUser as any).role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    const inquiry = await env.DB.prepare(`
+      SELECT 
+        ci.*,
+        u.username as user_name,
+        u.email as user_email,
+        admin.username as assigned_name
+      FROM contact_inquiries ci
+      LEFT JOIN users u ON ci.user_id = u.id
+      LEFT JOIN users admin ON ci.assigned_to = admin.id
+      WHERE ci.id = ?
+    `).bind(inquiryId).first()
+    
+    if (!inquiry) {
+      return c.json({ error: 'Inquiry not found' }, 404)
+    }
+    
+    // Get replies
+    const replies = await env.DB.prepare(`
+      SELECT 
+        cr.*,
+        u.username as admin_name
+      FROM contact_replies cr
+      LEFT JOIN users u ON cr.admin_id = u.id
+      WHERE cr.inquiry_id = ?
+      ORDER BY cr.created_at ASC
+    `).bind(inquiryId).all()
+    
+    // Mark as read if new
+    if ((inquiry as any).status === 'new') {
+      await env.DB.prepare(
+        'UPDATE contact_inquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      ).bind('read', inquiryId).run()
+    }
+    
+    return c.json({
+      inquiry,
+      replies: replies.results
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Update inquiry status
+app.put('/api/admin/inquiries/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const inquiryId = c.req.param('id')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || (currentUser as any).role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    const body = await c.req.json()
+    const { status, priority, admin_notes, assigned_to } = body
+    
+    let updateFields: string[] = ['updated_at = CURRENT_TIMESTAMP']
+    let params: any[] = []
+    
+    if (status) {
+      updateFields.push('status = ?')
+      params.push(status)
+      
+      if (status === 'replied') {
+        updateFields.push('replied_at = CURRENT_TIMESTAMP')
+      } else if (status === 'closed') {
+        updateFields.push('closed_at = CURRENT_TIMESTAMP')
+      }
+    }
+    
+    if (priority) {
+      updateFields.push('priority = ?')
+      params.push(priority)
+    }
+    
+    if (admin_notes !== undefined) {
+      updateFields.push('admin_notes = ?')
+      params.push(admin_notes)
+    }
+    
+    if (assigned_to !== undefined) {
+      updateFields.push('assigned_to = ?')
+      params.push(assigned_to || null)
+    }
+    
+    params.push(inquiryId)
+    
+    await env.DB.prepare(
+      `UPDATE contact_inquiries SET ${updateFields.join(', ')} WHERE id = ?`
+    ).bind(...params).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Add reply to inquiry
+app.post('/api/admin/inquiries/:id/reply', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const inquiryId = c.req.param('id')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || (currentUser as any).role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    const body = await c.req.json()
+    const { message, is_internal } = body
+    
+    if (!message) {
+      return c.json({ error: 'Message is required' }, 400)
+    }
+    
+    // Insert reply
+    await env.DB.prepare(`
+      INSERT INTO contact_replies (inquiry_id, admin_id, message, is_internal)
+      VALUES (?, ?, ?, ?)
+    `).bind(inquiryId, (currentUser as any).id, message, is_internal ? 1 : 0).run()
+    
+    // Update inquiry status
+    await env.DB.prepare(`
+      UPDATE contact_inquiries 
+      SET status = ?, replied_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(is_internal ? 'in_progress' : 'replied', inquiryId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Delete inquiry
+app.delete('/api/admin/inquiries/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const inquiryId = c.req.param('id')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || (currentUser as any).role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    await env.DB.prepare('DELETE FROM contact_inquiries WHERE id = ?').bind(inquiryId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Admin: Get inquiry statistics
+app.get('/api/admin/inquiries/stats/summary', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  try {
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    if (!currentUser || (currentUser as any).role !== 'admin') {
+      return c.json({ error: 'Admin access required' }, 403)
+    }
+    
+    // Status counts
+    const statusStats = await env.DB.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM contact_inquiries
+      GROUP BY status
+    `).all()
+    
+    // Category counts
+    const categoryStats = await env.DB.prepare(`
+      SELECT category, COUNT(*) as count
+      FROM contact_inquiries
+      GROUP BY category
+    `).all()
+    
+    // Today's count
+    const today = new Date().toISOString().split('T')[0]
+    const todayCount = await env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM contact_inquiries
+      WHERE DATE(created_at) = ?
+    `).bind(today).first() as any
+    
+    // This week's count
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const weekCount = await env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM contact_inquiries
+      WHERE created_at > ?
+    `).bind(weekAgo).first() as any
+    
+    // Average response time (for replied inquiries)
+    const avgResponse = await env.DB.prepare(`
+      SELECT AVG(
+        (julianday(replied_at) - julianday(created_at)) * 24
+      ) as avg_hours
+      FROM contact_inquiries
+      WHERE replied_at IS NOT NULL
+    `).first() as any
+    
+    return c.json({
+      by_status: statusStats.results,
+      by_category: categoryStats.results,
+      today: todayCount?.count || 0,
+      this_week: weekCount?.count || 0,
+      avg_response_hours: avgResponse?.avg_hours ? Math.round(avgResponse.avg_hours * 10) / 10 : null
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
 
 // Export Hono app
 export default app
