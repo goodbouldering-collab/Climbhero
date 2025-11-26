@@ -2016,6 +2016,13 @@ async function handleAuth(event, type) {
     await axios.post(endpoint, data);
     
     await checkAuth();
+    
+    // ログイン後にお気に入りをロード
+    if (state.currentUser) {
+      await loadUserLikeStatus();
+      await loadUserFavorites();
+    }
+    
     closeModal('auth-modal');
     
     // ログイン後は全員トップページへ
@@ -2041,6 +2048,12 @@ async function quickAdminLogin() {
     
     await axios.post('/api/auth/login', adminData);
     await checkAuth();
+    
+    // ログイン後にお気に入りをロード
+    if (state.currentUser) {
+      await loadUserLikeStatus();
+      await loadUserFavorites();
+    }
     
     // Close auth modal
     closeModal('auth-modal');
