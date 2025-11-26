@@ -7185,16 +7185,33 @@ async function renderFavoritesPage() {
     </div>
   `;
   
+  // Initialize filter state
+  if (!state.favoritesFilter) {
+    state.favoritesFilter = { type: '', search: '', sort: 'recent' };
+  }
+  
   try {
     const lang = state.currentLanguage || 'ja';
-    const response = await axios.get(`/api/favorites?lang=${lang}`);
+    const { type, search, sort } = state.favoritesFilter;
+    
+    // Build query params
+    const params = new URLSearchParams({ lang });
+    if (type) params.append('type', type);
+    if (search) params.append('search', search);
+    if (sort) params.append('sort', sort);
+    
+    const response = await axios.get(`/api/favorites?${params.toString()}`);
     const { favorites, counts } = response.data;
     
+    // Load collections
+    const collectionsResponse = await axios.get('/api/collections');
+    state.userCollections = collectionsResponse.data;
+    
     root.innerHTML = `
-      <!-- Simple Header -->
+      <!-- Enhanced Header with Filters -->
       <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between mb-4">
             <button onclick="navigateTo('home')" class="text-gray-600 hover:text-gray-900">
               <i class="fas fa-arrow-left mr-2"></i>ホームに戻る
             </button>
@@ -7202,7 +7219,37 @@ async function renderFavoritesPage() {
               <i class="fas fa-star text-yellow-500"></i>
               お気に入り一覧
             </h1>
-            <div class="w-24"></div>
+            <button onclick="showCollectionModal()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+              <i class="fas fa-folder-plus mr-2"></i>コレクション管理
+            </button>
+          </div>
+          
+          <!-- Filter Controls -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <!-- Type Filter -->
+            <select id="filter-type" onchange="updateFavoriteFilter('type', this.value)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600">
+              <option value="">すべてのタイプ</option>
+              <option value="video" ${type === 'video' ? 'selected' : ''}>動画のみ</option>
+              <option value="blog" ${type === 'blog' ? 'selected' : ''}>ブログのみ</option>
+              <option value="news" ${type === 'news' ? 'selected' : ''}>ニュースのみ</option>
+            </select>
+            
+            <!-- Search -->
+            <input 
+              type="text" 
+              id="filter-search" 
+              placeholder="タイトルやタグで検索..."
+              value="${search}"
+              onkeyup="if(event.key==='Enter') updateFavoriteFilter('search', this.value)"
+              class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600"
+            />
+            
+            <!-- Sort -->
+            <select id="filter-sort" onchange="updateFavoriteFilter('sort', this.value)" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600">
+              <option value="recent" ${sort === 'recent' ? 'selected' : ''}>最新順</option>
+              <option value="popular" ${sort === 'popular' ? 'selected' : ''}>人気順</option>
+              <option value="added" ${sort === 'added' ? 'selected' : ''}>追加順</option>
+            </select>
           </div>
         </div>
       </header>
@@ -7284,10 +7331,19 @@ function renderFavoriteItem(item) {
               </span>
             </div>
             <p class="text-sm text-gray-600 line-clamp-2 mb-2">${item.description || ''}</p>
-            <div class="flex items-center gap-4 text-xs text-gray-500">
-              <span><i class="fas fa-heart text-red-500"></i> ${item.likes || 0}</span>
-              <span><i class="fas fa-eye"></i> ${item.views || 0}</span>
-              <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4 text-xs text-gray-500">
+                <span><i class="fas fa-heart text-red-500"></i> ${item.likes || 0}</span>
+                <span><i class="fas fa-eye"></i> ${item.views || 0}</span>
+                <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+              </div>
+              <button 
+                onclick="event.stopPropagation(); addToCollection('video', ${item.id})"
+                class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 text-xs"
+                title="コレクションに追加"
+              >
+                <i class="fas fa-folder-plus"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -7314,9 +7370,18 @@ function renderFavoriteItem(item) {
               </span>
             </div>
             <p class="text-sm text-gray-600 line-clamp-2 mb-2">${stripHtml(item.content || '').substring(0, 120)}...</p>
-            <div class="flex items-center gap-4 text-xs text-gray-500">
-              <span><i class="fas fa-calendar"></i> ${formatDate(item.published_date)}</span>
-              <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4 text-xs text-gray-500">
+                <span><i class="fas fa-calendar"></i> ${formatDate(item.published_date)}</span>
+                <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+              </div>
+              <button 
+                onclick="event.stopPropagation(); addToCollection('blog', ${item.id})"
+                class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 text-xs"
+                title="コレクションに追加"
+              >
+                <i class="fas fa-folder-plus"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -7343,10 +7408,19 @@ function renderFavoriteItem(item) {
               </span>
             </div>
             <p class="text-sm text-gray-600 line-clamp-2 mb-2">${item.summary || ''}</p>
-            <div class="flex items-center gap-4 text-xs text-gray-500">
-              <span><i class="fas fa-heart text-red-500"></i> ${item.like_count || 0}</span>
-              <span><i class="fas fa-external-link-alt"></i> ${item.source_name || ''}</span>
-              <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4 text-xs text-gray-500">
+                <span><i class="fas fa-heart text-red-500"></i> ${item.like_count || 0}</span>
+                <span><i class="fas fa-external-link-alt"></i> ${item.source_name || ''}</span>
+                <span><i class="fas fa-clock"></i> ${timeAgo}にお気に入り追加</span>
+              </div>
+              <button 
+                onclick="event.stopPropagation(); addToCollection('news', ${item.id})"
+                class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 text-xs"
+                title="コレクションに追加"
+              >
+                <i class="fas fa-folder-plus"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -7490,6 +7564,227 @@ function renderUnifiedFavoriteCard(item) {
   return '';
 }
 
+// ============ Favorites Filter Functions ============
+function updateFavoriteFilter(key, value) {
+  if (!state.favoritesFilter) {
+    state.favoritesFilter = { type: '', search: '', sort: 'recent' };
+  }
+  
+  state.favoritesFilter[key] = value;
+  renderFavoritesPage();
+}
+
+// ============ Collection Management Functions ============
+async function showCollectionModal() {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+  modal.id = 'collection-modal';
+  
+  try {
+    const response = await axios.get('/api/collections');
+    const collections = response.data;
+    
+    modal.innerHTML = `
+      <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+            <i class="fas fa-folder-open"></i>
+            コレクション管理
+          </h2>
+          <button onclick="closeCollectionModal()" class="text-white hover:text-gray-200 text-2xl">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="p-6">
+          <!-- Create New Collection -->
+          <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-3">新しいコレクションを作成</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <input 
+                type="text" 
+                id="new-collection-name" 
+                placeholder="コレクション名"
+                class="md:col-span-2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600"
+              />
+              <select id="new-collection-icon" class="px-4 py-2 border border-gray-300 rounded-lg">
+                <option value="folder">📁 フォルダー</option>
+                <option value="star">⭐ スター</option>
+                <option value="heart">❤️ ハート</option>
+                <option value="bookmark">🔖 ブックマーク</option>
+                <option value="flag">🚩 フラグ</option>
+              </select>
+              <button onclick="createCollection()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                <i class="fas fa-plus mr-2"></i>作成
+              </button>
+            </div>
+          </div>
+          
+          <!-- Collections List -->
+          <div class="space-y-3">
+            <h3 class="text-lg font-bold text-gray-900 mb-3">マイコレクション (${collections.length})</h3>
+            ${collections.length === 0 ? `
+              <div class="text-center py-12 text-gray-500">
+                <i class="fas fa-folder-open text-6xl mb-4 text-gray-300"></i>
+                <p>コレクションがまだありません</p>
+                <p class="text-sm">上のフォームから新しいコレクションを作成しましょう</p>
+              </div>
+            ` : collections.map(col => `
+              <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3 flex-1">
+                    <span class="text-2xl">${getCollectionIcon(col.icon)}</span>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-gray-900">${col.name}</h4>
+                      <p class="text-sm text-gray-500">${col.item_count || 0}件のアイテム</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button onclick="viewCollection(${col.id})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                      <i class="fas fa-eye mr-1"></i>表示
+                    </button>
+                    <button onclick="deleteCollection(${col.id})" class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">
+                      <i class="fas fa-trash mr-1"></i>削除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+  } catch (error) {
+    console.error('Failed to load collections:', error);
+    showToast('コレクションの読み込みに失敗しました', 'error');
+  }
+}
+
+function getCollectionIcon(icon) {
+  const icons = {
+    'folder': '📁',
+    'star': '⭐',
+    'heart': '❤️',
+    'bookmark': '🔖',
+    'flag': '🚩'
+  };
+  return icons[icon] || '📁';
+}
+
+function closeCollectionModal() {
+  const modal = document.getElementById('collection-modal');
+  if (modal) modal.remove();
+}
+
+async function createCollection() {
+  const name = document.getElementById('new-collection-name').value.trim();
+  const icon = document.getElementById('new-collection-icon').value;
+  
+  if (!name) {
+    showToast('コレクション名を入力してください', 'error');
+    return;
+  }
+  
+  try {
+    await axios.post('/api/collections', { name, icon });
+    showToast('コレクションを作成しました', 'success');
+    closeCollectionModal();
+    showCollectionModal(); // Reload
+  } catch (error) {
+    console.error('Failed to create collection:', error);
+    showToast('コレクションの作成に失敗しました', 'error');
+  }
+}
+
+async function deleteCollection(collectionId) {
+  if (!confirm('このコレクションを削除しますか？')) return;
+  
+  try {
+    await axios.delete(`/api/collections/${collectionId}`);
+    showToast('コレクションを削除しました', 'success');
+    closeCollectionModal();
+    showCollectionModal(); // Reload
+  } catch (error) {
+    console.error('Failed to delete collection:', error);
+    showToast('コレクションの削除に失敗しました', 'error');
+  }
+}
+
+async function viewCollection(collectionId) {
+  // TODO: Implement collection detail view
+  showToast('コレクション詳細は開発中です', 'info');
+}
+
+async function addToCollection(contentType, contentId) {
+  try {
+    const response = await axios.get('/api/collections');
+    const collections = response.data;
+    
+    if (collections.length === 0) {
+      showToast('まずコレクションを作成してください', 'info');
+      showCollectionModal();
+      return;
+    }
+    
+    // Show collection selector
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.id = 'collection-selector-modal';
+    
+    modal.innerHTML = `
+      <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+          <h2 class="text-xl font-bold text-white">コレクションに追加</h2>
+          <button onclick="document.getElementById('collection-selector-modal').remove()" class="text-white hover:text-gray-200">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-6 space-y-2">
+          ${collections.map(col => `
+            <button 
+              onclick="confirmAddToCollection(${col.id}, '${contentType}', ${contentId})"
+              class="w-full text-left px-4 py-3 bg-gray-50 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-3"
+            >
+              <span class="text-2xl">${getCollectionIcon(col.icon)}</span>
+              <div class="flex-1">
+                <div class="font-semibold text-gray-900">${col.name}</div>
+                <div class="text-sm text-gray-500">${col.item_count || 0}件</div>
+              </div>
+              <i class="fas fa-chevron-right text-gray-400"></i>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+  } catch (error) {
+    console.error('Failed to load collections:', error);
+    showToast('コレクションの読み込みに失敗しました', 'error');
+  }
+}
+
+async function confirmAddToCollection(collectionId, contentType, contentId) {
+  try {
+    await axios.post(`/api/collections/${collectionId}/items`, {
+      content_type: contentType,
+      content_id: contentId
+    });
+    showToast('コレクションに追加しました', 'success');
+    const modal = document.getElementById('collection-selector-modal');
+    if (modal) modal.remove();
+  } catch (error) {
+    if (error.response && error.response.status === 409) {
+      showToast('既にこのコレクションに追加されています', 'info');
+    } else {
+      console.error('Failed to add to collection:', error);
+      showToast('コレクションへの追加に失敗しました', 'error');
+    }
+  }
+}
+
 // Expose all functions to global scope
 window.filterNewsByCategory = filterNewsByCategory;
 window.filterNewsByGenre = filterNewsByGenre;
@@ -7502,3 +7797,11 @@ window.renderFavoritesPage = renderFavoritesPage;
 window.translateNews = translateNews;
 window.showAnnouncementsModal = showAnnouncementsModal;
 window.filterAnnouncements = filterAnnouncements;
+window.updateFavoriteFilter = updateFavoriteFilter;
+window.showCollectionModal = showCollectionModal;
+window.closeCollectionModal = closeCollectionModal;
+window.createCollection = createCollection;
+window.deleteCollection = deleteCollection;
+window.viewCollection = viewCollection;
+window.addToCollection = addToCollection;
+window.confirmAddToCollection = confirmAddToCollection;

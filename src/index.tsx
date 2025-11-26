@@ -1234,6 +1234,404 @@ app.get('/api/users/:id/favorites', async (c) => {
   }
 })
 
+// ============ Unified Favorites API with Filtering, Search, Sort ============
+
+// Get unified favorites (videos, blogs, news) with filters and search
+app.get('/api/favorites', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const lang = c.req.query('lang') || 'ja'
+    const contentType = c.req.query('type') // 'video', 'blog', 'news', or empty for all
+    const search = c.req.query('search') || ''
+    const sortBy = c.req.query('sort') || 'recent' // 'recent', 'popular', 'added'
+    
+    const getLocalizedField = (prefix: string) => {
+      switch(lang) {
+        case 'en': return `${prefix}_en`
+        case 'zh': return `${prefix}_zh`
+        case 'ko': return `${prefix}_ko`
+        default: return prefix
+      }
+    }
+    
+    const titleField = getLocalizedField('title')
+    const descField = getLocalizedField('description')
+    
+    let allFavorites: any[] = []
+    
+    // Fetch video favorites
+    if (!contentType || contentType === 'video') {
+      const videoQuery = `
+        SELECT 
+          v.id,
+          v.${titleField} as title,
+          v.${descField} as description,
+          v.thumbnail_url,
+          v.media_source,
+          v.external_video_id,
+          v.views,
+          v.likes,
+          f.created_at as favorited_at,
+          f.tags,
+          'video' as content_type
+        FROM favorites f
+        JOIN videos v ON f.video_id = v.id
+        WHERE f.user_id = ?
+        ${search ? `AND (v.${titleField} LIKE ? OR v.${descField} LIKE ? OR f.tags LIKE ?)` : ''}
+        ORDER BY ${sortBy === 'popular' ? 'v.likes DESC' : sortBy === 'added' ? 'f.sort_order DESC' : 'f.created_at DESC'}
+      `
+      const videoBinds = [user.id]
+      if (search) {
+        const searchPattern = `%${search}%`
+        videoBinds.push(searchPattern, searchPattern, searchPattern)
+      }
+      const videoResult = await env.DB.prepare(videoQuery).bind(...videoBinds).all()
+      allFavorites = allFavorites.concat(videoResult.results || [])
+    }
+    
+    // Fetch blog favorites
+    if (!contentType || contentType === 'blog') {
+      const blogQuery = `
+        SELECT 
+          b.id,
+          b.${titleField} as title,
+          b.${descField} as description,
+          b.thumbnail_url,
+          b.views,
+          b.like_count as likes,
+          bf.created_at as favorited_at,
+          bf.tags,
+          'blog' as content_type
+        FROM blog_favorites bf
+        JOIN blog_posts b ON bf.post_id = b.id
+        WHERE bf.user_id = ?
+        ${search ? `AND (b.${titleField} LIKE ? OR b.${descField} LIKE ? OR bf.tags LIKE ?)` : ''}
+        ORDER BY ${sortBy === 'popular' ? 'b.like_count DESC' : sortBy === 'added' ? 'bf.sort_order DESC' : 'bf.created_at DESC'}
+      `
+      const blogBinds = [user.id]
+      if (search) {
+        const searchPattern = `%${search}%`
+        blogBinds.push(searchPattern, searchPattern, searchPattern)
+      }
+      const blogResult = await env.DB.prepare(blogQuery).bind(...blogBinds).all()
+      allFavorites = allFavorites.concat(blogResult.results || [])
+    }
+    
+    // Fetch news favorites
+    if (!contentType || contentType === 'news') {
+      const newsQuery = `
+        SELECT 
+          n.id,
+          n.${titleField} as title,
+          n.${descField} as description,
+          n.image_url as thumbnail_url,
+          n.source_url,
+          n.like_count as likes,
+          nf.created_at as favorited_at,
+          nf.tags,
+          'news' as content_type
+        FROM news_favorites nf
+        JOIN news_articles n ON nf.article_id = n.id
+        WHERE nf.user_id = ?
+        ${search ? `AND (n.${titleField} LIKE ? OR n.${descField} LIKE ? OR nf.tags LIKE ?)` : ''}
+        ORDER BY ${sortBy === 'popular' ? 'n.like_count DESC' : sortBy === 'added' ? 'nf.sort_order DESC' : 'nf.created_at DESC'}
+      `
+      const newsBinds = [user.id]
+      if (search) {
+        const searchPattern = `%${search}%`
+        newsBinds.push(searchPattern, searchPattern, searchPattern)
+      }
+      const newsResult = await env.DB.prepare(newsQuery).bind(...newsBinds).all()
+      allFavorites = allFavorites.concat(newsResult.results || [])
+    }
+    
+    // Sort unified results
+    if (sortBy === 'recent') {
+      allFavorites.sort((a, b) => new Date(b.favorited_at).getTime() - new Date(a.favorited_at).getTime())
+    } else if (sortBy === 'popular') {
+      allFavorites.sort((a, b) => (b.likes || 0) - (a.likes || 0))
+    }
+    
+    // Get counts by type
+    const counts = {
+      total: allFavorites.length,
+      videos: allFavorites.filter(f => f.content_type === 'video').length,
+      blogs: allFavorites.filter(f => f.content_type === 'blog').length,
+      news: allFavorites.filter(f => f.content_type === 'news').length
+    }
+    
+    return c.json({ favorites: allFavorites, counts })
+  } catch (error: any) {
+    console.error('Favorites fetch error:', error)
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ============ Collection Management API ============
+
+// Get user's collections
+app.get('/api/collections', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const result = await env.DB.prepare(`
+      SELECT 
+        fc.*,
+        COUNT(ci.id) as item_count
+      FROM favorite_collections fc
+      LEFT JOIN collection_items ci ON fc.id = ci.collection_id
+      WHERE fc.user_id = ?
+      GROUP BY fc.id
+      ORDER BY fc.is_default DESC, fc.created_at DESC
+    `).bind(user.id).all()
+    
+    return c.json(result.results || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Create new collection
+app.post('/api/collections', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const { name, description, icon, color } = await c.req.json()
+    
+    if (!name || name.trim() === '') {
+      return c.json({ error: 'Collection name is required' }, 400)
+    }
+    
+    const result = await env.DB.prepare(`
+      INSERT INTO favorite_collections (user_id, name, description, icon, color)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(user.id, name, description || '', icon || 'folder', color || 'blue').run()
+    
+    return c.json({ 
+      success: true, 
+      collection_id: result.meta.last_row_id 
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update collection
+app.put('/api/collections/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const collectionId = c.req.param('id')
+    const { name, description, icon, color } = await c.req.json()
+    
+    // Verify ownership
+    const collection = await env.DB.prepare(
+      'SELECT * FROM favorite_collections WHERE id = ? AND user_id = ?'
+    ).bind(collectionId, user.id).first()
+    
+    if (!collection) {
+      return c.json({ error: 'Collection not found' }, 404)
+    }
+    
+    await env.DB.prepare(`
+      UPDATE favorite_collections 
+      SET name = ?, description = ?, icon = ?, color = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(name, description, icon, color, collectionId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Delete collection
+app.delete('/api/collections/:id', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const collectionId = c.req.param('id')
+    
+    // Verify ownership
+    const collection = await env.DB.prepare(
+      'SELECT * FROM favorite_collections WHERE id = ? AND user_id = ?'
+    ).bind(collectionId, user.id).first()
+    
+    if (!collection) {
+      return c.json({ error: 'Collection not found' }, 404)
+    }
+    
+    await env.DB.prepare('DELETE FROM favorite_collections WHERE id = ?').bind(collectionId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get collection items
+app.get('/api/collections/:id/items', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const collectionId = c.req.param('id')
+    const lang = c.req.query('lang') || 'ja'
+    
+    // Verify ownership
+    const collection = await env.DB.prepare(
+      'SELECT * FROM favorite_collections WHERE id = ? AND user_id = ?'
+    ).bind(collectionId, user.id).first()
+    
+    if (!collection) {
+      return c.json({ error: 'Collection not found' }, 404)
+    }
+    
+    const getLocalizedField = (prefix: string) => {
+      switch(lang) {
+        case 'en': return `${prefix}_en`
+        case 'zh': return `${prefix}_zh`
+        case 'ko': return `${prefix}_ko`
+        default: return prefix
+      }
+    }
+    
+    const titleField = getLocalizedField('title')
+    
+    // Get all items with content details
+    const items = await env.DB.prepare(`
+      SELECT 
+        ci.id as item_id,
+        ci.content_type,
+        ci.content_id,
+        ci.added_at,
+        ci.notes,
+        CASE 
+          WHEN ci.content_type = 'video' THEN (SELECT ${titleField} FROM videos WHERE id = ci.content_id)
+          WHEN ci.content_type = 'blog' THEN (SELECT ${titleField} FROM blog_posts WHERE id = ci.content_id)
+          WHEN ci.content_type = 'news' THEN (SELECT ${titleField} FROM news_articles WHERE id = ci.content_id)
+        END as title
+      FROM collection_items ci
+      WHERE ci.collection_id = ?
+      ORDER BY ci.added_at DESC
+    `).bind(collectionId).all()
+    
+    return c.json(items.results || [])
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Add item to collection
+app.post('/api/collections/:id/items', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const collectionId = c.req.param('id')
+    const { content_type, content_id, notes } = await c.req.json()
+    
+    // Verify ownership
+    const collection = await env.DB.prepare(
+      'SELECT * FROM favorite_collections WHERE id = ? AND user_id = ?'
+    ).bind(collectionId, user.id).first()
+    
+    if (!collection) {
+      return c.json({ error: 'Collection not found' }, 404)
+    }
+    
+    // Check if already exists
+    const existing = await env.DB.prepare(
+      'SELECT * FROM collection_items WHERE collection_id = ? AND content_type = ? AND content_id = ?'
+    ).bind(collectionId, content_type, content_id).first()
+    
+    if (existing) {
+      return c.json({ error: 'Item already in collection' }, 409)
+    }
+    
+    await env.DB.prepare(`
+      INSERT INTO collection_items (collection_id, content_type, content_id, notes)
+      VALUES (?, ?, ?, ?)
+    `).bind(collectionId, content_type, content_id, notes || '').run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Remove item from collection
+app.delete('/api/collections/:collectionId/items/:itemId', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  
+  if (!user) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const collectionId = c.req.param('collectionId')
+    const itemId = c.req.param('itemId')
+    
+    // Verify ownership
+    const collection = await env.DB.prepare(
+      'SELECT * FROM favorite_collections WHERE id = ? AND user_id = ?'
+    ).bind(collectionId, user.id).first()
+    
+    if (!collection) {
+      return c.json({ error: 'Collection not found' }, 404)
+    }
+    
+    await env.DB.prepare('DELETE FROM collection_items WHERE id = ?').bind(itemId).run()
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // ============ Frontend Route ============
 
 // Favicon handler
