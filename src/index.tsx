@@ -573,7 +573,35 @@ app.post('/api/videos/:id/like', async (c) => {
     const existing = await env.DB.prepare('SELECT * FROM user_likes WHERE user_id = ? AND video_id = ?').bind(userId, videoId).first()
     
     if (existing) {
-      return c.json({ error: 'Already liked this video', liked: true }, 400)
+      // Unlike: Remove like
+      await env.DB.prepare('DELETE FROM user_likes WHERE user_id = ? AND video_id = ?').bind(userId, videoId).run()
+      await env.DB.prepare('UPDATE videos SET likes = likes - 1 WHERE id = ?').bind(videoId).run()
+      
+      // Update rankings (decrease score)
+      await env.DB.prepare(`
+        UPDATE video_rankings 
+        SET 
+          total_score = total_score - 1,
+          daily_score = daily_score - 1,
+          weekly_score = weekly_score - 1,
+          monthly_score = monthly_score - 1,
+          yearly_score = yearly_score - 1,
+          last_updated = CURRENT_TIMESTAMP
+        WHERE video_id = ?
+      `).bind(videoId).run()
+      
+      const video = await env.DB.prepare('SELECT likes FROM videos WHERE id = ?').bind(videoId).first() as any
+      const userLikeCount = await env.DB.prepare(
+        'SELECT COUNT(*) as count FROM user_likes WHERE user_id = ?'
+      ).bind(userId).first() as any
+      
+      return c.json({ 
+        message: 'Unliked successfully',
+        liked: false,
+        likes: video.likes,
+        user_like_count: userLikeCount.count,
+        remaining_likes: user.membership_type === 'free' ? (1 - userLikeCount.count) : 'unlimited'
+      })
     }
 
     // Free users: Check like limit (1 like)
@@ -4896,15 +4924,34 @@ app.post('/api/news/:id/like', async (c) => {
   }
   
   try {
-    await env.DB.prepare(
-      'INSERT OR IGNORE INTO news_likes (user_id, article_id) VALUES (?, ?)'
-    ).bind((user as any).id, articleId).run()
+    // Check if already liked
+    const existing = await env.DB.prepare(
+      'SELECT * FROM news_likes WHERE user_id = ? AND article_id = ?'
+    ).bind((user as any).id, articleId).first()
     
-    await env.DB.prepare(
-      'UPDATE news_articles SET like_count = like_count + 1 WHERE id = ?'
-    ).bind(articleId).run()
-    
-    return c.json({ success: true })
+    if (existing) {
+      // Unlike
+      await env.DB.prepare(
+        'DELETE FROM news_likes WHERE user_id = ? AND article_id = ?'
+      ).bind((user as any).id, articleId).run()
+      
+      await env.DB.prepare(
+        'UPDATE news_articles SET like_count = MAX(like_count - 1, 0) WHERE id = ?'
+      ).bind(articleId).run()
+      
+      return c.json({ success: true, liked: false })
+    } else {
+      // Like
+      await env.DB.prepare(
+        'INSERT INTO news_likes (user_id, article_id) VALUES (?, ?)'
+      ).bind((user as any).id, articleId).run()
+      
+      await env.DB.prepare(
+        'UPDATE news_articles SET like_count = like_count + 1 WHERE id = ?'
+      ).bind(articleId).run()
+      
+      return c.json({ success: true, liked: true })
+    }
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -4950,11 +4997,26 @@ app.post('/api/news/:id/favorite', async (c) => {
   }
   
   try {
-    await env.DB.prepare(
-      'INSERT OR IGNORE INTO news_favorites (user_id, article_id) VALUES (?, ?)'
-    ).bind((user as any).id, articleId).run()
+    // Check if already favorited
+    const existing = await env.DB.prepare(
+      'SELECT * FROM news_favorites WHERE user_id = ? AND article_id = ?'
+    ).bind((user as any).id, articleId).first()
     
-    return c.json({ success: true })
+    if (existing) {
+      // Unfavorite
+      await env.DB.prepare(
+        'DELETE FROM news_favorites WHERE user_id = ? AND article_id = ?'
+      ).bind((user as any).id, articleId).run()
+      
+      return c.json({ success: true, favorited: false })
+    } else {
+      // Favorite
+      await env.DB.prepare(
+        'INSERT INTO news_favorites (user_id, article_id) VALUES (?, ?)'
+      ).bind((user as any).id, articleId).run()
+      
+      return c.json({ success: true, favorited: true })
+    }
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -4996,11 +5058,34 @@ app.post('/api/blog/:id/like', async (c) => {
   }
   
   try {
-    await env.DB.prepare(
-      'INSERT OR IGNORE INTO blog_likes (user_id, post_id) VALUES (?, ?)'
-    ).bind((user as any).id, postId).run()
+    // Check if already liked
+    const existing = await env.DB.prepare(
+      'SELECT * FROM blog_likes WHERE user_id = ? AND post_id = ?'
+    ).bind((user as any).id, postId).first()
     
-    return c.json({ success: true })
+    if (existing) {
+      // Unlike
+      await env.DB.prepare(
+        'DELETE FROM blog_likes WHERE user_id = ? AND post_id = ?'
+      ).bind((user as any).id, postId).run()
+      
+      await env.DB.prepare(
+        'UPDATE blog_posts SET like_count = like_count - 1 WHERE id = ?'
+      ).bind(postId).run()
+      
+      return c.json({ success: true, liked: false })
+    } else {
+      // Like
+      await env.DB.prepare(
+        'INSERT INTO blog_likes (user_id, post_id) VALUES (?, ?)'
+      ).bind((user as any).id, postId).run()
+      
+      await env.DB.prepare(
+        'UPDATE blog_posts SET like_count = like_count + 1 WHERE id = ?'
+      ).bind(postId).run()
+      
+      return c.json({ success: true, liked: true })
+    }
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -5040,11 +5125,26 @@ app.post('/api/blog/:id/favorite', async (c) => {
   }
   
   try {
-    await env.DB.prepare(
-      'INSERT OR IGNORE INTO blog_favorites (user_id, post_id) VALUES (?, ?)'
-    ).bind((user as any).id, postId).run()
+    // Check if already favorited
+    const existing = await env.DB.prepare(
+      'SELECT * FROM blog_favorites WHERE user_id = ? AND post_id = ?'
+    ).bind((user as any).id, postId).first()
     
-    return c.json({ success: true })
+    if (existing) {
+      // Unfavorite
+      await env.DB.prepare(
+        'DELETE FROM blog_favorites WHERE user_id = ? AND post_id = ?'
+      ).bind((user as any).id, postId).run()
+      
+      return c.json({ success: true, favorited: false })
+    } else {
+      // Favorite
+      await env.DB.prepare(
+        'INSERT INTO blog_favorites (user_id, post_id) VALUES (?, ?)'
+      ).bind((user as any).id, postId).run()
+      
+      return c.json({ success: true, favorited: true })
+    }
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }

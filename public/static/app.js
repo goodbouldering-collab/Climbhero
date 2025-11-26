@@ -2423,9 +2423,17 @@ async function handleLike(event, videoId) {
 
 async function likeVideo(videoId) {
   try {
-    await axios.post(`/api/videos/${videoId}/like`);
-    showToast('いいねしました', 'success');
+    const response = await axios.post(`/api/videos/${videoId}/like`);
+    const { liked } = response.data;
+    
+    if (liked) {
+      showToast('いいねしました', 'success');
+    } else {
+      showToast('いいねを取り消しました', 'info');
+    }
+    
     await loadInitialData();
+    await loadUserLikeStatus();
   } catch (error) {
     if (error.response && error.response.status === 403) {
       showPremiumLimitModal(3);
@@ -2477,10 +2485,19 @@ async function handleFavorite(event, videoId) {
 
 async function favoriteVideo(videoId) {
   try {
-    await axios.post(`/api/videos/${videoId}/favorite`);
-    showToast('お気に入りに追加しました', 'success');
+    const response = await axios.post(`/api/videos/${videoId}/favorite`);
+    const { favorited } = response.data;
+    
+    if (favorited) {
+      showToast('お気に入りに追加しました', 'success');
+    } else {
+      showToast('お気に入りから削除しました', 'info');
+    }
+    
+    await loadUserFavorites();
+    renderApp();
   } catch (error) {
-    showToast('お気に入りの追加に失敗しました', 'error');
+    showToast('お気に入りの処理に失敗しました', 'error');
   }
 }
 
@@ -7059,16 +7076,16 @@ async function toggleNewsLike(articleId) {
     const article = state.newsArticles.find(a => a.id === articleId);
     if (!article) return;
     
-    if (article.is_liked) {
-      await axios.delete(`/api/news/${articleId}/like`);
-      article.is_liked = false;
-      article.like_count = Math.max((article.like_count || 0) - 1, 0);
-      showToast('いいねを取り消しました', 'info');
-    } else {
-      await axios.post(`/api/news/${articleId}/like`);
-      article.is_liked = true;
+    const response = await axios.post(`/api/news/${articleId}/like`);
+    const { liked } = response.data;
+    
+    article.is_liked = liked;
+    if (liked) {
       article.like_count = (article.like_count || 0) + 1;
       showToast('いいねしました', 'success');
+    } else {
+      article.like_count = Math.max((article.like_count || 0) - 1, 0);
+      showToast('いいねを取り消しました', 'info');
     }
     
     // Update like count display
@@ -7095,15 +7112,17 @@ async function toggleNewsFavorite(articleId) {
     const article = state.newsArticles.find(a => a.id === articleId);
     if (!article) return;
     
-    if (article.is_favorited) {
-      await axios.delete(`/api/news/${articleId}/favorite`);
-      article.is_favorited = false;
-      showToast('お気に入りから削除しました', 'info');
-    } else {
-      await axios.post(`/api/news/${articleId}/favorite`);
-      article.is_favorited = true;
+    const response = await axios.post(`/api/news/${articleId}/favorite`);
+    const { favorited } = response.data;
+    
+    article.is_favorited = favorited;
+    if (favorited) {
       showToast('お気に入りに追加しました', 'success');
+    } else {
+      showToast('お気に入りから削除しました', 'info');
     }
+    
+    await loadUserFavorites();
     
     // Re-render news section
     renderNewsSection();
@@ -7124,16 +7143,16 @@ async function toggleBlogLike(postId) {
     const post = state.blogPosts.find(p => p.id === postId);
     if (!post) return;
     
-    if (post.is_liked) {
-      await axios.delete(`/api/blog/${postId}/like`);
-      post.is_liked = false;
-      post.like_count = Math.max((post.like_count || 0) - 1, 0);
-      showToast('いいねを取り消しました', 'info');
-    } else {
-      await axios.post(`/api/blog/${postId}/like`);
-      post.is_liked = true;
+    const response = await axios.post(`/api/blog/${postId}/like`);
+    const { liked } = response.data;
+    
+    post.is_liked = liked;
+    if (liked) {
       post.like_count = (post.like_count || 0) + 1;
       showToast('いいねしました', 'success');
+    } else {
+      post.like_count = Math.max((post.like_count || 0) - 1, 0);
+      showToast('いいねを取り消しました', 'info');
     }
     
     // Update like count display
@@ -7160,16 +7179,17 @@ async function toggleBlogFavorite(postId) {
     const post = state.blogPosts.find(p => p.id === postId);
     if (!post) return;
     
-    if (post.is_favorited) {
-      await axios.delete(`/api/blog/${postId}/favorite`);
-      post.is_favorited = false;
-      showToast('お気に入りから削除しました', 'info');
-    } else {
-      await axios.post(`/api/blog/${postId}/favorite`);
-      post.is_favorited = true;
+    const response = await axios.post(`/api/blog/${postId}/favorite`);
+    const { favorited } = response.data;
+    
+    post.is_favorited = favorited;
+    if (favorited) {
       showToast('お気に入りに追加しました', 'success');
+    } else {
+      showToast('お気に入りから削除しました', 'info');
     }
     
+    await loadUserFavorites();
     // Re-render blog section
     renderBlogSection();
   } catch (error) {
