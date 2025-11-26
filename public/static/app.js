@@ -239,16 +239,19 @@ async function loadUserLikeStatus() {
   }
 }
 
-// Load user favorites
+// Load user favorites (unified: videos, blogs, news)
 async function loadUserFavorites() {
   if (!state.currentUser) return;
   
   try {
-    const res = await axios.get(`/api/users/${state.currentUser.id}/favorites`);
-    state.favorites = res.data || [];
+    const lang = state.currentLanguage || 'ja';
+    const res = await axios.get(`/api/favorites?lang=${lang}`);
+    state.allFavorites = res.data.favorites || [];
+    state.favoriteCounts = res.data.counts || { total: 0, videos: 0, blogs: 0, news: 0 };
   } catch (error) {
     console.error('Failed to load favorites:', error);
-    state.favorites = [];
+    state.allFavorites = [];
+    state.favoriteCounts = { total: 0, videos: 0, blogs: 0, news: 0 };
   }
 }
 
@@ -653,14 +656,32 @@ function renderHomePage() {
         </div>
       </section>
       
-      <!-- Favorites Section - User's Favorite Videos -->
-      ${state.currentUser && state.userFavorites && state.userFavorites.length > 0 ? `
+      <!-- Unified Favorites Section - Videos, Blogs, News (Mixed) -->
+      ${state.currentUser && state.allFavorites && state.allFavorites.length > 0 ? `
       <section class="py-6 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-4">
+          <div class="flex items-center justify-between mb-4">
             <div class="section-title">
               <i class="fas fa-star text-yellow-500"></i>
-              <span>${i18n.t('section.favorites')}</span>
+              <span>${i18n.t('section.favorites')} - すべて</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm">
+              <span class="px-3 py-1 bg-white rounded-full border border-purple-200">
+                <i class="fas fa-video text-red-500 mr-1"></i>
+                ${state.favoriteCounts.videos || 0}
+              </span>
+              <span class="px-3 py-1 bg-white rounded-full border border-purple-200">
+                <i class="fas fa-blog text-indigo-500 mr-1"></i>
+                ${state.favoriteCounts.blogs || 0}
+              </span>
+              <span class="px-3 py-1 bg-white rounded-full border border-purple-200">
+                <i class="fas fa-newspaper text-blue-500 mr-1"></i>
+                ${state.favoriteCounts.news || 0}
+              </span>
+              <button onclick="navigateTo('favorites')" class="px-4 py-1 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-colors">
+                <i class="fas fa-arrow-right mr-1"></i>
+                すべて見る
+              </button>
             </div>
           </div>
           
@@ -669,7 +690,7 @@ function renderHomePage() {
               <i class="fas fa-chevron-left"></i>
             </button>
             <div class="horizontal-scroll" id="favorites-scroll">
-              ${state.userFavorites.map(video => renderVideoCardWide(video)).join('')}
+              ${state.allFavorites.slice(0, 20).map(item => renderUnifiedFavoriteCard(item)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('favorites-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
@@ -2942,48 +2963,6 @@ function renderMyPage() {
           
           <!-- Right Column: Account Info & Actions -->
           <div class="space-y-6">
-            ${state.currentUser.is_admin ? `
-            <!-- Content Management Card (Admin Only) -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div class="bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4">
-                <h3 class="text-lg font-bold text-white flex items-center">
-                  <i class="fas fa-edit mr-2"></i>
-                  コンテンツ管理
-                </h3>
-              </div>
-              <div class="p-4 space-y-2">
-                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center justify-between">
-                  <span class="flex items-center">
-                    <i class="fas fa-newspaper text-purple-600 mr-3"></i>
-                    <span class="font-semibold text-gray-900">ニュース管理</span>
-                  </span>
-                  <i class="fas fa-chevron-right text-gray-400"></i>
-                </button>
-                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-between">
-                  <span class="flex items-center">
-                    <i class="fas fa-blog text-blue-600 mr-3"></i>
-                    <span class="font-semibold text-gray-900">ブログ管理</span>
-                  </span>
-                  <i class="fas fa-chevron-right text-gray-400"></i>
-                </button>
-                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center justify-between">
-                  <span class="flex items-center">
-                    <i class="fas fa-video text-red-600 mr-3"></i>
-                    <span class="font-semibold text-gray-900">動画管理</span>
-                  </span>
-                  <i class="fas fa-chevron-right text-gray-400"></i>
-                </button>
-                <button onclick="navigateTo('admin')" class="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors flex items-center justify-between">
-                  <span class="flex items-center">
-                    <i class="fas fa-bullhorn text-green-600 mr-3"></i>
-                    <span class="font-semibold text-gray-900">お知らせ管理</span>
-                  </span>
-                  <i class="fas fa-chevron-right text-gray-400"></i>
-                </button>
-              </div>
-            </div>
-            ` : ''}
-            
             <!-- Account Status Card -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
@@ -7423,6 +7402,92 @@ async function translateNews(articleId) {
     console.error('Translation error:', error);
     showToast('翻訳に失敗しました', 'error');
   }
+}
+
+// ============ Unified Favorite Card Renderer ============
+function renderUnifiedFavoriteCard(item) {
+  const { content_type } = item;
+  
+  if (content_type === 'video') {
+    const thumbnail = getThumbnailUrl(item.media_source, item.thumbnail_url, item.external_video_id);
+    return `
+      <div class="scroll-item">
+        <div class="video-card-compact" onclick="openVideoModal(${item.id})">
+          <div class="video-thumbnail">
+            <img src="${thumbnail}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/400x225?text=Video'">
+            <span class="absolute top-2 left-2 px-2 py-1 bg-red-600 text-white text-xs rounded-full font-semibold">
+              <i class="fas fa-video"></i> 動画
+            </span>
+          </div>
+          <div class="video-info-compact">
+            <div class="video-title-compact line-clamp-2">${item.title}</div>
+            <div class="video-meta-compact">
+              <span><i class="fas fa-heart"></i> ${item.likes || 0}</span>
+              <span><i class="fas fa-eye"></i> ${item.views || 0}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (content_type === 'blog') {
+    return `
+      <div class="scroll-item">
+        <div class="video-card-compact" onclick="navigateTo('blog/${item.id}')">
+          ${item.image_url ? `
+            <div class="video-thumbnail">
+              <img src="${item.image_url}" alt="${item.title}">
+              <span class="absolute top-2 left-2 px-2 py-1 bg-indigo-600 text-white text-xs rounded-full font-semibold">
+                <i class="fas fa-blog"></i> ブログ
+              </span>
+            </div>
+          ` : `
+            <div class="video-thumbnail" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+              <span class="absolute top-2 left-2 px-2 py-1 bg-indigo-600 text-white text-xs rounded-full font-semibold">
+                <i class="fas fa-blog"></i> ブログ
+              </span>
+            </div>
+          `}
+          <div class="video-info-compact">
+            <div class="video-title-compact line-clamp-2">${item.title}</div>
+            <div class="video-meta-compact">
+              <span><i class="fas fa-calendar"></i> ${formatDate(item.published_date)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (content_type === 'news') {
+    return `
+      <div class="scroll-item">
+        <div class="video-card-compact" onclick="window.open('${item.url}', '_blank')">
+          ${item.image_url ? `
+            <div class="video-thumbnail">
+              <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
+              <span class="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
+                <i class="fas fa-newspaper"></i> ニュース
+              </span>
+            </div>
+          ` : `
+            <div class="video-thumbnail" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)">
+              <span class="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
+                <i class="fas fa-newspaper"></i> ニュース
+              </span>
+            </div>
+          `}
+          <div class="video-info-compact">
+            <div class="video-title-compact line-clamp-2 font-bold">${item.title}</div>
+            <p class="text-xs text-gray-600 line-clamp-2 mb-2">${item.summary ? item.summary.substring(0, 80) + '...' : ''}</p>
+            <div class="video-meta-compact">
+              <span><i class="fas fa-heart"></i> ${item.like_count || 0}</span>
+              ${item.source_name ? `<span><i class="fas fa-newspaper"></i> ${item.source_name}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  return '';
 }
 
 // Expose all functions to global scope
