@@ -14,7 +14,21 @@
       "preview_database_id": "local-dev"
     }
   ]
-  // Note: Cron Triggers are configured via Cloudflare Dashboard
-  // for Pages Functions. Schedule: "0 15 * * *" (Daily at 15:00 JST)
-  // Trigger endpoint: /api/admin/news/crawl
+  // ============================================
+  // NEWS CRAWLER SCHEDULE (1日2回)
+  // ============================================
+  // Cron Triggers for Cloudflare Workers:
+  // - 朝 9:00 JST (0:00 UTC): "0 0 * * *"
+  // - 夕 18:00 JST (9:00 UTC): "0 9 * * *"
+  // 
+  // 設定方法:
+  // 1. Cloudflare Dashboard > Workers & Pages
+  // 2. project-02ceb497 を選択
+  // 3. Settings > Triggers > Cron Triggers
+  // 4. 以下を追加:
+  //    - 0 0 * * * (毎日 9:00 JST)
+  //    - 0 9 * * * (毎日 18:00 JST)
+  //
+  // 手動実行: POST /api/admin/news/crawl-now
+  // ============================================
 }

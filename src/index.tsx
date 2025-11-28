@@ -5573,6 +5573,16 @@ app.get('*', (c) => {
             </div>
         </div>
         
+        <!-- News Modal -->
+        <div id="news-modal" class="modal">
+          <div class="modal-overlay" onclick="closeModal('news-modal')"></div>
+          <div class="modal-content" style="max-width: 600px; padding: 0; overflow: hidden; border-radius: 16px;">
+            <div id="news-modal-content">
+              <!-- Content loaded dynamically -->
+            </div>
+          </div>
+        </div>
+        
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="/static/i18n.js"></script>
         <script src="/static/video-helpers.js"></script>

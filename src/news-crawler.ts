@@ -1,6 +1,7 @@
 /**
  * News Crawler for ClimbHero
- * Automatically crawls climbing news and translates to 4 languages
+ * AI-powered news collection with Gemini translation
+ * Collects top climbing news from worldwide sources
  */
 
 export interface NewsArticle {
@@ -16,8 +17,19 @@ export interface NewsArticle {
   language: string
 }
 
+// World's top climbing news sources
+const NEWS_SOURCES = [
+  // International (English)
+  { name: 'Rock and Ice', url: 'https://rockandice.com/feed/', lang: 'en' },
+  { name: 'Climbing Magazine', url: 'https://www.climbing.com/feed/', lang: 'en' },
+  { name: 'UKClimbing', url: 'https://www.ukclimbing.com/news/rss.php', lang: 'en' },
+  { name: 'PlanetMountain', url: 'https://www.planetmountain.com/rss.php?lang=eng', lang: 'en' },
+  // IFSC Official
+  { name: 'IFSC News', url: 'https://www.ifsc-climbing.org/index.php/component/obrss/ifsc-news?format=feed&type=rss', lang: 'en' },
+]
+
 /**
- * Translate using Gemini API (on-demand translation)
+ * Translate using Gemini API
  */
 export async function translateText(
   text: string,
@@ -25,7 +37,11 @@ export async function translateText(
   targetLang: string,
   geminiApiKey: string
 ): Promise<string> {
-  if (sourceLang === targetLang) return text
+  if (!text || sourceLang === targetLang) return text
+  
+  const langNames: Record<string, string> = {
+    'ja': 'Japanese', 'en': 'English', 'zh': 'Chinese', 'ko': 'Korean'
+  }
   
   try {
     const response = await fetch(
@@ -36,10 +52,14 @@ export async function translateText(
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Translate this climbing news from ${sourceLang} to ${targetLang}. Maintain technical accuracy:\n\n${text}`
+              text: `Translate this climbing/bouldering news text from ${langNames[sourceLang] || sourceLang} to ${langNames[targetLang] || targetLang}. 
+Keep climbing terminology accurate (e.g., grades like V10, 5.14a, 8c should not be translated).
+Output ONLY the translated text without any explanation.
+
+Text: ${text}`
             }]
           }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 2048 }
+          generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
         })
       }
     )
@@ -53,23 +73,70 @@ export async function translateText(
 }
 
 /**
+ * Summarize article using Gemini
+ */
+export async function summarizeArticle(
+  content: string,
+  targetLang: string,
+  geminiApiKey: string
+): Promise<string> {
+  if (!content) return ''
+  
+  const langNames: Record<string, string> = {
+    'ja': 'Japanese', 'en': 'English', 'zh': 'Chinese', 'ko': 'Korean'
+  }
+  
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Summarize this climbing news article in ${langNames[targetLang] || 'Japanese'} in 2-3 sentences (max 150 characters).
+Focus on: WHO did WHAT, WHERE, and WHY it matters to climbers.
+Keep climbing grades (V10, 5.14a, 8c) unchanged.
+
+Article:
+${content.substring(0, 3000)}
+
+Output ONLY the summary.`
+            }]
+          }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 500 }
+        })
+      }
+    )
+    
+    const data = await response.json()
+    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content.substring(0, 200)
+  } catch (error) {
+    console.error('Summarize error:', error)
+    return content.substring(0, 200)
+  }
+}
+
+/**
  * Translate article to all 4 languages
  */
 export async function translateArticle(article: NewsArticle, apiKey: string) {
   const lang = article.language || 'en'
   
+  // Parallel translation for efficiency
   const [t_ja, t_en, t_zh, t_ko] = await Promise.all([
-    translateText(article.title, lang, 'ja', apiKey),
-    translateText(article.title, lang, 'en', apiKey),
-    translateText(article.title, lang, 'zh', apiKey),
-    translateText(article.title, lang, 'ko', apiKey)
+    lang === 'ja' ? article.title : translateText(article.title, lang, 'ja', apiKey),
+    lang === 'en' ? article.title : translateText(article.title, lang, 'en', apiKey),
+    lang === 'zh' ? article.title : translateText(article.title, lang, 'zh', apiKey),
+    lang === 'ko' ? article.title : translateText(article.title, lang, 'ko', apiKey)
   ])
   
   const [s_ja, s_en, s_zh, s_ko] = await Promise.all([
-    translateText(article.summary, lang, 'ja', apiKey),
-    translateText(article.summary, lang, 'en', apiKey),
-    translateText(article.summary, lang, 'zh', apiKey),
-    translateText(article.summary, lang, 'ko', apiKey)
+    lang === 'ja' ? article.summary : translateText(article.summary, lang, 'ja', apiKey),
+    lang === 'en' ? article.summary : translateText(article.summary, lang, 'en', apiKey),
+    lang === 'zh' ? article.summary : translateText(article.summary, lang, 'zh', apiKey),
+    lang === 'ko' ? article.summary : translateText(article.summary, lang, 'ko', apiKey)
   ])
   
   return {
@@ -91,78 +158,186 @@ export async function classifyGenre(title: string, summary: string, apiKey: stri
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Classify this climbing news into ONE genre: achievement, event, facility, research, history, competition, gear, technique, accident, general.\n\nTitle: ${title}\nSummary: ${summary}\n\nOutput only the genre name.`
+              text: `Classify this climbing news into exactly ONE of these genres:
+- competition (contests, IFSC, World Cup, Olympics)
+- achievement (first ascents, records, sends)
+- athlete (pro climber profiles, interviews)
+- gear (equipment, shoes, reviews)
+- technique (training, tips, how-to)
+- facility (gyms, new routes, crags)
+- accident (safety, incidents, rescue)
+- event (festivals, meetups, community)
+- general (other news)
+
+Title: ${title}
+Summary: ${summary}
+
+Output ONLY the genre name in lowercase.`
             }]
           }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 50 }
+          generationConfig: { temperature: 0.1, maxOutputTokens: 20 }
         })
       }
     )
     
     const data = await response.json()
-    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || 'general'
+    const genre = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase() || 'general'
+    const validGenres = ['competition', 'achievement', 'athlete', 'gear', 'technique', 'facility', 'accident', 'event', 'general']
+    return validGenres.includes(genre) ? genre : 'general'
   } catch (error) {
     return 'general'
   }
 }
 
 /**
- * Fetch RSS feed
+ * Extract image URL from article page
  */
-async function fetchRSS(url: string): Promise<NewsArticle[]> {
+export async function extractImageFromPage(url: string): Promise<string | null> {
   try {
-    const response = await fetch(url)
-    const xml = await response.text()
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'ClimbHero News Bot/1.0' }
+    })
+    const html = await response.text()
     
-    const articles: NewsArticle[] = []
-    const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/g
+    // Try Open Graph image first
+    const ogMatch = /<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i.exec(html)
+    if (ogMatch) return ogMatch[1]
     
+    // Try Twitter image
+    const twitterMatch = /<meta[^>]+name="twitter:image"[^>]+content="([^"]+)"/i.exec(html)
+    if (twitterMatch) return twitterMatch[1]
+    
+    // Try first large image in article
+    const imgMatch = /<img[^>]+src="([^"]+)"[^>]*(?:width|height)=["']?(\d+)/gi
     let match
-    while ((match = itemRegex.exec(xml)) !== null) {
+    while ((match = imgMatch.exec(html)) !== null) {
+      const size = parseInt(match[2])
+      if (size >= 300) return match[1]
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Image extraction error:', error)
+    return null
+  }
+}
+
+/**
+ * Fetch RSS feed and parse articles
+ */
+async function fetchRSS(url: string, sourceName: string, lang: string): Promise<NewsArticle[]> {
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'ClimbHero News Bot/1.0' }
+    })
+    
+    if (!response.ok) {
+      console.error(`RSS fetch failed: ${url} - ${response.status}`)
+      return []
+    }
+    
+    const xml = await response.text()
+    const articles: NewsArticle[] = []
+    
+    // Parse RSS items
+    const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>/g
+    let match
+    
+    while ((match = itemRegex.exec(xml)) !== null && articles.length < 10) {
       const item = match[1]
-      const title = /<title[^>]*>([\s\S]*?)<\/title>/.exec(item)?.[1]
-      const link = /<link[^>]*>([\s\S]*?)<\/link>/.exec(item)?.[1]
-      const desc = /<description[^>]*>([\s\S]*?)<\/description>/.exec(item)?.[1]
-      const pubDate = /<pubDate[^>]*>([\s\S]*?)<\/pubDate>/.exec(item)?.[1]
-      const imageMatch = /<media:content[^>]*url="([^"]+)"/.exec(item)
+      
+      // Extract fields with CDATA handling
+      const extractField = (tag: string) => {
+        const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i')
+        const m = regex.exec(item)
+        if (!m) return ''
+        return m[1]
+          .replace(/<!\[CDATA\[|\]\]>/g, '')
+          .replace(/<[^>]+>/g, '')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .trim()
+      }
+      
+      const title = extractField('title')
+      const link = extractField('link')
+      const description = extractField('description')
+      const pubDate = extractField('pubDate')
+      
+      // Extract image from media:content, media:thumbnail, or enclosure
+      let imageUrl = ''
+      const mediaMatch = /url="([^"]+\.(jpg|jpeg|png|webp)[^"]*)"/i.exec(item)
+      if (mediaMatch) imageUrl = mediaMatch[1]
       
       if (title && link) {
         articles.push({
-          title: title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').trim(),
-          summary: desc ? desc.replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, ' ').substring(0, 300).trim() : '',
-          url: link.trim(),
-          source_name: '',
-          image_url: imageMatch ? imageMatch[1] : undefined,
-          published_date: pubDate ? new Date(pubDate).toISOString() : undefined,
-          language: 'en'
+          title,
+          summary: description.substring(0, 500),
+          url: link,
+          source_name: sourceName,
+          image_url: imageUrl || undefined,
+          published_date: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+          language: lang
         })
       }
     }
     
     return articles
   } catch (error) {
-    console.error('RSS fetch error:', error)
+    console.error(`RSS error for ${url}:`, error)
     return []
   }
 }
 
 /**
- * Main crawler
+ * Main crawler - Collect top news from worldwide sources
  */
 export async function crawlNews(): Promise<NewsArticle[]> {
-  const sources = [
-    { name: 'Rock and Ice', url: 'https://rockandice.com/feed/' },
-    { name: 'Climbing Magazine', url: 'https://www.climbing.com/feed/' },
-    { name: 'UKClimbing', url: 'https://www.ukclimbing.com/news/rss.php' }
-  ]
+  console.log('🌍 Starting worldwide climbing news crawl...')
   
-  const all: NewsArticle[] = []
+  const allArticles: NewsArticle[] = []
   
-  for (const source of sources) {
-    const articles = await fetchRSS(source.url)
-    articles.forEach(a => a.source_name = source.name)
-    all.push(...articles)
-  }
+  // Fetch from all sources in parallel
+  const results = await Promise.allSettled(
+    NEWS_SOURCES.map(source => fetchRSS(source.url, source.name, source.lang))
+  )
   
-  return Array.from(new Map(all.map(a => [a.url, a])).values()).slice(0, 20)
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      console.log(`✅ ${NEWS_SOURCES[index].name}: ${result.value.length} articles`)
+      allArticles.push(...result.value)
+    } else {
+      console.error(`❌ ${NEWS_SOURCES[index].name}: Failed`)
+    }
+  })
+  
+  // Remove duplicates by URL
+  const uniqueArticles = Array.from(
+    new Map(allArticles.map(a => [a.url, a])).values()
+  )
+  
+  // Sort by date (newest first) and take top articles
+  const sortedArticles = uniqueArticles
+    .sort((a, b) => {
+      const dateA = a.published_date ? new Date(a.published_date).getTime() : 0
+      const dateB = b.published_date ? new Date(b.published_date).getTime() : 0
+      return dateB - dateA
+    })
+    .slice(0, 20)
+  
+  console.log(`📰 Total unique articles: ${sortedArticles.length}`)
+  
+  return sortedArticles
+}
+
+/**
+ * Get top 5 trending articles by view count
+ */
+export function getTopTrending(articles: any[], limit: number = 5): any[] {
+  return [...articles]
+    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+    .slice(0, limit)
 }

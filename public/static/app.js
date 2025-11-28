@@ -7031,7 +7031,229 @@ function renderVideosPage() {
 
 // ============ News Functions ============
 
-// Render news card
+// Show news modal with full article details
+async function showNewsModal(articleId) {
+  const modal = document.getElementById('news-modal');
+  if (!modal) return;
+  
+  const content = document.getElementById('news-modal-content');
+  if (!content) return;
+  
+  // Show loading state
+  content.innerHTML = `
+    <div class="flex items-center justify-center py-16">
+      <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+    </div>
+  `;
+  modal.classList.add('active');
+  
+  try {
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/news/${articleId}?lang=${lang}`);
+    const article = response.data.article;
+    
+    if (!article) {
+      content.innerHTML = `<p class="text-center text-gray-500 py-8">記事が見つかりません</p>`;
+      return;
+    }
+    
+    const publishedDate = article.published_date ? formatDate(article.published_date) : '';
+    const isLiked = article.is_liked || false;
+    const isFavorited = article.is_favorited || false;
+    const likeCount = article.like_count || 0;
+    
+    // Fallback image if none available
+    const imageUrl = article.image_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=400&fit=crop';
+    
+    content.innerHTML = `
+      <!-- Hero Image -->
+      <div class="relative">
+        <img 
+          src="${imageUrl}" 
+          alt="${article.title}" 
+          class="w-full h-48 sm:h-64 object-cover"
+          onerror="this.src='https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=400&fit=crop'"
+        >
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        
+        <!-- Genre Badge -->
+        ${article.genre ? `
+          <span class="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-sm rounded-full font-semibold shadow-lg">
+            <i class="fas fa-tag mr-1"></i>
+            ${i18n.t('news.genre.' + article.genre) || article.genre}
+          </span>
+        ` : ''}
+        
+        <!-- Source Badge -->
+        ${article.source_name ? `
+          <span class="absolute top-4 right-4 px-3 py-1 bg-white/90 text-gray-800 text-sm rounded-full font-medium shadow-lg">
+            <i class="fas fa-newspaper mr-1"></i>
+            ${article.source_name}
+          </span>
+        ` : ''}
+        
+        <!-- Close Button -->
+        <button 
+          onclick="closeModal('news-modal')" 
+          class="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+          style="right: ${article.source_name ? '140px' : '16px'}"
+        >
+          <i class="fas fa-times text-lg"></i>
+        </button>
+      </div>
+      
+      <!-- Content -->
+      <div class="p-6">
+        <!-- Title -->
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 leading-tight">
+          ${article.title}
+        </h2>
+        
+        <!-- Meta Info -->
+        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-4">
+          <span class="flex items-center">
+            <i class="fas fa-calendar-alt mr-1"></i>
+            ${publishedDate}
+          </span>
+          <span class="flex items-center">
+            <i class="fas fa-eye mr-1"></i>
+            ${article.view_count || 0} views
+          </span>
+          <span class="flex items-center">
+            <i class="fas fa-heart mr-1 text-red-500"></i>
+            <span id="modal-news-like-count">${likeCount}</span>
+          </span>
+        </div>
+        
+        <!-- Summary (AI Translated) -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-6">
+          <div class="flex items-center mb-2">
+            <i class="fas fa-robot text-purple-500 mr-2"></i>
+            <span class="text-sm font-medium text-purple-700">AI ${i18n.t('news.summary') || '要約'}</span>
+          </div>
+          <p class="text-gray-700 leading-relaxed" id="news-modal-summary">
+            ${article.summary || '要約を読み込み中...'}
+          </p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-3 mb-6">
+          <button 
+            onclick="toggleNewsLikeFromModal(${article.id})" 
+            id="modal-news-like-btn"
+            class="flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-all ${isLiked ? 'bg-red-100 text-red-600 border-2 border-red-300' : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'}"
+          >
+            <i class="fas fa-heart mr-2"></i>
+            ${isLiked ? 'いいね済み' : 'いいね'}
+          </button>
+          
+          <button 
+            onclick="toggleNewsFavoriteFromModal(${article.id})" 
+            id="modal-news-favorite-btn"
+            class="flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-all ${isFavorited ? 'bg-yellow-100 text-yellow-600 border-2 border-yellow-300' : 'bg-gray-100 text-gray-700 hover:bg-yellow-50 hover:text-yellow-600'}"
+          >
+            <i class="fas fa-star mr-2"></i>
+            ${isFavorited ? 'お気に入り済み' : 'お気に入り'}
+          </button>
+          
+          <button 
+            onclick="translateNewsInModal(${article.id})" 
+            class="flex-1 sm:flex-none px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium hover:bg-purple-200 transition-all"
+          >
+            <i class="fas fa-language mr-2"></i>
+            翻訳
+          </button>
+          
+          <button 
+            onclick="shareNews(${article.id}, '${encodeURIComponent(article.title)}', '${encodeURIComponent(article.url)}')" 
+            class="flex-1 sm:flex-none px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-all"
+          >
+            <i class="fas fa-share-alt mr-2"></i>
+            シェア
+          </button>
+        </div>
+        
+        <!-- Read Original Article Button -->
+        <a 
+          href="${article.url}" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="block w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center rounded-xl font-bold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl"
+        >
+          <i class="fas fa-external-link-alt mr-2"></i>
+          元の記事を読む
+        </a>
+      </div>
+    `;
+    
+    // Store current article for actions
+    state.currentNewsArticle = article;
+    
+  } catch (error) {
+    console.error('Error loading news:', error);
+    content.innerHTML = `
+      <div class="p-8 text-center">
+        <i class="fas fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
+        <p class="text-gray-600">記事の読み込みに失敗しました</p>
+        <button onclick="closeModal('news-modal')" class="mt-4 px-4 py-2 bg-gray-200 rounded-lg">閉じる</button>
+      </div>
+    `;
+  }
+}
+
+// Toggle like from modal
+async function toggleNewsLikeFromModal(articleId) {
+  await toggleNewsLike(articleId);
+  // Refresh modal content
+  setTimeout(() => showNewsModal(articleId), 300);
+}
+
+// Toggle favorite from modal
+async function toggleNewsFavoriteFromModal(articleId) {
+  await toggleNewsFavorite(articleId);
+  // Refresh modal content
+  setTimeout(() => showNewsModal(articleId), 300);
+}
+
+// Translate news in modal using AI
+async function translateNewsInModal(articleId) {
+  const summaryEl = document.getElementById('news-modal-summary');
+  if (!summaryEl) return;
+  
+  summaryEl.innerHTML = '<span class="animate-pulse">翻訳中...</span>';
+  
+  try {
+    const lang = state.currentLanguage || 'ja';
+    const response = await axios.get(`/api/news/${articleId}/translate/${lang}`);
+    
+    if (response.data.summary) {
+      summaryEl.textContent = response.data.summary;
+      showToast('翻訳完了', 'success');
+    }
+  } catch (error) {
+    console.error('Translation error:', error);
+    summaryEl.textContent = state.currentNewsArticle?.summary || 'エラー';
+    showToast('翻訳に失敗しました', 'error');
+  }
+}
+
+// Share news
+function shareNews(articleId, title, url) {
+  const decodedTitle = decodeURIComponent(title);
+  const decodedUrl = decodeURIComponent(url);
+  
+  if (navigator.share) {
+    navigator.share({
+      title: decodedTitle,
+      url: decodedUrl
+    });
+  } else {
+    navigator.clipboard.writeText(decodedUrl);
+    showToast('URLをコピーしました', 'success');
+  }
+}
+
+// Render news card (click opens modal)
 function renderNewsCard(article) {
   const truncatedSummary = article.summary ? article.summary.substring(0, 120) + '...' : ''
   const publishedDate = article.published_date ? formatDate(article.published_date) : ''
@@ -7039,33 +7261,37 @@ function renderNewsCard(article) {
   const isFavorited = article.is_favorited || false
   const likeCount = article.like_count || 0
   
+  // Fallback image
+  const imageUrl = article.image_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400&h=300&fit=crop';
+  
   return `
     <div class="scroll-item">
-      <div class="video-card-compact" onclick="window.open('${article.url}', '_blank')">
-        ${article.image_url ? `
-          <div class="video-thumbnail">
-            <img src="${article.image_url}" alt="${article.title}" class="w-full h-full object-cover">
-            ${article.genre ? `
-              <span class="absolute top-2 right-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
-                ${i18n.t(`news.genre.${article.genre}`)}
-              </span>
-            ` : ''}
+      <div class="video-card-compact cursor-pointer" onclick="showNewsModal(${article.id})">
+        <div class="video-thumbnail">
+          <img 
+            src="${imageUrl}" 
+            alt="${article.title}" 
+            class="w-full h-full object-cover"
+            onerror="this.src='https://images.unsplash.com/photo-1522163182402-834f871fd851?w=400&h=300&fit=crop'"
+          >
+          ${article.genre ? `
+            <span class="absolute top-2 right-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
+              ${i18n.t('news.genre.' + article.genre) || article.genre}
+            </span>
+          ` : ''}
+          <div class="absolute bottom-2 left-2 px-2 py-1 bg-black/70 text-white text-xs rounded">
+            <i class="fas fa-newspaper mr-1"></i>${article.source_name || 'News'}
           </div>
-        ` : `
-          <div class="video-thumbnail" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)"></div>
-        `}
+        </div>
         <div class="video-info-compact">
           <div class="video-title-compact line-clamp-2 font-bold">${article.title}</div>
-          <p class="text-xs text-gray-600 line-clamp-3 mb-2 leading-relaxed">${truncatedSummary}</p>
+          <p class="text-xs text-gray-600 line-clamp-2 mb-2 leading-relaxed">${truncatedSummary}</p>
           <div class="video-meta-compact text-xs">
             <span><i class="fas fa-calendar"></i> ${publishedDate}</span>
-            ${article.source_name ? `<span><i class="fas fa-newspaper"></i> ${article.source_name}</span>` : ''}
+            <span><i class="fas fa-eye"></i> ${article.view_count || 0}</span>
           </div>
           <div class="mt-2 flex items-center justify-between">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
-                ${i18n.t(`news.category.${article.category}`)}
-              </span>
+            <div class="flex items-center gap-2">
               <button 
                 onclick="event.stopPropagation(); toggleNewsLike(${article.id})" 
                 class="text-xs px-2 py-1 rounded-full transition-colors ${isLiked ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'}"
@@ -7078,15 +7304,9 @@ function renderNewsCard(article) {
                 title="${isFavorited ? 'お気に入り済み' : 'お気に入り'}">
                 <i class="fas fa-star"></i>
               </button>
-              <button 
-                onclick="event.stopPropagation(); translateNews(${article.id})" 
-                class="text-xs px-2 py-1 rounded-full transition-colors bg-purple-50 text-purple-600 hover:bg-purple-100"
-                title="現在の言語に翻訳">
-                <i class="fas fa-language"></i>
-              </button>
             </div>
-            <span class="text-xs text-gray-400">
-              <i class="fas fa-external-link-alt"></i>
+            <span class="text-xs text-blue-600 font-medium">
+              詳細を見る <i class="fas fa-chevron-right ml-1"></i>
             </span>
           </div>
         </div>
@@ -7936,6 +8156,11 @@ async function confirmAddToCollection(collectionId, contentType, contentId) {
 window.filterNewsByCategory = filterNewsByCategory;
 window.filterNewsByGenre = filterNewsByGenre;
 window.renderNewsCard = renderNewsCard;
+window.showNewsModal = showNewsModal;
+window.toggleNewsLikeFromModal = toggleNewsLikeFromModal;
+window.toggleNewsFavoriteFromModal = toggleNewsFavoriteFromModal;
+window.translateNewsInModal = translateNewsInModal;
+window.shareNews = shareNews;
 window.toggleNewsLike = toggleNewsLike;
 window.toggleNewsFavorite = toggleNewsFavorite;
 window.toggleBlogLike = toggleBlogLike;
