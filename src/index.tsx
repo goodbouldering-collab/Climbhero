@@ -6,6 +6,8 @@ import { serveStatic } from 'hono/cloudflare-workers'
 type Bindings = {
   DB: D1Database;
   GEMINI_API_KEY?: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -5539,6 +5541,603 @@ app.get('/api/news/:id/translate/:lang', async (c) => {
       language: lang,
       translated_on_demand: true
     })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// ===========================================
+// SUBSCRIPTION & STRIPE API ENDPOINTS
+// (MUST be defined BEFORE catch-all route)
+// ===========================================
+
+// Plan pricing configuration
+const PLAN_CONFIG = {
+  free: { price: 0, name: 'フリー', features: ['動画閲覧', '1日1いいね'] },
+  monthly: { price: 980, name: 'プレミアム月額', features: ['無制限いいね', '動画投稿', 'お気に入り管理', '広告非表示'] },
+  annual: { price: 5880, name: 'プレミアム年間', features: ['月額の半額！', '無制限いいね', '動画投稿', 'お気に入り管理', '広告非表示'] } // 980 * 12 * 0.5 = 5880
+}
+
+// Get subscription plans
+app.get('/api/subscription/plans', (c) => {
+  return c.json({
+    plans: [
+      { 
+        id: 'free', 
+        name: PLAN_CONFIG.free.name, 
+        price: 0, 
+        period: null,
+        features: PLAN_CONFIG.free.features,
+        popular: false
+      },
+      { 
+        id: 'monthly', 
+        name: PLAN_CONFIG.monthly.name, 
+        price: PLAN_CONFIG.monthly.price, 
+        period: 'month',
+        features: PLAN_CONFIG.monthly.features,
+        popular: false
+      },
+      { 
+        id: 'annual', 
+        name: PLAN_CONFIG.annual.name, 
+        price: PLAN_CONFIG.annual.price, 
+        period: 'year',
+        originalPrice: 11760, // 980 * 12
+        discount: 50,
+        features: PLAN_CONFIG.annual.features,
+        popular: true
+      }
+    ]
+  })
+})
+
+// Get current user's subscription
+app.get('/api/subscription/current', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    const userId = (user as any).id
+    
+    // Get active subscription
+    const subscription = await env.DB.prepare(`
+      SELECT * FROM subscriptions 
+      WHERE user_id = ? AND status IN ('active', 'canceled')
+      ORDER BY created_at DESC LIMIT 1
+    `).bind(userId).first() as any
+    
+    // Get user membership info
+    const userInfo = await env.DB.prepare(`
+      SELECT membership_type, membership_expires, subscription_type 
+      FROM users WHERE id = ?
+    `).bind(userId).first() as any
+    
+    // Check if expired
+    const now = new Date()
+    let isExpired = false
+    if (userInfo?.membership_expires) {
+      const expiresAt = new Date(userInfo.membership_expires)
+      isExpired = expiresAt < now
+    }
+    
+    // If expired and not free, downgrade
+    if (isExpired && userInfo?.membership_type !== 'free') {
+      await env.DB.prepare(`
+        UPDATE users SET membership_type = 'free', subscription_type = NULL 
+        WHERE id = ?
+      `).bind(userId).run()
+      
+      if (subscription) {
+        await env.DB.prepare(`
+          UPDATE subscriptions SET status = 'inactive' WHERE id = ?
+        `).bind(subscription.id).run()
+      }
+    }
+    
+    return c.json({
+      subscription: subscription ? {
+        id: subscription.id,
+        plan_type: subscription.plan_type,
+        status: subscription.status,
+        auto_renew: subscription.auto_renew === 1,
+        cancel_at_period_end: subscription.cancel_at_period_end === 1,
+        current_period_start: subscription.current_period_start,
+        current_period_end: subscription.current_period_end,
+        price_amount: subscription.price_amount
+      } : null,
+      user: {
+        membership_type: isExpired ? 'free' : (userInfo?.membership_type || 'free'),
+        membership_expires: userInfo?.membership_expires,
+        subscription_type: userInfo?.subscription_type
+      },
+      is_expired: isExpired
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Create Stripe Checkout Session
+app.post('/api/subscription/checkout', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  const stripeKey = env.STRIPE_SECRET_KEY
+  if (!stripeKey) {
+    return c.json({ error: 'Stripe not configured' }, 500)
+  }
+  
+  try {
+    const { plan_type } = await c.req.json()
+    const userId = (user as any).id
+    const userEmail = (user as any).email
+    
+    if (!['monthly', 'annual'].includes(plan_type)) {
+      return c.json({ error: 'Invalid plan type' }, 400)
+    }
+    
+    const planConfig = PLAN_CONFIG[plan_type as keyof typeof PLAN_CONFIG]
+    const isAnnual = plan_type === 'annual'
+    
+    // Get or create Stripe customer
+    let existingSubscription = await env.DB.prepare(`
+      SELECT stripe_customer_id FROM subscriptions WHERE user_id = ? AND stripe_customer_id IS NOT NULL
+      ORDER BY created_at DESC LIMIT 1
+    `).bind(userId).first() as any
+    
+    let customerId = existingSubscription?.stripe_customer_id
+    
+    if (!customerId) {
+      // Create Stripe customer
+      const customerResponse = await fetch('https://api.stripe.com/v1/customers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${stripeKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          email: userEmail,
+          'metadata[user_id]': userId.toString()
+        })
+      })
+      
+      const customerData = await customerResponse.json() as any
+      if (customerData.error) {
+        return c.json({ error: customerData.error.message }, 500)
+      }
+      customerId = customerData.id
+    }
+    
+    // Create Checkout Session
+    const baseUrl = c.req.header('origin') || 'https://project-02ceb497.pages.dev'
+    
+    const checkoutParams = new URLSearchParams({
+      'mode': 'subscription',
+      'customer': customerId,
+      'success_url': `${baseUrl}?subscription=success&plan=${plan_type}`,
+      'cancel_url': `${baseUrl}?subscription=canceled`,
+      'line_items[0][price_data][currency]': 'jpy',
+      'line_items[0][price_data][product_data][name]': planConfig.name,
+      'line_items[0][price_data][product_data][description]': isAnnual ? '年間プラン（50%OFF）' : '月額プラン',
+      'line_items[0][price_data][unit_amount]': planConfig.price.toString(),
+      'line_items[0][price_data][recurring][interval]': isAnnual ? 'year' : 'month',
+      'line_items[0][quantity]': '1',
+      'subscription_data[metadata][user_id]': userId.toString(),
+      'subscription_data[metadata][plan_type]': plan_type,
+      'allow_promotion_codes': 'true',
+      'locale': 'ja'
+    })
+    
+    const sessionResponse = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: checkoutParams
+    })
+    
+    const sessionData = await sessionResponse.json() as any
+    if (sessionData.error) {
+      return c.json({ error: sessionData.error.message }, 500)
+    }
+    
+    return c.json({
+      checkout_url: sessionData.url,
+      session_id: sessionData.id
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Stripe Webhook handler
+app.post('/api/stripe/webhook', async (c) => {
+  const { env } = c
+  const stripeKey = env.STRIPE_SECRET_KEY
+  const webhookSecret = env.STRIPE_WEBHOOK_SECRET
+  
+  if (!stripeKey) {
+    return c.json({ error: 'Stripe not configured' }, 500)
+  }
+  
+  try {
+    const body = await c.req.text()
+    const sig = c.req.header('stripe-signature')
+    
+    // Note: In production, verify webhook signature
+    // For now, parse the event directly
+    const event = JSON.parse(body)
+    
+    console.log('📥 Stripe Webhook:', event.type)
+    
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object
+        const userId = session.metadata?.user_id || session.subscription_data?.metadata?.user_id
+        const planType = session.metadata?.plan_type || 'monthly'
+        const customerId = session.customer
+        const subscriptionId = session.subscription
+        
+        if (userId && subscriptionId) {
+          // Get subscription details from Stripe
+          const subResponse = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
+            headers: { 'Authorization': `Bearer ${stripeKey}` }
+          })
+          const subData = await subResponse.json() as any
+          
+          const periodEnd = new Date(subData.current_period_end * 1000)
+          const periodStart = new Date(subData.current_period_start * 1000)
+          
+          // Create subscription record
+          await env.DB.prepare(`
+            INSERT INTO subscriptions (
+              user_id, stripe_customer_id, stripe_subscription_id, 
+              plan_type, status, current_period_start, current_period_end,
+              auto_renew, price_amount
+            ) VALUES (?, ?, ?, ?, 'active', ?, ?, 1, ?)
+          `).bind(
+            userId, customerId, subscriptionId, planType,
+            periodStart.toISOString(), periodEnd.toISOString(),
+            PLAN_CONFIG[planType as keyof typeof PLAN_CONFIG].price
+          ).run()
+          
+          // Update user membership
+          await env.DB.prepare(`
+            UPDATE users SET 
+              membership_type = 'premium',
+              membership_expires = ?,
+              subscription_type = ?
+            WHERE id = ?
+          `).bind(periodEnd.toISOString(), planType, userId).run()
+          
+          // Record payment
+          await env.DB.prepare(`
+            INSERT INTO payment_history (
+              user_id, stripe_payment_intent_id, amount, status, description, plan_type, paid_at
+            ) VALUES (?, ?, ?, 'succeeded', ?, ?, CURRENT_TIMESTAMP)
+          `).bind(
+            userId, session.payment_intent,
+            PLAN_CONFIG[planType as keyof typeof PLAN_CONFIG].price,
+            `${PLAN_CONFIG[planType as keyof typeof PLAN_CONFIG].name} 購入`,
+            planType
+          ).run()
+          
+          console.log(`✅ Subscription activated: User ${userId}, Plan ${planType}`)
+        }
+        break
+      }
+      
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object
+        const userId = subscription.metadata?.user_id
+        
+        if (userId) {
+          const periodEnd = new Date(subscription.current_period_end * 1000)
+          const cancelAtPeriodEnd = subscription.cancel_at_period_end ? 1 : 0
+          
+          await env.DB.prepare(`
+            UPDATE subscriptions SET 
+              status = ?,
+              current_period_end = ?,
+              cancel_at_period_end = ?,
+              auto_renew = ?,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE stripe_subscription_id = ?
+          `).bind(
+            subscription.status,
+            periodEnd.toISOString(),
+            cancelAtPeriodEnd,
+            cancelAtPeriodEnd ? 0 : 1,
+            subscription.id
+          ).run()
+          
+          // Update user expiry
+          await env.DB.prepare(`
+            UPDATE users SET membership_expires = ? WHERE id = ?
+          `).bind(periodEnd.toISOString(), userId).run()
+          
+          console.log(`📝 Subscription updated: ${subscription.id}`)
+        }
+        break
+      }
+      
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object
+        const userId = subscription.metadata?.user_id
+        
+        if (userId) {
+          await env.DB.prepare(`
+            UPDATE subscriptions SET 
+              status = 'inactive',
+              canceled_at = CURRENT_TIMESTAMP,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE stripe_subscription_id = ?
+          `).bind(subscription.id).run()
+          
+          // Downgrade to free
+          await env.DB.prepare(`
+            UPDATE users SET 
+              membership_type = 'free',
+              subscription_type = NULL
+            WHERE id = ?
+          `).bind(userId).run()
+          
+          console.log(`❌ Subscription canceled: User ${userId}`)
+        }
+        break
+      }
+      
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object
+        const userId = invoice.subscription_details?.metadata?.user_id
+        
+        if (userId && invoice.billing_reason === 'subscription_cycle') {
+          // Record renewal payment
+          await env.DB.prepare(`
+            INSERT INTO payment_history (
+              user_id, stripe_invoice_id, amount, status, description, paid_at
+            ) VALUES (?, ?, ?, 'succeeded', '自動更新', CURRENT_TIMESTAMP)
+          `).bind(userId, invoice.id, invoice.amount_paid).run()
+          
+          console.log(`💰 Renewal payment: User ${userId}`)
+        }
+        break
+      }
+      
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object
+        const userId = invoice.subscription_details?.metadata?.user_id
+        
+        if (userId) {
+          // Update subscription status
+          await env.DB.prepare(`
+            UPDATE subscriptions SET status = 'past_due' 
+            WHERE user_id = ? AND status = 'active'
+          `).bind(userId).run()
+          
+          console.log(`⚠️ Payment failed: User ${userId}`)
+        }
+        break
+      }
+    }
+    
+    return c.json({ received: true })
+  } catch (error: any) {
+    console.error('Webhook error:', error)
+    return c.json({ error: error.message }, 400)
+  }
+})
+
+// Toggle auto-renewal
+app.post('/api/subscription/toggle-auto-renew', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  const stripeKey = env.STRIPE_SECRET_KEY
+  if (!stripeKey) {
+    return c.json({ error: 'Stripe not configured' }, 500)
+  }
+  
+  try {
+    const userId = (user as any).id
+    const { auto_renew } = await c.req.json()
+    
+    // Get active subscription
+    const subscription = await env.DB.prepare(`
+      SELECT * FROM subscriptions 
+      WHERE user_id = ? AND status = 'active'
+      ORDER BY created_at DESC LIMIT 1
+    `).bind(userId).first() as any
+    
+    if (!subscription || !subscription.stripe_subscription_id) {
+      return c.json({ error: 'No active subscription' }, 400)
+    }
+    
+    // Update in Stripe
+    const updateResponse = await fetch(
+      `https://api.stripe.com/v1/subscriptions/${subscription.stripe_subscription_id}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${stripeKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          'cancel_at_period_end': auto_renew ? 'false' : 'true'
+        })
+      }
+    )
+    
+    const updateData = await updateResponse.json() as any
+    if (updateData.error) {
+      return c.json({ error: updateData.error.message }, 500)
+    }
+    
+    // Update local DB
+    await env.DB.prepare(`
+      UPDATE subscriptions SET 
+        auto_renew = ?,
+        cancel_at_period_end = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      auto_renew ? 1 : 0,
+      auto_renew ? 0 : 1,
+      subscription.id
+    ).run()
+    
+    return c.json({
+      success: true,
+      auto_renew: auto_renew,
+      message: auto_renew ? '自動更新をONにしました' : '自動更新をOFFにしました。期限終了後フリープランに戻ります。'
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Cancel subscription
+app.post('/api/subscription/cancel', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  const stripeKey = env.STRIPE_SECRET_KEY
+  if (!stripeKey) {
+    return c.json({ error: 'Stripe not configured' }, 500)
+  }
+  
+  try {
+    const userId = (user as any).id
+    const { immediate } = await c.req.json()
+    
+    // Get active subscription
+    const subscription = await env.DB.prepare(`
+      SELECT * FROM subscriptions 
+      WHERE user_id = ? AND status = 'active'
+      ORDER BY created_at DESC LIMIT 1
+    `).bind(userId).first() as any
+    
+    if (!subscription || !subscription.stripe_subscription_id) {
+      return c.json({ error: 'No active subscription' }, 400)
+    }
+    
+    if (immediate) {
+      // Cancel immediately
+      const cancelResponse = await fetch(
+        `https://api.stripe.com/v1/subscriptions/${subscription.stripe_subscription_id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${stripeKey}` }
+        }
+      )
+      
+      const cancelData = await cancelResponse.json() as any
+      if (cancelData.error) {
+        return c.json({ error: cancelData.error.message }, 500)
+      }
+      
+      // Update local DB
+      await env.DB.prepare(`
+        UPDATE subscriptions SET 
+          status = 'inactive',
+          canceled_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(subscription.id).run()
+      
+      await env.DB.prepare(`
+        UPDATE users SET 
+          membership_type = 'free',
+          subscription_type = NULL
+        WHERE id = ?
+      `).bind(userId).run()
+      
+      return c.json({
+        success: true,
+        message: 'サブスクリプションを即時解約しました。フリープランに戻りました。'
+      })
+    } else {
+      // Cancel at period end - set auto_renew to OFF
+      const updateResponse = await fetch(
+        `https://api.stripe.com/v1/subscriptions/${subscription.stripe_subscription_id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${stripeKey}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            'cancel_at_period_end': 'true'
+          })
+        }
+      )
+      
+      const updateData = await updateResponse.json() as any
+      if (updateData.error) {
+        return c.json({ error: updateData.error.message }, 500)
+      }
+      
+      await env.DB.prepare(`
+        UPDATE subscriptions SET 
+          auto_renew = 0,
+          cancel_at_period_end = 1,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(subscription.id).run()
+      
+      return c.json({
+        success: true,
+        message: `サブスクリプションは${subscription.current_period_end}まで有効です。その後フリープランに戻ります。`
+      })
+    }
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Get payment history
+app.get('/api/subscription/history', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  
+  const user = await getUserFromSession(env.DB, sessionToken || '')
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401)
+  }
+  
+  try {
+    const userId = (user as any).id
+    
+    const payments = await env.DB.prepare(`
+      SELECT * FROM payment_history 
+      WHERE user_id = ? 
+      ORDER BY created_at DESC 
+      LIMIT 20
+    `).bind(userId).all()
+    
+    return c.json({ payments: payments.results || [] })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }

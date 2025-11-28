@@ -84,8 +84,44 @@ async function init() {
   // Initialize hero slideshow
   initHeroSlideshow();
   
+  // Handle subscription callback from Stripe
+  handleSubscriptionCallback();
+  
   window.addEventListener('hashchange', handleNavigation);
   handleNavigation();
+}
+
+// Handle subscription callback from Stripe Checkout
+function handleSubscriptionCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const subscriptionStatus = urlParams.get('subscription');
+  const planType = urlParams.get('plan');
+  
+  if (subscriptionStatus === 'success') {
+    // Clear URL parameters
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    
+    // Show success message
+    setTimeout(() => {
+      const planName = planType === 'annual' ? 'プレミアム年間プラン' : 'プレミアム月額プラン';
+      showToast(`🎉 ${planName}への登録が完了しました！`, 'success');
+      
+      // Refresh auth to get updated membership
+      checkAuth().then(() => {
+        if (state.currentView === 'mypage') {
+          loadSubscriptionManagement();
+        }
+        renderApp();
+      });
+    }, 500);
+  } else if (subscriptionStatus === 'canceled') {
+    // Clear URL parameters
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    
+    setTimeout(() => {
+      showToast('決済がキャンセルされました', 'info');
+    }, 500);
+  }
 }
 
 // ============ Authentication ============
@@ -346,6 +382,8 @@ function renderApp() {
     loadAdminData();
   } else if (state.currentView === 'mypage') {
     root.innerHTML = renderMyPage();
+    // Load subscription management after page renders
+    setTimeout(() => loadSubscriptionManagement(), 100);
   } else if (state.currentView === 'api') {
     root.innerHTML = renderApiPage();
   } else if (state.currentView === 'blog-detail') {
@@ -934,48 +972,102 @@ function renderHomePage() {
       </section>
 
       <!-- Pricing Section -->
-      <section class="py-8 bg-gradient-to-br from-purple-50 to-pink-50">
+      <section class="py-12 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-6">
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">${i18n.t('pricing.title')}</h3>
-            <p class="text-sm text-gray-600">✨ ${i18n.t('pricing.trial')}</p>
+          <div class="text-center mb-8">
+            <h3 class="text-3xl font-bold text-gray-900 mb-2">料金プラン</h3>
+            <p class="text-gray-600">あなたに合ったプランを選択してください</p>
           </div>
           
-          <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <!-- Free Plan -->
-            <div class="card p-6 bg-white">
-              <h4 class="text-lg font-bold mb-2">${i18n.t('pricing.free.title')}</h4>
-              <div class="text-2xl font-bold text-gray-900 mb-3">${i18n.t('pricing.free.price')}<span class="text-sm font-normal text-gray-600">${i18n.t('pricing.free.month')}</span></div>
-              <ul class="space-y-2 mb-4 text-sm">
-                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">${i18n.t('pricing.free.upload')}</span> <span class="text-xs">${i18n.t('pricing.free.upload_status')}</span></li>
-                <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times text-xs"></i> <span class="line-through">${i18n.t('pricing.free.likes')}</span> <span class="text-xs">${i18n.t('pricing.free.likes_status')}</span></li>
+            <div class="card p-6 bg-white border-2 border-gray-200 relative">
+              <h4 class="text-xl font-bold mb-2 text-gray-800">フリー</h4>
+              <div class="text-3xl font-bold text-gray-900 mb-1">¥0</div>
+              <p class="text-sm text-gray-500 mb-4">永久無料</p>
+              <ul class="space-y-3 mb-6 text-sm">
+                <li class="flex items-center gap-2 text-gray-700">
+                  <i class="fas fa-check text-green-500"></i> 動画閲覧無制限
+                </li>
+                <li class="flex items-center gap-2 text-gray-700">
+                  <i class="fas fa-check text-green-500"></i> 1日1いいね
+                </li>
+                <li class="flex items-center gap-2 text-gray-400">
+                  <i class="fas fa-times"></i> <span class="line-through">動画投稿</span>
+                </li>
+                <li class="flex items-center gap-2 text-gray-400">
+                  <i class="fas fa-times"></i> <span class="line-through">お気に入り管理</span>
+                </li>
               </ul>
-            </div>
-            
-            <!-- Premium Plan -->
-            <div class="card p-6 bg-gradient-to-br from-purple-600 to-purple-700 text-white relative overflow-hidden">
-              <h4 class="text-lg font-bold mb-2">${i18n.t('pricing.premium.title')}</h4>
-              <div class="text-2xl font-bold mb-3">${i18n.t('pricing.premium.price')}<span class="text-sm font-normal opacity-90">${i18n.t('pricing.premium.month')}</span></div>
-              <ul class="space-y-2 mb-3 text-sm">
-                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature1')}</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature2')}</strong></li>
-                <li class="flex items-center gap-2"><i class="fas fa-heart text-red-300 text-xs"></i> <strong>${i18n.t('pricing.premium.feature3')}</strong></li>
-              </ul>
-              <div class="bg-white/10 rounded-lg p-3 mb-3">
-                <p class="text-xs font-semibold mb-2 opacity-90">詳細機能:</p>
-                <ul class="space-y-1 text-xs">
-                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail1')}</li>
-                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail2')}</li>
-                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail3')}</li>
-                  <li class="pricing-detail-item"><i class="fas fa-check text-yellow-300 text-xs mr-1"></i> ${i18n.t('pricing.premium.detail4')}</li>
-                </ul>
-              </div>
-              <button onclick="showPricingModal()" class="btn btn-sm w-full bg-white text-purple-600 hover:bg-gray-100 font-bold">
-                <i class="fas fa-rocket"></i>
-                ${i18n.t('pricing.cta')}
+              <button class="btn w-full bg-gray-100 text-gray-600 font-bold cursor-default">
+                現在のプラン
               </button>
             </div>
+            
+            <!-- Monthly Plan -->
+            <div class="card p-6 bg-white border-2 border-purple-300 relative">
+              <h4 class="text-xl font-bold mb-2 text-purple-700">プレミアム月額</h4>
+              <div class="text-3xl font-bold text-gray-900 mb-1">¥980</div>
+              <p class="text-sm text-gray-500 mb-4">/月</p>
+              <ul class="space-y-3 mb-6 text-sm">
+                <li class="flex items-center gap-2 text-gray-700">
+                  <i class="fas fa-check text-purple-500"></i> <strong>無制限いいね</strong>
+                </li>
+                <li class="flex items-center gap-2 text-gray-700">
+                  <i class="fas fa-check text-purple-500"></i> <strong>動画投稿OK</strong>
+                </li>
+                <li class="flex items-center gap-2 text-gray-700">
+                  <i class="fas fa-check text-purple-500"></i> お気に入り管理
+                </li>
+                <li class="flex items-center gap-2 text-gray-700">
+                  <i class="fas fa-check text-purple-500"></i> 広告非表示
+                </li>
+              </ul>
+              <button onclick="startCheckout('monthly')" class="btn w-full bg-purple-600 hover:bg-purple-700 text-white font-bold">
+                <i class="fas fa-credit-card mr-2"></i>月額プランを始める
+              </button>
+            </div>
+            
+            <!-- Annual Plan (BEST VALUE) -->
+            <div class="card p-6 bg-gradient-to-br from-purple-600 to-pink-600 text-white relative overflow-hidden border-2 border-yellow-400">
+              <div class="absolute top-0 right-0 bg-yellow-400 text-purple-900 text-xs font-bold px-3 py-1 rounded-bl-lg">
+                🔥 50% OFF
+              </div>
+              <h4 class="text-xl font-bold mb-2">プレミアム年間</h4>
+              <div class="flex items-baseline gap-2 mb-1">
+                <span class="text-3xl font-bold">¥5,880</span>
+                <span class="text-sm line-through opacity-70">¥11,760</span>
+              </div>
+              <p class="text-sm opacity-90 mb-4">/年（月額換算 ¥490）</p>
+              <ul class="space-y-3 mb-6 text-sm">
+                <li class="flex items-center gap-2">
+                  <i class="fas fa-star text-yellow-300"></i> <strong>月額の半額でお得！</strong>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fas fa-check text-green-300"></i> 無制限いいね
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fas fa-check text-green-300"></i> 動画投稿OK
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fas fa-check text-green-300"></i> お気に入り管理
+                </li>
+                <li class="flex items-center gap-2">
+                  <i class="fas fa-check text-green-300"></i> 広告非表示
+                </li>
+              </ul>
+              <button onclick="startCheckout('annual')" class="btn w-full bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold shadow-lg">
+                <i class="fas fa-crown mr-2"></i>年間プランを始める
+              </button>
+              <p class="text-xs text-center mt-2 opacity-80">
+                <i class="fas fa-shield-alt mr-1"></i>いつでも解約可能
+              </p>
+            </div>
           </div>
+          
+          <p class="text-center text-xs text-gray-500 mt-6">
+            <i class="fas fa-lock mr-1"></i>安全なStripe決済 | 自動更新（解約可能）
+          </p>
         </div>
       </section>
 
@@ -1758,88 +1850,145 @@ function toggleTestimonialsSection() {
 // ============ Pricing Modal ============
 function showPricingModal() {
   const modal = document.getElementById('pricing-modal');
+  const currentPlan = state.currentUser?.membership_type || 'free';
+  
   modal.innerHTML = `
-    <div class="modal-content" style="max-width: 380px; width: 90%;">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold">プレミアムプラン</h3>
+    <div class="modal-content" style="max-width: 720px; width: 95%;">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold text-gray-900">
+          <i class="fas fa-crown text-yellow-500 mr-2"></i>
+          料金プラン
+        </h3>
         <button onclick="closeModal('pricing-modal')" class="text-gray-400 hover:text-gray-600">
-          <i class="fas fa-times"></i>
+          <i class="fas fa-times text-xl"></i>
         </button>
       </div>
       
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg mb-4">
-        <div class="text-center mb-3">
-          <div class="text-2xl font-bold text-purple-600 mb-1">$20<span class="text-sm font-normal">/月</span></div>
-          <p class="text-xs text-gray-600">15日間無料トライアル</p>
+      <!-- Plan Cards -->
+      <div class="grid md:grid-cols-3 gap-4">
+        <!-- Free Plan -->
+        <div class="border-2 ${currentPlan === 'free' ? 'border-green-500 bg-green-50' : 'border-gray-200'} rounded-xl p-5 relative">
+          ${currentPlan === 'free' ? '<div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">現在のプラン</div>' : ''}
+          <div class="text-center mb-4">
+            <h4 class="text-lg font-bold text-gray-800">🆓 フリー</h4>
+            <div class="text-3xl font-bold text-gray-800 mt-2">¥0</div>
+            <p class="text-sm text-gray-500">永久無料</p>
+          </div>
+          <ul class="space-y-2 text-sm mb-6">
+            <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> 動画閲覧</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> 1日1いいね</li>
+            <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times"></i> お気に入り管理</li>
+            <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times"></i> 動画投稿</li>
+            <li class="flex items-center gap-2 text-gray-400"><i class="fas fa-times"></i> 広告非表示</li>
+          </ul>
+          <button disabled class="w-full py-2 px-4 bg-gray-100 text-gray-500 rounded-lg cursor-not-allowed">
+            ${currentPlan === 'free' ? '現在のプラン' : '基本プラン'}
+          </button>
         </div>
         
-        <ul class="space-y-1 text-xs">
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> 動画投稿無制限</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> いいね・お気に入り機能</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> 広告非表示</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> AIグレード判定機能</li>
-          <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> 優先サポート</li>
-        </ul>
+        <!-- Monthly Plan -->
+        <div class="border-2 ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'monthly' ? 'border-purple-500 bg-purple-50' : 'border-gray-200'} rounded-xl p-5 relative">
+          ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'monthly' ? '<div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">現在のプラン</div>' : ''}
+          <div class="text-center mb-4">
+            <h4 class="text-lg font-bold text-purple-700">👑 プレミアム月額</h4>
+            <div class="text-3xl font-bold text-purple-600 mt-2">¥980</div>
+            <p class="text-sm text-gray-500">/月</p>
+          </div>
+          <ul class="space-y-2 text-sm mb-6">
+            <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 動画閲覧</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> <strong>無制限いいね</strong></li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> お気に入り管理</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 動画投稿</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600"></i> 広告非表示</li>
+          </ul>
+          <button onclick="startCheckout('monthly')" class="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition ${currentPlan === 'premium' ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPlan === 'premium' ? 'disabled' : ''}>
+            <i class="fas fa-credit-card mr-2"></i>
+            ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'monthly' ? '契約中' : '月額プランを始める'}
+          </button>
+        </div>
+        
+        <!-- Annual Plan (50% OFF) -->
+        <div class="border-2 ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'border-yellow-500 bg-yellow-50' : 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50'} rounded-xl p-5 relative shadow-lg">
+          <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+            ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? '現在のプラン' : '🎉 50%OFF 一番人気！'}
+          </div>
+          <div class="text-center mb-4">
+            <h4 class="text-lg font-bold text-orange-700">🏆 プレミアム年間</h4>
+            <div class="text-3xl font-bold text-orange-600 mt-2">¥5,880</div>
+            <p class="text-sm text-gray-500">/年（月額換算 ¥490）</p>
+            <div class="mt-2 text-xs">
+              <span class="line-through text-gray-400">¥11,760/年</span>
+              <span class="ml-2 text-red-500 font-bold">5,880円お得！</span>
+            </div>
+          </div>
+          <ul class="space-y-2 text-sm mb-6">
+            <li class="flex items-center gap-2"><i class="fas fa-check text-orange-600"></i> 動画閲覧</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-orange-600"></i> <strong>無制限いいね</strong></li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-orange-600"></i> お気に入り管理</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-orange-600"></i> 動画投稿</li>
+            <li class="flex items-center gap-2"><i class="fas fa-check text-orange-600"></i> 広告非表示</li>
+            <li class="flex items-center gap-2"><i class="fas fa-star text-yellow-500"></i> <strong class="text-orange-600">月額の半額でお得！</strong></li>
+          </ul>
+          <button onclick="startCheckout('annual')" class="w-full py-3 px-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold rounded-lg transition shadow-md ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'disabled' : ''}>
+            <i class="fas fa-crown mr-2"></i>
+            ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? '契約中' : '年間プランを始める'}
+          </button>
+        </div>
       </div>
       
-      <form onsubmit="handlePremiumSubscribe(event)" class="space-y-3">
-        ${!state.currentUser ? `
-          <div>
-            <label class="text-sm">ユーザー名</label>
-            <input type="text" name="username" required class="text-sm">
-          </div>
-          <div>
-            <label class="text-sm">メールアドレス</label>
-            <input type="email" name="email" required class="text-sm">
-          </div>
-          <div>
-            <label class="text-sm">パスワード</label>
-            <input type="password" name="password" required class="text-sm">
-          </div>
-        ` : ''}
-        
-        <div>
-          <label class="text-sm">クレジットカード番号</label>
-          <input type="text" placeholder="1234 5678 9012 3456" required class="text-sm">
+      ${!state.currentUser ? `
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+          <p class="text-sm text-blue-700">
+            <i class="fas fa-info-circle mr-1"></i>
+            プランを選択するには、まず<button onclick="closeModal('pricing-modal'); showAuthModal('login');" class="font-bold underline hover:text-blue-900">ログイン</button>してください。
+          </p>
         </div>
-        
-        <div>
-          <label class="text-sm">有効期限</label>
-          <input type="text" placeholder="MM/YY" required class="text-sm">
-        </div>
-        
-        <div>
-          <label class="text-sm">CVV</label>
-          <input type="text" placeholder="123" required class="text-sm">
-        </div>
-        
-        <p class="text-xs text-gray-600">
-          15日間の無料トライアル後、自動的に月額$20が請求されます。いつでもキャンセル可能です。
-        </p>
-        
-        <button type="submit" class="btn btn-primary w-full text-sm py-2">
-          <i class="fas fa-crown"></i>
-          15日間無料で始める
-        </button>
-      </form>
+      ` : ''}
       
-      <p class="text-xs text-center text-gray-500 mt-3">
-        お支払い情報は安全に暗号化されて処理されます
-      </p>
+      <div class="mt-6 text-center text-xs text-gray-500">
+        <p>🔒 お支払いは <a href="https://stripe.com" target="_blank" class="text-purple-600 hover:underline">Stripe</a> による安全な決済システムで処理されます</p>
+        <p class="mt-1">いつでもキャンセル可能・自動更新あり</p>
+      </div>
     </div>
   `;
   modal.classList.add('active');
+}
+
+// Start Stripe Checkout
+async function startCheckout(planType) {
+  if (!state.currentUser) {
+    closeModal('pricing-modal');
+    showAuthModal('login');
+    showToast('プランを選択するにはログインが必要です', 'info');
+    return;
+  }
+  
+  try {
+    showToast('決済画面を準備中...', 'info');
+    
+    const response = await axios.post('/api/subscription/checkout', {
+      plan_type: planType
+    });
+    
+    if (response.data.checkout_url) {
+      // Redirect to Stripe Checkout
+      window.location.href = response.data.checkout_url;
+    } else {
+      showToast('決済画面の準備に失敗しました', 'error');
+    }
+  } catch (error) {
+    console.error('Checkout error:', error);
+    const message = error.response?.data?.error || '決済処理に失敗しました';
+    showToast(message, 'error');
+  }
 }
 
 async function handlePremiumSubscribe(event) {
   event.preventDefault();
   showToast('プレミアムプランへの登録処理を開始します...', 'info');
   
-  // Simulate payment processing
-  setTimeout(() => {
-    closeModal('pricing-modal');
-    showToast('プレミアムプランに登録しました！15日間無料でお試しいただけます', 'success');
-  }, 1500);
+  // Redirect to checkout
+  startCheckout('monthly');
 }
 
 // ============ Auth Modal (Continuing from previous implementation) ============
@@ -3046,12 +3195,234 @@ function renderMyPage() {
                 </div>
               </div>
             </div>
+            
+            <!-- Subscription Management Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4">
+                <h3 class="text-lg font-bold text-white flex items-center">
+                  <i class="fas fa-crown mr-2"></i>
+                  購読プラン管理
+                </h3>
+              </div>
+              <div class="p-6" id="subscription-management">
+                <div class="text-center py-4">
+                  <i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i>
+                  <p class="text-sm text-gray-500 mt-2">読み込み中...</p>
+                </div>
+              </div>
+            </div>
           </div>
           
         </div>
       </main>
     </div>
   `;
+}
+
+// Load subscription data for My Page
+async function loadSubscriptionManagement() {
+  const container = document.getElementById('subscription-management');
+  if (!container) return;
+  
+  try {
+    const response = await axios.get('/api/subscription/current');
+    const { subscription, user, is_expired } = response.data;
+    
+    let content = '';
+    
+    if (user.membership_type === 'premium' && subscription && !is_expired) {
+      // Active subscription
+      const periodEnd = new Date(subscription.current_period_end);
+      const planName = subscription.plan_type === 'annual' ? '年間プラン' : '月額プラン';
+      const price = subscription.plan_type === 'annual' ? '¥5,880/年' : '¥980/月';
+      
+      content = \`
+        <div class="space-y-4">
+          <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-600">現在のプラン</span>
+              <span class="px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">アクティブ</span>
+            </div>
+            <p class="text-xl font-bold text-purple-700">
+              <i class="fas fa-crown text-yellow-500 mr-1"></i>
+              プレミアム\${planName}
+            </p>
+            <p class="text-sm text-gray-600 mt-1">\${price}</p>
+          </div>
+          
+          <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <p class="text-xs text-gray-500 mb-1">次回更新日</p>
+            <p class="text-lg font-semibold text-gray-900">
+              <i class="fas fa-calendar text-gray-600 mr-2"></i>
+              \${periodEnd.toLocaleDateString('ja-JP')}
+            </p>
+            \${subscription.cancel_at_period_end ? \`
+              <p class="text-xs text-red-600 mt-1">
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                この日にフリープランに戻ります
+              </p>
+            \` : ''}
+          </div>
+          
+          <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-700">自動更新</p>
+                <p class="text-xs text-gray-500">\${subscription.auto_renew ? 'プランは自動更新されます' : '期限終了後フリープランに戻ります'}</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" \${subscription.auto_renew ? 'checked' : ''} onchange="toggleAutoRenew(this.checked)">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <button onclick="showPricingModal()" class="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm">
+              <i class="fas fa-exchange-alt mr-1"></i>
+              プラン変更
+            </button>
+            <button onclick="showCancelSubscriptionModal()" class="flex-1 py-2 px-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm">
+              <i class="fas fa-times-circle mr-1"></i>
+              解約
+            </button>
+          </div>
+        </div>
+      \`;
+    } else {
+      // Free plan or expired
+      content = \`
+        <div class="space-y-4">
+          <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+            <p class="text-3xl mb-2">🆓</p>
+            <p class="text-lg font-bold text-gray-700">フリープラン</p>
+            <p class="text-sm text-gray-500 mt-1">基本機能のみ利用可能</p>
+          </div>
+          
+          \${is_expired ? \`
+            <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p class="text-sm text-red-700">
+                <i class="fas fa-exclamation-circle mr-1"></i>
+                以前の購読が期限切れになりました
+              </p>
+            </div>
+          \` : ''}
+          
+          <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+            <h4 class="font-bold text-purple-700 mb-2">
+              <i class="fas fa-crown text-yellow-500 mr-1"></i>
+              プレミアムにアップグレード
+            </h4>
+            <ul class="text-sm text-gray-600 space-y-1">
+              <li><i class="fas fa-check text-green-500 mr-1"></i> 無制限いいね</li>
+              <li><i class="fas fa-check text-green-500 mr-1"></i> 動画投稿</li>
+              <li><i class="fas fa-check text-green-500 mr-1"></i> お気に入り管理</li>
+              <li><i class="fas fa-check text-green-500 mr-1"></i> 広告非表示</li>
+            </ul>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button onclick="startCheckout('monthly')" class="py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium">
+                月額 ¥980
+              </button>
+              <button onclick="startCheckout('annual')" class="py-2 px-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg text-sm font-medium">
+                年間 ¥5,880
+                <span class="block text-xs opacity-80">50%OFF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      \`;
+    }
+    
+    container.innerHTML = content;
+  } catch (error) {
+    console.error('Failed to load subscription:', error);
+    container.innerHTML = \`
+      <div class="text-center py-4 text-red-500">
+        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+        <p class="text-sm">購読情報の読み込みに失敗しました</p>
+        <button onclick="loadSubscriptionManagement()" class="mt-2 text-purple-600 hover:underline text-sm">
+          再読み込み
+        </button>
+      </div>
+    \`;
+  }
+}
+
+// Toggle auto-renewal
+async function toggleAutoRenew(autoRenew) {
+  try {
+    showToast('設定を更新中...', 'info');
+    
+    const response = await axios.post('/api/subscription/toggle-auto-renew', {
+      auto_renew: autoRenew
+    });
+    
+    showToast(response.data.message, 'success');
+    loadSubscriptionManagement();
+  } catch (error) {
+    console.error('Failed to toggle auto-renew:', error);
+    showToast(error.response?.data?.error || '設定の更新に失敗しました', 'error');
+    loadSubscriptionManagement();
+  }
+}
+
+// Show cancel subscription modal
+function showCancelSubscriptionModal() {
+  const modal = document.getElementById('pricing-modal');
+  modal.innerHTML = \`
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-900">購読を解約しますか？</h3>
+        <p class="text-sm text-gray-600 mt-2">解約すると以下の機能が使えなくなります：</p>
+      </div>
+      
+      <ul class="text-sm text-gray-600 space-y-2 mb-6 bg-gray-50 p-4 rounded-lg">
+        <li><i class="fas fa-times text-red-500 mr-2"></i>無制限いいね</li>
+        <li><i class="fas fa-times text-red-500 mr-2"></i>動画投稿</li>
+        <li><i class="fas fa-times text-red-500 mr-2"></i>お気に入り管理</li>
+        <li><i class="fas fa-times text-red-500 mr-2"></i>広告非表示</li>
+      </ul>
+      
+      <div class="space-y-3">
+        <button onclick="cancelSubscription(false)" class="w-full py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg">
+          <i class="fas fa-clock mr-2"></i>
+          期限終了時に解約
+        </button>
+        <button onclick="cancelSubscription(true)" class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg">
+          <i class="fas fa-times-circle mr-2"></i>
+          今すぐ解約
+        </button>
+        <button onclick="closeModal('pricing-modal')" class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">
+          キャンセル
+        </button>
+      </div>
+    </div>
+  \`;
+  modal.classList.add('active');
+}
+
+// Cancel subscription
+async function cancelSubscription(immediate) {
+  try {
+    showToast('解約処理中...', 'info');
+    
+    const response = await axios.post('/api/subscription/cancel', {
+      immediate: immediate
+    });
+    
+    closeModal('pricing-modal');
+    showToast(response.data.message, 'success');
+    
+    // Refresh user data
+    await checkAuth();
+    loadSubscriptionManagement();
+  } catch (error) {
+    console.error('Failed to cancel subscription:', error);
+    showToast(error.response?.data?.error || '解約処理に失敗しました', 'error');
+  }
 }
 
 // ============ Admin Page (Simplified) ============
