@@ -3236,7 +3236,7 @@ async function loadSubscriptionManagement() {
       const planName = subscription.plan_type === 'annual' ? '年間プラン' : '月額プラン';
       const price = subscription.plan_type === 'annual' ? '¥5,880/年' : '¥980/月';
       
-      content = \`
+      content = `
         <div class="space-y-4">
           <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
             <div class="flex items-center justify-between mb-2">
@@ -3245,33 +3245,33 @@ async function loadSubscriptionManagement() {
             </div>
             <p class="text-xl font-bold text-purple-700">
               <i class="fas fa-crown text-yellow-500 mr-1"></i>
-              プレミアム\${planName}
+              プレミアム${planName}
             </p>
-            <p class="text-sm text-gray-600 mt-1">\${price}</p>
+            <p class="text-sm text-gray-600 mt-1">${price}</p>
           </div>
           
           <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p class="text-xs text-gray-500 mb-1">次回更新日</p>
             <p class="text-lg font-semibold text-gray-900">
               <i class="fas fa-calendar text-gray-600 mr-2"></i>
-              \${periodEnd.toLocaleDateString('ja-JP')}
+              ${periodEnd.toLocaleDateString('ja-JP')}
             </p>
-            \${subscription.cancel_at_period_end ? \`
+            ${subscription.cancel_at_period_end ? `
               <p class="text-xs text-red-600 mt-1">
                 <i class="fas fa-exclamation-triangle mr-1"></i>
                 この日にフリープランに戻ります
               </p>
-            \` : ''}
+            ` : ''}
           </div>
           
           <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-gray-700">自動更新</p>
-                <p class="text-xs text-gray-500">\${subscription.auto_renew ? 'プランは自動更新されます' : '期限終了後フリープランに戻ります'}</p>
+                <p class="text-xs text-gray-500">${subscription.auto_renew ? 'プランは自動更新されます' : '期限終了後フリープランに戻ります'}</p>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" class="sr-only peer" \${subscription.auto_renew ? 'checked' : ''} onchange="toggleAutoRenew(this.checked)">
+                <input type="checkbox" class="sr-only peer" ${subscription.auto_renew ? 'checked' : ''} onchange="toggleAutoRenew(this.checked)">
                 <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
               </label>
             </div>
@@ -3288,10 +3288,10 @@ async function loadSubscriptionManagement() {
             </button>
           </div>
         </div>
-      \`;
+      `;
     } else {
       // Free plan or expired
-      content = \`
+      content = `
         <div class="space-y-4">
           <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
             <p class="text-3xl mb-2">🆓</p>
@@ -3299,14 +3299,14 @@ async function loadSubscriptionManagement() {
             <p class="text-sm text-gray-500 mt-1">基本機能のみ利用可能</p>
           </div>
           
-          \${is_expired ? \`
+          ${is_expired ? `
             <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
               <p class="text-sm text-red-700">
                 <i class="fas fa-exclamation-circle mr-1"></i>
                 以前の購読が期限切れになりました
               </p>
             </div>
-          \` : ''}
+          ` : ''}
           
           <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
             <h4 class="font-bold text-purple-700 mb-2">
@@ -3330,13 +3330,13 @@ async function loadSubscriptionManagement() {
             </div>
           </div>
         </div>
-      \`;
+      `;
     }
     
     container.innerHTML = content;
   } catch (error) {
     console.error('Failed to load subscription:', error);
-    container.innerHTML = \`
+    container.innerHTML = `
       <div class="text-center py-4 text-red-500">
         <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
         <p class="text-sm">購読情報の読み込みに失敗しました</p>
@@ -3344,7 +3344,7 @@ async function loadSubscriptionManagement() {
           再読み込み
         </button>
       </div>
-    \`;
+    `;
   }
 }
 
@@ -3369,7 +3369,7 @@ async function toggleAutoRenew(autoRenew) {
 // Show cancel subscription modal
 function showCancelSubscriptionModal() {
   const modal = document.getElementById('pricing-modal');
-  modal.innerHTML = \`
+  modal.innerHTML = `
     <div class="modal-content" style="max-width: 400px;">
       <div class="text-center mb-6">
         <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -3400,7 +3400,7 @@ function showCancelSubscriptionModal() {
         </button>
       </div>
     </div>
-  \`;
+  `;
   modal.classList.add('active');
 }
 
