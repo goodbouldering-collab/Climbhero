@@ -1091,6 +1091,13 @@ function renderHomePage() {
     <div id="upload-modal" class="modal"></div>
     <div id="video-modal" class="modal"></div>
     <div id="pricing-modal" class="modal"></div>
+    
+    <!-- News Modal -->
+    <div id="news-modal" class="modal">
+      <div id="news-modal-content" class="modal-content modal-video-content" style="max-width: 600px; padding: 0; overflow: hidden; border-radius: 16px;">
+        <!-- Content will be injected by showNewsModal() -->
+      </div>
+    </div>
   `;
 }
 
@@ -8127,7 +8134,7 @@ function renderFavoriteItem(item) {
     `;
   } else if (content_type === 'news') {
     return `
-      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer" onclick="window.open('${item.url}', '_blank')">
+      <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer" onclick="showNewsModal(${item.id})">
         <div class="flex gap-4">
           <div class="flex-shrink-0 w-40 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded overflow-hidden">
             ${item.image_url ? `
@@ -8271,7 +8278,7 @@ function renderUnifiedFavoriteCard(item) {
   } else if (content_type === 'news') {
     return `
       <div class="scroll-item">
-        <div class="video-card-compact" onclick="window.open('${item.url}', '_blank')">
+        <div class="video-card-compact" onclick="showNewsModal(${item.id})">
           ${item.image_url ? `
             <div class="video-thumbnail">
               <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
