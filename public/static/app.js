@@ -526,6 +526,77 @@ function renderHomePage() {
       </div>
       ` : ''}
       
+      <!-- ★ MY FAVORITES SECTION - TOP PRIORITY FOR LOGGED IN USERS ★ -->
+      ${state.currentUser && state.allFavorites && state.allFavorites.length > 0 ? `
+      <section class="py-6 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 border-b-2 border-yellow-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <!-- Section Header -->
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                <i class="fas fa-star text-white text-lg"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-gray-900">${state.currentUser.username}さんのお気に入り</h2>
+                <p class="text-sm text-gray-600">動画・ブログ・ニュースをまとめて管理</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <!-- Category Counters -->
+              <div class="hidden sm:flex items-center gap-2">
+                <span class="px-3 py-1.5 bg-white rounded-full border border-red-200 shadow-sm text-sm font-medium">
+                  <i class="fas fa-video text-red-500 mr-1"></i>
+                  ${state.favoriteCounts.videos || 0}
+                </span>
+                <span class="px-3 py-1.5 bg-white rounded-full border border-indigo-200 shadow-sm text-sm font-medium">
+                  <i class="fas fa-blog text-indigo-500 mr-1"></i>
+                  ${state.favoriteCounts.blogs || 0}
+                </span>
+                <span class="px-3 py-1.5 bg-white rounded-full border border-blue-200 shadow-sm text-sm font-medium">
+                  <i class="fas fa-newspaper text-blue-500 mr-1"></i>
+                  ${state.favoriteCounts.news || 0}
+                </span>
+              </div>
+              <button onclick="navigateTo('favorites')" class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md font-medium">
+                <i class="fas fa-th-list mr-1"></i>
+                すべて見る
+              </button>
+            </div>
+          </div>
+          
+          <!-- Total Count Badge (Mobile) -->
+          <div class="sm:hidden flex items-center gap-2 mb-4 text-sm">
+            <span class="px-2 py-1 bg-white rounded border text-red-600"><i class="fas fa-video"></i> ${state.favoriteCounts.videos || 0}</span>
+            <span class="px-2 py-1 bg-white rounded border text-indigo-600"><i class="fas fa-blog"></i> ${state.favoriteCounts.blogs || 0}</span>
+            <span class="px-2 py-1 bg-white rounded border text-blue-600"><i class="fas fa-newspaper"></i> ${state.favoriteCounts.news || 0}</span>
+          </div>
+          
+          <!-- Favorites Carousel -->
+          <div class="carousel-container relative" id="my-favorites-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('my-favorites-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="my-favorites-scroll">
+              ${state.allFavorites.slice(0, 20).map(item => renderUnifiedFavoriteCard(item)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('my-favorites-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          
+          <!-- Empty State Hint (if very few favorites) -->
+          ${state.allFavorites.length < 3 ? `
+          <div class="mt-4 p-3 bg-white/80 rounded-lg border border-yellow-200 text-center">
+            <p class="text-sm text-gray-600">
+              <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
+              動画やニュースの<i class="fas fa-star text-yellow-500 mx-1"></i>ボタンでお気に入り登録できます
+            </p>
+          </div>
+          ` : ''}
+        </div>
+      </section>
+      ` : ''}
+      
       <!-- How to Use ClimbHero Section (Collapsible) -->
       <div class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -695,50 +766,6 @@ function renderHomePage() {
           </div>
         </div>
       </section>
-      
-      <!-- Unified Favorites Section - Videos, Blogs, News (Mixed) -->
-      ${state.currentUser && state.allFavorites && state.allFavorites.length > 0 ? `
-      <section class="py-6 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between mb-4">
-            <div class="section-title">
-              <i class="fas fa-star text-yellow-500"></i>
-              <span>${i18n.t('section.favorites')} - すべて</span>
-            </div>
-            <div class="flex items-center gap-3 text-sm">
-              <span class="px-3 py-1 bg-white rounded-full border border-purple-200">
-                <i class="fas fa-video text-red-500 mr-1"></i>
-                ${state.favoriteCounts.videos || 0}
-              </span>
-              <span class="px-3 py-1 bg-white rounded-full border border-purple-200">
-                <i class="fas fa-blog text-indigo-500 mr-1"></i>
-                ${state.favoriteCounts.blogs || 0}
-              </span>
-              <span class="px-3 py-1 bg-white rounded-full border border-purple-200">
-                <i class="fas fa-newspaper text-blue-500 mr-1"></i>
-                ${state.favoriteCounts.news || 0}
-              </span>
-              <button onclick="navigateTo('favorites')" class="px-4 py-1 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-colors">
-                <i class="fas fa-arrow-right mr-1"></i>
-                すべて見る
-              </button>
-            </div>
-          </div>
-          
-          <div class="carousel-container" id="favorites-carousel">
-            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('favorites-carousel', -1)">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="horizontal-scroll" id="favorites-scroll">
-              ${state.allFavorites.slice(0, 20).map(item => renderUnifiedFavoriteCard(item)).join('')}
-            </div>
-            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('favorites-carousel', 1)">
-              <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-      </section>
-      ` : ''}
       
       <!-- Rankings Section - いいね数ランキング -->
       ${state.topLikedVideos && state.topLikedVideos.length > 0 ? `
