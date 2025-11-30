@@ -7,6 +7,7 @@ const state = {
   favoriteCounts: { total: 0, videos: 0, blogs: 0, news: 0 },
   trendingVideos: [],
   topLikedVideos: [],
+  recentLikes: [], // みんなのいいね
   rankings: { daily: [], weekly: [], monthly: [], yearly: [] },
   currentRankingPeriod: 'all', // 'daily', 'weekly', 'monthly', '6months', '1year', 'all'
   blogPosts: [],
@@ -205,44 +206,72 @@ function updateHeroSlide() {
 async function loadInitialData() {
   try {
     const lang = state.currentLanguage || 'ja'
-    const [videosRes, rankingsRes, blogRes, announcementsRes, trendingRes, testimonialsRes, topLikedRes, adBannersHeroRes, adBannersBlogRes, blogGenresRes, newsRes, newsCategoriesRes] = await Promise.all([
+    
+    // Phase 1: Load critical data first (visible above fold)
+    const [videosRes, topLikedRes, announcementsRes, newsRes] = await Promise.all([
       axios.get(`/api/videos?limit=20&lang=${lang}`),
-      axios.get('/api/rankings/weekly?limit=20'),
-      axios.get(`/api/blog?lang=${lang}`),
-      axios.get(`/api/announcements?lang=${lang}`),
-      axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
-      axios.get('/api/testimonials'),
       axios.get(`/api/videos/top-liked?limit=20&period=all&lang=${lang}`),
-      axios.get('/api/ad-banners?position=hero_bottom'),
-      axios.get('/api/ad-banners?position=blog_top'),
-      axios.get('/api/blog/genres'),
-      axios.get(`/api/news?limit=10&lang=${lang}`),
-      axios.get('/api/news/meta/categories')
+      axios.get(`/api/announcements?lang=${lang}`),
+      axios.get(`/api/news?limit=10&lang=${lang}`)
     ]);
     
     state.videos = videosRes.data.videos || [];
-    state.rankings.weekly = rankingsRes.data || [];
-    state.blogPosts = blogRes.data || [];
-    state.announcements = announcementsRes.data || [];
-    state.trendingVideos = trendingRes.data.videos || [];
-    state.testimonials = testimonialsRes.data.testimonials || [];
     state.topLikedVideos = topLikedRes.data.videos || [];
     state.currentRankingPeriod = 'all';
-    state.adBanners.hero_bottom = adBannersHeroRes.data || [];
-    state.adBanners.blog_top = adBannersBlogRes.data || [];
-    state.blogGenres = blogGenresRes.data || [];
+    state.announcements = announcementsRes.data || [];
     state.newsArticles = newsRes.data.articles || [];
-    state.newsCategories = newsCategoriesRes.data.categories || [];
-    state.newsGenres = newsCategoriesRes.data.genres || [];
     
-    // Load user like status and favorites for all videos
+    // Load user favorites early if logged in
     if (state.currentUser) {
-      await loadUserLikeStatus();
-      await loadUserFavorites();
+      loadUserFavorites(); // Don't await, run in background
     }
+    
+    // Phase 2: Load secondary data in background (non-blocking)
+    loadSecondaryData(lang);
+    
   } catch (error) {
     console.error('Failed to load initial data:', error);
     showToast(i18n.t('toast.data_load_error'), 'error');
+  }
+}
+
+// Load secondary data in background for better performance
+async function loadSecondaryData(lang) {
+  try {
+    const [rankingsRes, blogRes, trendingRes, testimonialsRes, adBannersHeroRes, adBannersBlogRes, blogGenresRes, newsCategoriesRes, recentLikesRes] = await Promise.all([
+      axios.get('/api/rankings/weekly?limit=20'),
+      axios.get(`/api/blog?lang=${lang}`),
+      axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
+      axios.get('/api/testimonials'),
+      axios.get('/api/ad-banners?position=hero_bottom'),
+      axios.get('/api/ad-banners?position=blog_top'),
+      axios.get('/api/blog/genres'),
+      axios.get('/api/news/meta/categories'),
+      axios.get(`/api/videos/recent-likes?limit=20&lang=${lang}`)
+    ]);
+    
+    state.rankings.weekly = rankingsRes.data || [];
+    state.blogPosts = blogRes.data || [];
+    state.trendingVideos = trendingRes.data.videos || [];
+    state.testimonials = testimonialsRes.data.testimonials || [];
+    state.adBanners.hero_bottom = adBannersHeroRes.data || [];
+    state.adBanners.blog_top = adBannersBlogRes.data || [];
+    state.blogGenres = blogGenresRes.data || [];
+    state.newsCategories = newsCategoriesRes.data.categories || [];
+    state.newsGenres = newsCategoriesRes.data.genres || [];
+    state.recentLikes = recentLikesRes.data.videos || [];
+    
+    // Load user like status after secondary data
+    if (state.currentUser) {
+      loadUserLikeStatus(); // Don't await
+    }
+    
+    // Re-render to show secondary content
+    if (state.currentView === 'home') {
+      renderHomePage();
+    }
+  } catch (error) {
+    console.error('Failed to load secondary data:', error);
   }
 }
 
@@ -767,14 +796,14 @@ function renderHomePage() {
         </div>
       </section>
       
-      <!-- Rankings Section - いいね数ランキング -->
+      <!-- Rankings Section - 投稿動画ランキング -->
       ${state.topLikedVideos && state.topLikedVideos.length > 0 ? `
       <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-trophy text-yellow-500"></i>
-              <span>いいね数ランキング</span>
+              <span>投稿動画ランキング</span>
             </div>
           </div>
           
@@ -825,6 +854,33 @@ function renderHomePage() {
               ${state.trendingVideos.map(video => renderVideoCardWide(video)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('trending-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      ` : ''}
+      
+      <!-- みんなのいいね Section (Recent Likes from All Users) -->
+      ${state.recentLikes && state.recentLikes.length > 0 ? `
+      <section class="py-6 bg-gradient-to-r from-pink-50 to-red-50 border-b border-pink-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-4">
+            <div class="section-title">
+              <i class="fas fa-heart text-red-500"></i>
+              <span>みんなのいいね</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1">ユーザーが最近いいねした動画</p>
+          </div>
+          
+          <div class="carousel-container" id="recent-likes-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('recent-likes-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="recent-likes-scroll">
+              ${state.recentLikes.map(video => renderRecentLikeCard(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('recent-likes-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
@@ -1240,7 +1296,7 @@ function renderRankingCard(video, rank) {
     <div class="scroll-item">
       <div class="video-card-compact video-card-ranking">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${thumbnailUrl}" alt="${video.title}" 
+          <img loading="lazy" decoding="async" src="${thumbnailUrl}" alt="${video.title}" 
                onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 right-2 media-source-badge">
@@ -1299,7 +1355,7 @@ function renderVideoCard(video) {
     <div class="scroll-item">
       <div class="video-card-compact">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${thumbnailUrl}" alt="${video.title}" 
+          <img loading="lazy" decoding="async" src="${thumbnailUrl}" alt="${video.title}" 
                onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 left-2 media-source-badge">
@@ -1361,7 +1417,7 @@ function renderVideoCardWide(video) {
     <div class="scroll-item-wide">
       <div class="video-card-compact">
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
-          <img src="${thumbnailUrl}" alt="${video.title}" 
+          <img loading="lazy" decoding="async" src="${thumbnailUrl}" alt="${video.title}" 
                onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
           <div class="duration-badge">${video.duration}</div>
           <span class="absolute top-2 left-2 media-source-badge">
@@ -1402,6 +1458,72 @@ function renderVideoCardWide(video) {
                 title="${i18n.t('common.share')}">
                 <i class="fas fa-share-alt"></i>
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Render card for recent likes (みんなのいいね)
+function renderRecentLikeCard(video) {
+  const thumbnail = getThumbnailUrl(video.media_source, video.thumbnail_url, video.external_video_id)
+  const isLiked = state.currentUser && video.is_liked
+  const isFavorited = state.currentUser && video.is_favorited
+  const likedAt = video.liked_at ? formatTimeAgo(new Date(video.liked_at)) : ''
+  
+  return `
+    <div class="scroll-item">
+      <div class="video-card-compact cursor-pointer" onclick="openVideoModal(${video.id})">
+        <div class="video-thumbnail relative">
+          <img loading="lazy" decoding="async" src="${thumbnail}" alt="${video.title}" class="w-full h-full object-cover"
+             onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
+          
+          <!-- Like badge -->
+          <div class="absolute top-2 left-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full font-semibold shadow-lg flex items-center gap-1">
+            <i class="fas fa-heart"></i>
+            <span>${video.likes || 0}</span>
+          </div>
+          
+          <!-- Platform badge -->
+          <div class="absolute top-2 right-2 px-2 py-1 bg-black/70 text-white text-xs rounded">
+            <i class="${getMediaIcon(video.media_source)}"></i>
+          </div>
+          
+          <!-- Liked by user info -->
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+            <div class="flex items-center gap-2 text-white text-xs">
+              <i class="fas fa-user-circle"></i>
+              <span class="truncate">${video.liked_by_username || 'ユーザー'}</span>
+              <span class="text-gray-300">${likedAt}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="video-info-compact">
+          <div class="video-title-compact line-clamp-2 font-bold">${video.title}</div>
+          <div class="video-meta-compact text-xs mt-1">
+            <span><i class="fas fa-eye"></i> ${(video.views || 0).toLocaleString()}</span>
+            ${video.grade ? `<span class="font-bold text-purple-600">${video.grade}</span>` : ''}
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-xs text-gray-500 truncate">
+              <i class="fas fa-map-marker-alt"></i> ${video.location || video.channel_name || ''}
+            </span>
+            <div class="flex gap-1">
+              <button 
+                class="like-btn ${isLiked ? 'liked' : ''}" 
+                onclick="event.stopPropagation(); handleLike(event, ${video.id})">
+                <i class="fas fa-heart"></i>
+              </button>
+              ${state.currentUser ? `
+              <button 
+                class="favorite-btn ${isFavorited ? 'favorited' : ''}" 
+                onclick="event.stopPropagation(); handleFavorite(event, ${video.id})">
+                <i class="fas fa-star"></i>
+              </button>
+              ` : ''}
             </div>
           </div>
         </div>
@@ -1509,7 +1631,7 @@ function renderBlogCard(post) {
       <div class="video-card-compact" onclick="navigateTo('blog/${post.id}')">
         ${post.image_url ? `
           <div class="video-thumbnail">
-            <img src="${post.image_url}" alt="${post.title}">
+            <img loading="lazy" decoding="async" src="${post.image_url}" alt="${post.title}">
           </div>
         ` : `
           <div class="video-thumbnail" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"></div>
@@ -2970,7 +3092,7 @@ async function renderBlogDetail() {
 
       <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         ${post.image_url ? `
-          <img src="${post.image_url}" alt="${post.title}" class="w-full h-96 object-cover rounded-2xl mb-8">
+          <img loading="lazy" decoding="async" src="${post.image_url}" alt="${post.title}" class="w-full h-96 object-cover rounded-2xl mb-8">
         ` : ''}
         
         <h1 class="text-4xl font-bold text-gray-900 mb-4">${post.title}</h1>
@@ -3477,7 +3599,6 @@ function renderAdminPage() {
               <button onclick="navigateTo('home')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <i class="fas fa-mountain text-lg text-gray-700"></i>
                 <span class="text-lg font-bold text-gray-800">ClimbHero</span>
-                <span class="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded-full font-semibold">ADMIN</span>
               </button>
             </div>
             
@@ -3514,7 +3635,7 @@ function renderAdminPage() {
         <!-- Page Title -->
         <div class="mb-6">
           <h1 class="text-2xl font-bold text-gray-800 mb-1">管理ページ</h1>
-          <p class="text-sm text-gray-600">ClimbHeroの運営管理システム</p>
+          <p class="text-sm text-gray-600">ClimbHero 運営管理</p>
         </div>
 
         <!-- Quick Stats -->
@@ -3730,7 +3851,7 @@ function showSearchResults(results) {
           <h4 class="font-semibold text-sm text-gray-700 mb-2">${i18n.t('search.videos')}</h4>
           ${results.videos.map(video => `
             <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer" onclick="showVideoDetail(${video.id})">
-              <img src="${video.thumbnail_url}" class="w-16 h-12 object-cover rounded" alt="${video.title}">
+              <img loading="lazy" decoding="async" src="${video.thumbnail_url}" class="w-16 h-12 object-cover rounded" alt="${video.title}">
               <div class="flex-1 min-w-0">
                 <p class="font-medium text-sm text-gray-900 truncate">${video.title}</p>
                 <p class="text-xs text-gray-500">${video.channel_name}</p>
@@ -5505,7 +5626,7 @@ function renderVideosCarousel(videos) {
   container.innerHTML = videos.map((video, index) => `
     <div class="admin-card" style="min-width: 280px; max-width: 280px; animation: fadeInUp 0.4s ease-out ${index * 0.05}s;">
       <div class="relative mb-3">
-        <img src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-40 object-cover rounded-lg" />
+        <img loading="lazy" decoding="async" src="${video.thumbnail_url}" alt="${video.title}" class="w-full h-40 object-cover rounded-lg" />
         <span class="absolute top-2 right-2 px-2 py-1 text-xs font-bold rounded" style="background: rgba(0,0,0,0.7); color: white;">
           ${video.duration || 'N/A'}
         </span>
@@ -8093,7 +8214,7 @@ function renderFavoriteItem(item) {
       <div class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 cursor-pointer" onclick="openVideoModal(${item.id})">
         <div class="flex gap-4">
           <div class="flex-shrink-0 w-40 h-24 bg-gray-200 rounded overflow-hidden">
-            <img src="${thumbnail}" alt="${item.title}" class="w-full h-full object-cover">
+            <img loading="lazy" decoding="async" src="${thumbnail}" alt="${item.title}" class="w-full h-full object-cover">
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between mb-2">
@@ -8127,7 +8248,7 @@ function renderFavoriteItem(item) {
         <div class="flex gap-4">
           <div class="flex-shrink-0 w-40 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded overflow-hidden">
             ${item.image_url ? `
-              <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
+              <img loading="lazy" decoding="async" src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
             ` : `
               <div class="w-full h-full flex items-center justify-center">
                 <i class="fas fa-blog text-4xl text-indigo-400"></i>
@@ -8165,7 +8286,7 @@ function renderFavoriteItem(item) {
         <div class="flex gap-4">
           <div class="flex-shrink-0 w-40 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded overflow-hidden">
             ${item.image_url ? `
-              <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
+              <img loading="lazy" decoding="async" src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
             ` : `
               <div class="w-full h-full flex items-center justify-center">
                 <i class="fas fa-newspaper text-4xl text-blue-400"></i>
@@ -8260,7 +8381,7 @@ function renderUnifiedFavoriteCard(item) {
       <div class="scroll-item">
         <div class="video-card-compact" onclick="openVideoModal(${item.id})">
           <div class="video-thumbnail">
-            <img src="${thumbnail}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/400x225?text=Video'">
+            <img loading="lazy" decoding="async" src="${thumbnail}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/400x225?text=Video'">
             <span class="absolute top-2 left-2 px-2 py-1 bg-red-600 text-white text-xs rounded-full font-semibold">
               <i class="fas fa-video"></i> 動画
             </span>
@@ -8281,7 +8402,7 @@ function renderUnifiedFavoriteCard(item) {
         <div class="video-card-compact" onclick="navigateTo('blog/${item.id}')">
           ${item.image_url ? `
             <div class="video-thumbnail">
-              <img src="${item.image_url}" alt="${item.title}">
+              <img loading="lazy" decoding="async" src="${item.image_url}" alt="${item.title}">
               <span class="absolute top-2 left-2 px-2 py-1 bg-indigo-600 text-white text-xs rounded-full font-semibold">
                 <i class="fas fa-blog"></i> ブログ
               </span>
@@ -8308,7 +8429,7 @@ function renderUnifiedFavoriteCard(item) {
         <div class="video-card-compact" onclick="showNewsModal(${item.id})">
           ${item.image_url ? `
             <div class="video-thumbnail">
-              <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
+              <img loading="lazy" decoding="async" src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover">
               <span class="absolute top-2 left-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
                 <i class="fas fa-newspaper"></i> ニュース
               </span>

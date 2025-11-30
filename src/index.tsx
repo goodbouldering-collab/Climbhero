@@ -466,6 +466,42 @@ app.get('/api/videos/top-liked', async (c) => {
   }
 })
 
+// Get recent likes from all users (みんなのいいね)
+app.get('/api/videos/recent-likes', async (c) => {
+  const { env } = c
+  const limit = parseInt(c.req.query('limit') || '20')
+  const lang = c.req.query('lang') || 'ja'
+  
+  try {
+    // Get recently liked videos with user info
+    const { results: recentLikes } = await env.DB.prepare(`
+      SELECT 
+        v.*,
+        ul.created_at as liked_at,
+        u.username as liked_by_username,
+        u.id as liked_by_user_id
+      FROM user_likes ul
+      JOIN videos v ON ul.video_id = v.id
+      JOIN users u ON ul.user_id = u.id
+      ORDER BY ul.created_at DESC
+      LIMIT ?
+    `).bind(limit).all()
+    
+    // Localize video titles
+    const localizedVideos = (recentLikes as any[]).map((video: any) => ({
+      ...video,
+      title: getLocalizedField(video, 'title', lang)
+    }))
+    
+    return c.json({
+      videos: localizedVideos || [],
+      count: localizedVideos?.length || 0
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // Get Instagram videos
 app.get('/api/videos/instagram', async (c) => {
   const { env } = c
