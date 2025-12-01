@@ -7655,7 +7655,7 @@ async function showNewsModal(articleId) {
           <!-- Max height with scroll for very long content -->
           <div class="max-h-96 overflow-y-auto">
             <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap" id="news-modal-summary">
-              ${article.summary || '要約を読み込み中...'}
+              ${article.summary ? article.summary.trim() : '要約を読み込み中...'}
             </p>
           </div>
         </div>
@@ -7751,7 +7751,8 @@ async function translateNewsInModal(articleId) {
     const response = await axios.get(`/api/news/${articleId}/translate/${lang}`);
     
     if (response.data.summary) {
-      summaryEl.textContent = response.data.summary;
+      // Remove any leading/trailing whitespace and newlines
+      summaryEl.textContent = response.data.summary.trim();
       showToast('翻訳完了', 'success');
     }
   } catch (error) {

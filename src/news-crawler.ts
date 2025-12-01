@@ -52,11 +52,21 @@ export async function translateText(
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Translate this climbing/bouldering news text from ${langNames[sourceLang] || sourceLang} to ${langNames[targetLang] || targetLang}. 
-Keep climbing terminology accurate (e.g., grades like V10, 5.14a, 8c should not be translated).
-Output ONLY the translated text without any explanation.
+              text: `You are a professional climbing news translator with 30+ years of experience.
 
-Text: ${text}`
+Translate this climbing/bouldering news text from ${langNames[sourceLang] || sourceLang} to ${langNames[targetLang] || targetLang}.
+
+IMPORTANT RULES:
+1. Keep climbing grades unchanged (V10, 5.14a, 8c, 9a, etc.)
+2. Preserve proper nouns (climber names, crag names, competition names)
+3. Use natural, fluent language for the target audience
+4. Maintain the original tone and excitement
+5. Do NOT add any explanation, prefix, or commentary
+6. Do NOT add leading/trailing whitespace or newlines
+7. Output ONLY the translated text itself
+
+Text to translate:
+${text}`
             }]
           }],
           generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
@@ -65,7 +75,9 @@ Text: ${text}`
     )
     
     const data = await response.json()
-    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || text
+    const translated = data.candidates?.[0]?.content?.parts?.[0]?.text || text
+    // Remove any leading/trailing whitespace and newlines
+    return translated.trim().replace(/^[\s\n]+|[\s\n]+$/g, '')
   } catch (error) {
     console.error('Translation error:', error)
     return text
@@ -95,23 +107,35 @@ export async function summarizeArticle(
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Summarize this climbing news article in ${langNames[targetLang] || 'Japanese'} in 2-3 sentences (max 150 characters).
-Focus on: WHO did WHAT, WHERE, and WHY it matters to climbers.
-Keep climbing grades (V10, 5.14a, 8c) unchanged.
+              text: `You are a professional climbing journalist with 30+ years of experience.
 
-Article:
+Summarize this climbing news article in ${langNames[targetLang] || 'Japanese'}.
+
+REQUIREMENTS:
+1. Write 4-6 detailed sentences (approximately 300-500 characters)
+2. Include specific details: WHO, WHAT, WHERE, WHEN, and WHY it matters
+3. Preserve all climbing grades (V10, 5.14a, 8c, 9a, etc.) exactly as written
+4. Use enthusiastic, professional tone that captures climbing culture
+5. Include technical details and context that climbers care about
+6. Do NOT add any prefix, commentary, or explanation
+7. Do NOT add leading/trailing whitespace or blank lines
+8. Output ONLY the summary itself
+
+Article content:
 ${content.substring(0, 3000)}
 
-Output ONLY the summary.`
+Write the detailed summary now:`
             }]
           }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 500 }
+          generationConfig: { temperature: 0.3, maxOutputTokens: 1024 }
         })
       }
     )
     
     const data = await response.json()
-    return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content.substring(0, 200)
+    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text || content.substring(0, 200)
+    // Remove any leading/trailing whitespace and newlines
+    return summary.trim().replace(/^[\s\n]+|[\s\n]+$/g, '')
   } catch (error) {
     console.error('Summarize error:', error)
     return content.substring(0, 200)
