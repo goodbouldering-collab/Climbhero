@@ -888,31 +888,7 @@ function renderHomePage() {
       </section>
       ` : ''}
       
-      <!-- Recommended Videos Section -->
-      <section class="py-6 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-4">
-            <div class="section-title">
-              <i class="fas fa-star"></i>
-              <span>${i18n.t('section.recommended')}</span>
-            </div>
-          </div>
-          
-          <div class="carousel-container" id="recommended-carousel">
-            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('recommended-carousel', -1)">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="horizontal-scroll" id="recommended-scroll">
-              ${state.videos.slice(0, 8).map(video => renderVideoCardWide(video)).join('')}
-            </div>
-            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('recommended-carousel', 1)">
-              <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Latest Videos Section -->
+      <!-- Latest Videos Section (Moved up) -->
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-4">
@@ -943,6 +919,30 @@ function renderHomePage() {
                 <i class="fas fa-chevron-right"></i>
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recommended Videos Section (Moved down) -->
+      <section class="py-6 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-4">
+            <div class="section-title">
+              <i class="fas fa-star"></i>
+              <span>${i18n.t('section.recommended')}</span>
+            </div>
+          </div>
+          
+          <div class="carousel-container" id="recommended-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('recommended-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="recommended-scroll">
+              ${state.videos.slice(0, 8).map(video => renderVideoCardWide(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('recommended-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
           </div>
         </div>
       </section>
