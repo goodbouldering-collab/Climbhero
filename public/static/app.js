@@ -7592,121 +7592,119 @@ async function showNewsModal(articleId) {
     const imageUrl = article.image_url || 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=400&fit=crop';
     
     content.innerHTML = `
-      <!-- Hero Image -->
+      <!-- Hero Image (Compact) -->
       <div class="relative">
         <img 
           src="${imageUrl}" 
           alt="${article.title}" 
-          class="w-full h-48 sm:h-64 object-cover"
+          class="w-full h-32 sm:h-40 object-cover"
           onerror="this.src='https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=400&fit=crop'"
         >
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         
-        <!-- Genre Badge -->
-        ${article.genre ? `
-          <span class="absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white text-sm rounded-full font-semibold shadow-lg">
-            <i class="fas fa-tag mr-1"></i>
-            ${i18n.t('news.genre.' + article.genre) || article.genre}
-          </span>
-        ` : ''}
+        <!-- Compact Badges -->
+        <div class="absolute top-2 left-2 flex items-center gap-1">
+          ${article.genre ? `
+            <span class="px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full font-semibold">
+              <i class="fas fa-tag"></i> ${i18n.t('news.genre.' + article.genre) || article.genre}
+            </span>
+          ` : ''}
+          ${article.source_name ? `
+            <span class="px-2 py-0.5 bg-white/90 text-gray-800 text-xs rounded-full font-medium">
+              <i class="fas fa-newspaper"></i> ${article.source_name}
+            </span>
+          ` : ''}
+        </div>
         
-        <!-- Source Badge -->
-        ${article.source_name ? `
-          <span class="absolute top-4 right-4 px-3 py-1 bg-white/90 text-gray-800 text-sm rounded-full font-medium shadow-lg">
-            <i class="fas fa-newspaper mr-1"></i>
-            ${article.source_name}
-          </span>
-        ` : ''}
-        
-        <!-- Close Button -->
+        <!-- Close Button (Compact) -->
         <button 
           onclick="closeModal('news-modal')" 
-          class="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
-          style="right: ${article.source_name ? '140px' : '16px'}"
+          class="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
         >
-          <i class="fas fa-times text-lg"></i>
+          <i class="fas fa-times"></i>
         </button>
       </div>
       
-      <!-- Content -->
-      <div class="p-6">
-        <!-- Title -->
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-3 leading-tight">
+      <!-- Content (Compact padding) -->
+      <div class="p-3 sm:p-4">
+        <!-- Title (Compact) -->
+        <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-2 leading-tight">
           ${article.title}
         </h2>
         
-        <!-- Meta Info -->
-        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-4">
-          <span class="flex items-center">
-            <i class="fas fa-calendar-alt mr-1"></i>
-            ${publishedDate}
+        <!-- Meta Info (Compact) -->
+        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-3">
+          <span class="flex items-center gap-1">
+            <i class="fas fa-calendar-alt"></i>${publishedDate}
           </span>
-          <span class="flex items-center">
-            <i class="fas fa-eye mr-1"></i>
-            ${article.view_count || 0} views
+          <span class="flex items-center gap-1">
+            <i class="fas fa-eye"></i>${article.view_count || 0}
           </span>
-          <span class="flex items-center">
-            <i class="fas fa-heart mr-1 text-red-500"></i>
+          <span class="flex items-center gap-1">
+            <i class="fas fa-heart text-red-500"></i>
             <span id="modal-news-like-count">${likeCount}</span>
           </span>
         </div>
         
-        <!-- Summary (AI Translated) -->
-        <div class="bg-gray-50 rounded-xl p-4 mb-6">
-          <div class="flex items-center mb-2">
-            <i class="fas fa-robot text-purple-500 mr-2"></i>
-            <span class="text-sm font-medium text-purple-700">AI ${i18n.t('news.summary') || '要約'}</span>
+        <!-- Summary (AI Translated) - EXPANDED -->
+        <div class="bg-gray-50 rounded-lg p-3 mb-3">
+          <div class="flex items-center gap-1 mb-2">
+            <i class="fas fa-robot text-purple-500 text-sm"></i>
+            <span class="text-xs font-medium text-purple-700">AI ${i18n.t('news.summary') || '要約'}</span>
           </div>
-          <p class="text-gray-700 leading-relaxed" id="news-modal-summary">
-            ${article.summary || '要約を読み込み中...'}
-          </p>
+          <!-- Max height with scroll for very long content -->
+          <div class="max-h-96 overflow-y-auto">
+            <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap" id="news-modal-summary">
+              ${article.summary || '要約を読み込み中...'}
+            </p>
+          </div>
         </div>
         
-        <!-- Action Buttons -->
-        <div class="flex flex-wrap gap-3 mb-6">
+        <!-- Action Buttons (Compact) -->
+        <div class="flex flex-wrap gap-2 mb-3">
           <button 
             onclick="toggleNewsLikeFromModal(${article.id})" 
             id="modal-news-like-btn"
-            class="flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-all ${isLiked ? 'bg-red-100 text-red-600 border-2 border-red-300' : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'}"
+            class="flex-1 sm:flex-none px-3 py-1.5 text-sm rounded-lg font-medium transition-all ${isLiked ? 'bg-red-100 text-red-600 border border-red-300' : 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'}"
           >
-            <i class="fas fa-heart mr-2"></i>
-            ${isLiked ? 'いいね済み' : 'いいね'}
+            <i class="fas fa-heart"></i>
+            <span class="ml-1">${isLiked ? 'いいね済み' : 'いいね'}</span>
           </button>
           
           <button 
             onclick="toggleNewsFavoriteFromModal(${article.id})" 
             id="modal-news-favorite-btn"
-            class="flex-1 sm:flex-none px-4 py-2 rounded-lg font-medium transition-all ${isFavorited ? 'bg-yellow-100 text-yellow-600 border-2 border-yellow-300' : 'bg-gray-100 text-gray-700 hover:bg-yellow-50 hover:text-yellow-600'}"
+            class="flex-1 sm:flex-none px-3 py-1.5 text-sm rounded-lg font-medium transition-all ${isFavorited ? 'bg-yellow-100 text-yellow-600 border border-yellow-300' : 'bg-gray-100 text-gray-700 hover:bg-yellow-50 hover:text-yellow-600'}"
           >
-            <i class="fas fa-star mr-2"></i>
-            ${isFavorited ? 'お気に入り済み' : 'お気に入り'}
+            <i class="fas fa-star"></i>
+            <span class="ml-1">${isFavorited ? 'お気に入り済み' : 'お気に入り'}</span>
           </button>
           
           <button 
             onclick="translateNewsInModal(${article.id})" 
-            class="flex-1 sm:flex-none px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium hover:bg-purple-200 transition-all"
+            class="flex-1 sm:flex-none px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg font-medium hover:bg-purple-200 transition-all"
           >
-            <i class="fas fa-language mr-2"></i>
-            翻訳
+            <i class="fas fa-language"></i>
+            <span class="ml-1">翻訳</span>
           </button>
           
           <button 
             onclick="shareNews(${article.id}, '${encodeURIComponent(article.title)}', '${encodeURIComponent(article.url)}')" 
-            class="flex-1 sm:flex-none px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-all"
+            class="flex-1 sm:flex-none px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-all"
           >
-            <i class="fas fa-share-alt mr-2"></i>
-            シェア
+            <i class="fas fa-share-alt"></i>
+            <span class="ml-1">シェア</span>
           </button>
         </div>
         
-        <!-- Read Original Article Button -->
+        <!-- Read Original Article Button (Compact) -->
         <a 
           href="${article.url}" 
           target="_blank" 
           rel="noopener noreferrer"
-          class="block w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center rounded-xl font-bold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl"
+          class="block w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center rounded-lg font-bold hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg text-sm"
         >
-          <i class="fas fa-external-link-alt mr-2"></i>
+          <i class="fas fa-external-link-alt mr-1"></i>
           元の記事を読む
         </a>
       </div>
