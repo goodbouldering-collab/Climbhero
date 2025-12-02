@@ -252,8 +252,10 @@ async function loadSecondaryData(lang) {
     
     state.rankings.weekly = rankingsRes.data || [];
     state.blogPosts = blogRes.data || [];
+    console.log('📚 Blog posts loaded:', state.blogPosts.length, 'posts');
     state.trendingVideos = trendingRes.data.videos || [];
     state.testimonials = testimonialsRes.data.testimonials || [];
+    console.log('🏔️ Testimonials loaded:', state.testimonials.length, 'testimonials');
     state.adBanners.hero_bottom = adBannersHeroRes.data || [];
     state.adBanners.blog_top = adBannersBlogRes.data || [];
     state.blogGenres = blogGenresRes.data || [];
@@ -1000,6 +1002,7 @@ function renderHomePage() {
       ` : ''}
 
       <!-- Blog Posts Section -->
+      ${state.blogPosts && state.blogPosts.length > 0 ? `
       <section class="py-6 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-4">
@@ -1034,6 +1037,7 @@ function renderHomePage() {
           </div>
         </div>
       </section>
+      ` : ''}
 
       <!-- Pricing Section -->
       <section class="py-12 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
