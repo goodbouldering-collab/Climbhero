@@ -1040,100 +1040,100 @@ function renderHomePage() {
       ` : ''}
 
       <!-- Pricing Section -->
-      <section class="py-12 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <section class="py-6 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-8">
-            <h3 class="text-3xl font-bold text-gray-900 mb-2">料金プラン</h3>
-            <p class="text-gray-600">あなたに合ったプランを選択してください</p>
+          <div class="text-center mb-4">
+            <h3 class="text-2xl font-bold text-gray-900 mb-1">料金プラン</h3>
+            <p class="text-sm text-gray-600">あなたに合ったプランを選択してください</p>
           </div>
           
-          <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div class="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">
             <!-- Free Plan -->
-            <div class="card p-6 bg-white border-2 border-gray-200 relative">
-              <h4 class="text-xl font-bold mb-2 text-gray-800">フリー</h4>
-              <div class="text-3xl font-bold text-gray-900 mb-1">¥0</div>
-              <p class="text-sm text-gray-500 mb-4">永久無料</p>
-              <ul class="space-y-3 mb-6 text-sm">
-                <li class="flex items-center gap-2 text-gray-700">
-                  <i class="fas fa-check text-green-500"></i> 動画閲覧無制限
+            <div class="card p-4 bg-white border-2 border-gray-200 relative">
+              <h4 class="text-lg font-bold mb-1 text-gray-800">フリー</h4>
+              <div class="text-2xl font-bold text-gray-900 mb-0.5">¥0</div>
+              <p class="text-xs text-gray-500 mb-3">永久無料</p>
+              <ul class="space-y-2 mb-4 text-xs">
+                <li class="flex items-center gap-1.5 text-gray-700">
+                  <i class="fas fa-check text-green-500 text-xs"></i> 動画閲覧無制限
                 </li>
-                <li class="flex items-center gap-2 text-gray-700">
-                  <i class="fas fa-check text-green-500"></i> 1日1いいね
+                <li class="flex items-center gap-1.5 text-gray-700">
+                  <i class="fas fa-check text-green-500 text-xs"></i> 1日1いいね
                 </li>
-                <li class="flex items-center gap-2 text-gray-400">
-                  <i class="fas fa-times"></i> <span class="line-through">動画投稿</span>
+                <li class="flex items-center gap-1.5 text-gray-400">
+                  <i class="fas fa-times text-xs"></i> <span class="line-through">動画投稿</span>
                 </li>
-                <li class="flex items-center gap-2 text-gray-400">
-                  <i class="fas fa-times"></i> <span class="line-through">お気に入り管理</span>
+                <li class="flex items-center gap-1.5 text-gray-400">
+                  <i class="fas fa-times text-xs"></i> <span class="line-through">お気に入り管理</span>
                 </li>
               </ul>
-              <button class="btn w-full bg-gray-100 text-gray-600 font-bold cursor-default">
+              <button class="btn w-full bg-gray-100 text-gray-600 text-xs font-bold cursor-default py-2">
                 現在のプラン
               </button>
             </div>
             
             <!-- Monthly Plan -->
-            <div class="card p-6 bg-white border-2 border-purple-300 relative">
-              <h4 class="text-xl font-bold mb-2 text-purple-700">プレミアム月額</h4>
-              <div class="text-3xl font-bold text-gray-900 mb-1">¥980</div>
-              <p class="text-sm text-gray-500 mb-4">/月</p>
-              <ul class="space-y-3 mb-6 text-sm">
-                <li class="flex items-center gap-2 text-gray-700">
-                  <i class="fas fa-check text-purple-500"></i> <strong>無制限いいね</strong>
+            <div class="card p-4 bg-white border-2 border-purple-300 relative">
+              <h4 class="text-lg font-bold mb-1 text-purple-700">プレミアム月額</h4>
+              <div class="text-2xl font-bold text-gray-900 mb-0.5">¥980</div>
+              <p class="text-xs text-gray-500 mb-3">/月</p>
+              <ul class="space-y-2 mb-4 text-xs">
+                <li class="flex items-center gap-1.5 text-gray-700">
+                  <i class="fas fa-check text-purple-500 text-xs"></i> <strong>無制限いいね</strong>
                 </li>
-                <li class="flex items-center gap-2 text-gray-700">
-                  <i class="fas fa-check text-purple-500"></i> <strong>動画投稿OK</strong>
+                <li class="flex items-center gap-1.5 text-gray-700">
+                  <i class="fas fa-check text-purple-500 text-xs"></i> <strong>動画投稿OK</strong>
                 </li>
-                <li class="flex items-center gap-2 text-gray-700">
-                  <i class="fas fa-check text-purple-500"></i> お気に入り管理
+                <li class="flex items-center gap-1.5 text-gray-700">
+                  <i class="fas fa-check text-purple-500 text-xs"></i> お気に入り管理
                 </li>
-                <li class="flex items-center gap-2 text-gray-700">
-                  <i class="fas fa-check text-purple-500"></i> 広告非表示
+                <li class="flex items-center gap-1.5 text-gray-700">
+                  <i class="fas fa-check text-purple-500 text-xs"></i> 広告非表示
                 </li>
               </ul>
-              <button onclick="startCheckout('monthly')" class="btn w-full bg-purple-600 hover:bg-purple-700 text-white font-bold">
-                <i class="fas fa-credit-card mr-2"></i>月額プランを始める
+              <button onclick="startCheckout('monthly')" class="btn w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2">
+                <i class="fas fa-credit-card mr-1"></i>月額プランを始める
               </button>
             </div>
             
             <!-- Annual Plan (BEST VALUE) -->
-            <div class="card p-6 bg-gradient-to-br from-purple-600 to-pink-600 text-white relative overflow-hidden border-2 border-yellow-400">
-              <div class="absolute top-0 right-0 bg-yellow-400 text-purple-900 text-xs font-bold px-3 py-1 rounded-bl-lg">
+            <div class="card p-4 bg-gradient-to-br from-purple-600 to-pink-600 text-white relative overflow-hidden border-2 border-yellow-400">
+              <div class="absolute top-0 right-0 bg-yellow-400 text-purple-900 text-xs font-bold px-2 py-0.5 rounded-bl-lg">
                 🔥 50% OFF
               </div>
-              <h4 class="text-xl font-bold mb-2">プレミアム年間</h4>
-              <div class="flex items-baseline gap-2 mb-1">
-                <span class="text-3xl font-bold">¥5,880</span>
-                <span class="text-sm line-through opacity-70">¥11,760</span>
+              <h4 class="text-lg font-bold mb-1">プレミアム年間</h4>
+              <div class="flex items-baseline gap-1.5 mb-0.5">
+                <span class="text-2xl font-bold">¥5,880</span>
+                <span class="text-xs line-through opacity-70">¥11,760</span>
               </div>
-              <p class="text-sm opacity-90 mb-4">/年（月額換算 ¥490）</p>
-              <ul class="space-y-3 mb-6 text-sm">
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-star text-yellow-300"></i> <strong>月額の半額でお得！</strong>
+              <p class="text-xs opacity-90 mb-3">/年（月額換算 ¥490）</p>
+              <ul class="space-y-2 mb-4 text-xs">
+                <li class="flex items-center gap-1.5">
+                  <i class="fas fa-star text-yellow-300 text-xs"></i> <strong>月額の半額でお得！</strong>
                 </li>
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check text-green-300"></i> 無制限いいね
+                <li class="flex items-center gap-1.5">
+                  <i class="fas fa-check text-green-300 text-xs"></i> 無制限いいね
                 </li>
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check text-green-300"></i> 動画投稿OK
+                <li class="flex items-center gap-1.5">
+                  <i class="fas fa-check text-green-300 text-xs"></i> 動画投稿OK
                 </li>
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check text-green-300"></i> お気に入り管理
+                <li class="flex items-center gap-1.5">
+                  <i class="fas fa-check text-green-300 text-xs"></i> お気に入り管理
                 </li>
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check text-green-300"></i> 広告非表示
+                <li class="flex items-center gap-1.5">
+                  <i class="fas fa-check text-green-300 text-xs"></i> 広告非表示
                 </li>
               </ul>
-              <button onclick="startCheckout('annual')" class="btn w-full bg-yellow-400 hover:bg-yellow-300 text-purple-900 font-bold shadow-lg">
-                <i class="fas fa-crown mr-2"></i>年間プランを始める
+              <button onclick="startCheckout('annual')" class="btn w-full bg-yellow-400 hover:bg-yellow-300 text-purple-900 text-xs font-bold shadow-lg py-2">
+                <i class="fas fa-crown mr-1"></i>年間プランを始める
               </button>
-              <p class="text-xs text-center mt-2 opacity-80">
+              <p class="text-xs text-center mt-1.5 opacity-80">
                 <i class="fas fa-shield-alt mr-1"></i>いつでも解約可能
               </p>
             </div>
           </div>
           
-          <p class="text-center text-xs text-gray-500 mt-6">
+          <p class="text-center text-xs text-gray-500 mt-4">
             <i class="fas fa-lock mr-1"></i>安全なStripe決済 | 自動更新（解約可能）
           </p>
         </div>
