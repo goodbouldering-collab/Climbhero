@@ -700,19 +700,16 @@ function renderHomePage() {
       
       <!-- Climber Testimonials Section (Collapsible) -->
       ${state.testimonials && state.testimonials.length > 0 ? `
-      <section class="bg-white border-b border-gray-200">
-        <div class="w-full px-4 sm:px-6 lg:px-8 py-4">
-          <button 
-            onclick="toggleTestimonialsSection()" 
-            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
-            <h2 class="text-lg font-bold text-gray-900">
-              <i class="fas fa-mountain text-purple-600 mr-2"></i>
-              ${i18n.t('testimonials.title')}
-            </h2>
-            <i id="testimonials-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-          </button>
+      <section class="bg-white border-b border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-4">
+            <div class="section-title">
+              <i class="fas fa-mountain"></i>
+              <span>${i18n.t('testimonials.title')}</span>
+            </div>
+          </div>
           
-          <div id="testimonials-content" class="hidden mt-6">
+          <div class="mt-6">
             <div class="text-center mb-8">
               <p class="text-gray-600 text-base">
                 ${i18n.t('testimonials.subtitle')}
@@ -780,22 +777,6 @@ function renderHomePage() {
       ` : ''}
       
       <!-- Search Section (Below How to Use) -->
-      <section class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="max-w-3xl mx-auto">
-            <div class="relative w-full">
-              <input 
-                type="text" 
-                placeholder="${i18n.t('search.placeholder')}"
-                class="w-full pl-14 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-base shadow-sm"
-                onkeyup="handleSearch(event)"
-                id="search-input">
-              <i class="fas fa-search absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
-            </div>
-          </div>
-        </div>
-      </section>
-      
       <!-- Rankings Section - 投稿動画ランキング -->
       ${state.topLikedVideos && state.topLikedVideos.length > 0 ? `
       <section class="py-6 bg-white">
@@ -851,7 +832,7 @@ function renderHomePage() {
               <i class="fas fa-chevron-left"></i>
             </button>
             <div class="horizontal-scroll" id="trending-scroll">
-              ${state.trendingVideos.map(video => renderVideoCardWide(video)).join('')}
+              ${state.trendingVideos.map(video => renderVideoCard(video)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('trending-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
@@ -938,7 +919,7 @@ function renderHomePage() {
               <i class="fas fa-chevron-left"></i>
             </button>
             <div class="horizontal-scroll" id="recommended-scroll">
-              ${state.videos.slice(0, 8).map(video => renderVideoCardWide(video)).join('')}
+              ${state.videos.slice(0, 8).map(video => renderVideoCard(video)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('recommended-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
