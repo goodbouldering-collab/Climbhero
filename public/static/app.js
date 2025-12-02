@@ -1067,9 +1067,9 @@ function renderHomePage() {
                   <i class="fas fa-times text-xs"></i> <span class="line-through">お気に入り管理</span>
                 </li>
               </ul>
-              <button class="btn w-full bg-gray-100 text-gray-600 text-xs font-bold cursor-default py-2">
+              <p class="text-center text-xs text-gray-500 mt-2 py-2">
                 現在のプラン
-              </button>
+              </p>
             </div>
             
             <!-- Monthly Plan -->
@@ -1091,9 +1091,9 @@ function renderHomePage() {
                   <i class="fas fa-check text-purple-500 text-xs"></i> 広告非表示
                 </li>
               </ul>
-              <button onclick="startCheckout('monthly')" class="btn w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2">
-                <i class="fas fa-credit-card mr-1"></i>月額プランを始める
-              </button>
+              <a href="#" onclick="startCheckout('monthly'); return false;" class="block text-center text-xs text-purple-600 hover:text-purple-700 underline mt-2 py-2">
+                月額で始める →
+              </a>
             </div>
             
             <!-- Annual Plan (BEST VALUE) -->
@@ -1124,17 +1124,17 @@ function renderHomePage() {
                   <i class="fas fa-check text-green-300 text-xs"></i> 広告非表示
                 </li>
               </ul>
-              <button onclick="startCheckout('annual')" class="btn w-full bg-yellow-400 hover:bg-yellow-300 text-purple-900 text-xs font-bold shadow-lg py-2">
-                <i class="fas fa-crown mr-1"></i>年間プランを始める
+              <button onclick="startCheckout('annual')" class="btn w-full bg-yellow-400 hover:bg-yellow-300 text-purple-900 text-sm font-bold shadow-lg py-2.5">
+                今すぐ始める
               </button>
               <p class="text-xs text-center mt-1.5 opacity-80">
-                <i class="fas fa-shield-alt mr-1"></i>いつでも解約可能
+                いつでも解約可能
               </p>
             </div>
           </div>
           
-          <p class="text-center text-xs text-gray-500 mt-4">
-            <i class="fas fa-lock mr-1"></i>安全なStripe決済 | 自動更新（解約可能）
+          <p class="text-center text-xs text-gray-500 mt-3">
+            <i class="fas fa-lock mr-1"></i>Stripe安全決済
           </p>
         </div>
       </section>
