@@ -280,7 +280,7 @@ button:disabled {
 .video-thumbnail {
   position: relative;
   width: 100%;
-  height: 90px;
+  height: 120px;
   overflow: hidden;
   background: #f3f4f6;
   border-radius: var(--radius-sm);
@@ -403,7 +403,7 @@ button:disabled {
 }
 
 .scroll-item {
-  flex: 0 0 110px;
+  flex: 0 0 150px;
   scroll-snap-align: start;
 }
 
@@ -415,7 +415,7 @@ button:disabled {
 
 @media (max-width: 768px) {
   .scroll-item {
-    flex: 0 0 100px;
+    flex: 0 0 140px;
   }
   
   .scroll-item-wide {
@@ -798,23 +798,23 @@ a:hover {
 }
 
 .video-title-compact {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1.2;
-  margin-bottom: 2px;
+  line-height: 1.3;
+  margin-bottom: 3px;
   color: var(--text-primary);
 }
 
 .video-meta-compact {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 8px;
+  gap: 5px;
+  font-size: 9px;
   color: var(--text-secondary);
 }
 
 .video-meta-compact i {
-  font-size: 7px;
+  font-size: 8px;
 }
 
 /* ==================== Tab Buttons (Unified Style) ==================== */
@@ -1618,16 +1618,16 @@ a:hover {
   }
   
   .scroll-item {
-    min-width: 140px;
+    min-width: 160px;
   }
   
   /* Adjust video cards for mobile */
   .video-card-compact {
-    width: 140px;
+    width: 160px;
   }
   
   .video-thumbnail {
-    height: 80px;
+    height: 100px;
   }
   
   /* Improve button sizing on mobile */
@@ -1670,11 +1670,11 @@ a:hover {
   }
   
   .scroll-item {
-    min-width: 120px;
+    min-width: 150px;
   }
   
   .video-card-compact {
-    width: 120px;
+    width: 150px;
   }
 }
 
