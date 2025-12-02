@@ -270,7 +270,7 @@ async function loadSecondaryData(lang) {
     
     // Re-render to show secondary content
     if (state.currentView === 'home') {
-      renderHomePage();
+      renderApp();
     }
   } catch (error) {
     console.error('Failed to load secondary data:', error);
