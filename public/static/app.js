@@ -3147,6 +3147,12 @@ function renderMyPage() {
                 `).join('')}
               </div>
               
+              ${state.currentUser.is_admin ? `
+                <button onclick="navigateTo('admin')" class="btn btn-sm px-3 text-base" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+                  <i class="fas fa-crown mr-1 text-yellow-300"></i>管理
+                </button>
+              ` : ''}
+              
               <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
                 ${i18n.t('nav.logout')}
               </button>
@@ -3160,16 +3166,6 @@ function renderMyPage() {
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Admin Page Button (Top - Admin Only) -->
-        ${state.currentUser.is_admin ? `
-          <div class="mb-6">
-            <button onclick="navigateTo('admin')" class="w-full sm:w-auto px-8 py-4 text-left shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-xl" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
-              <i class="fas fa-crown mr-3 text-yellow-300 text-xl"></i>
-              <span class="font-bold text-lg">👑 管理ページ</span>
-            </button>
-          </div>
-        ` : ''}
-        
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           <!-- Left Column: Profile Info -->
@@ -3574,28 +3570,28 @@ function renderAdminPage() {
   }
 
   return `
-    <div class="min-h-screen bg-gray-100">
-      <!-- Admin Header with Sidebar Toggle -->
-      <header class="sticky top-0 z-50 bg-white border-b border-gray-300 shadow">
-        <div class="max-w-full mx-auto px-4 lg:px-6">
-          <div class="flex items-center justify-between h-16">
-            <!-- Logo Section -->
-            <div class="flex items-center gap-4">
-              <button onclick="navigateTo('home')" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <i class="fas fa-mountain text-lg text-gray-700"></i>
-                <span class="text-lg font-bold text-gray-800">ClimbHero</span>
+    <div class="min-h-screen bg-gray-50">
+      <!-- Header -->
+      <header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div class="flex items-center justify-between h-14 sm:h-16">
+            <!-- Logo Section (Clickable for Home) -->
+            <div class="flex items-center flex-shrink-0 min-w-0">
+              <button onclick="navigateTo('home')" class="flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-colors cursor-pointer">
+                <i class="fas fa-mountain text-sm sm:text-base bg-gradient-to-br from-purple-600 to-pink-600" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 class="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 whitespace-nowrap" style="background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ClimbHero</h1>
               </button>
             </div>
             
             <!-- Right Section -->
-            <div class="flex items-center gap-3">
-              <div class="flex gap-1">
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <div class="flex gap-0.5 sm:gap-1">
                 ${i18n.getAvailableLanguages().map(lang => `
                   <button 
                     onclick="switchLanguage('${lang.code}')" 
-                    class="w-8 h-8 flex items-center justify-center rounded transition-all ${
+                    class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded transition-all text-sm sm:text-base ${
                       i18n.getCurrentLanguage() === lang.code 
-                        ? 'bg-gray-200 scale-110' 
+                        ? 'bg-gradient-to-r from-purple-100 to-pink-100 scale-110' 
                         : 'hover:bg-gray-100'
                     }"
                     title="${lang.name}">
@@ -3604,19 +3600,23 @@ function renderAdminPage() {
                 `).join('')}
               </div>
               
-              <button onclick="navigateTo('mypage')" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors text-sm font-medium">
-                <i class="fas fa-user mr-2"></i>マイページ
+              <button onclick="navigateTo('admin')" class="btn btn-sm px-3 text-base" style="background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: white;">
+                <i class="fas fa-crown mr-1 text-yellow-300"></i>管理
               </button>
               
-              <button onclick="logout()" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors text-sm font-medium">
-                <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
+              <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
+                ${i18n.t('nav.logout')}
+              </button>
+              
+              <button onclick="navigateTo('mypage')" class="btn btn-sm btn-secondary px-3 text-base">
+                ${i18n.t('mypage.title')}
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main class="max-w-full mx-auto px-4 lg:px-6 py-6">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Page Title -->
         <div class="mb-6">
           <h1 class="text-2xl font-bold text-gray-800 mb-1">管理ページ</h1>
