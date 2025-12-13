@@ -3616,170 +3616,177 @@ function renderAdminPage() {
         </div>
       </header>
 
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Title -->
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-800 mb-1">管理ページ</h1>
-          <p class="text-sm text-gray-600">ClimbHero 運営管理</p>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="flex flex-wrap gap-8 mb-6 justify-center">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <i class="fas fa-users text-blue-600"></i>
-            </div>
-            <div>
-              <p class="text-xs text-gray-600 font-medium">総会員数</p>
-              <p class="text-2xl font-bold text-gray-800" id="stat-users">-</p>
-            </div>
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Page Title & Quick Stats in One Row -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div>
+            <h1 class="text-xl font-bold text-gray-800 mb-0.5">管理ページ</h1>
+            <p class="text-xs text-gray-600">ClimbHero 運営管理</p>
           </div>
           
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <i class="fas fa-video text-green-600"></i>
+          <!-- Compact Stats in One Row -->
+          <div class="flex flex-wrap items-center gap-4">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-users text-blue-600 text-sm"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">会員</p>
+                <p class="text-lg font-bold text-gray-800" id="stat-users">-</p>
+              </div>
             </div>
-            <div>
-              <p class="text-xs text-gray-600 font-medium">動画数</p>
-              <p class="text-2xl font-bold text-gray-800" id="stat-videos">-</p>
+            
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-video text-green-600 text-sm"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">動画</p>
+                <p class="text-lg font-bold text-gray-800" id="stat-videos">-</p>
+              </div>
             </div>
-          </div>
-          
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-              <i class="fas fa-blog text-orange-600"></i>
+            
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-blog text-orange-600 text-sm"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">ブログ</p>
+                <p class="text-lg font-bold text-gray-800" id="stat-blogs">-</p>
+              </div>
             </div>
-            <div>
-              <p class="text-xs text-gray-600 font-medium">ブログ記事</p>
-              <p class="text-2xl font-bold text-gray-800" id="stat-blogs">-</p>
-            </div>
-          </div>
-          
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <i class="fas fa-bullhorn text-red-600"></i>
-            </div>
-            <div>
-              <p class="text-xs text-gray-600 font-medium">お知らせ</p>
-              <p class="text-2xl font-bold text-gray-800" id="stat-announcements">-</p>
+            
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-bullhorn text-red-600 text-sm"></i>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">お知らせ</p>
+                <p class="text-lg font-bold text-gray-800" id="stat-announcements">-</p>
+              </div>
             </div>
           </div>
         </div>
         
-        <!-- Management Sections Grid -->
-        <div class="grid grid-cols-1 gap-4">
+        <!-- Management Sections Grid with Accordion -->
+        <div class="space-y-3">
           
           <!-- Video Management Section -->
-          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 class="text-base font-bold text-gray-800 flex items-center">
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group" open>
+            <summary class="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-green-100 hover:to-emerald-100 transition-colors">
+              <h2 class="text-sm font-bold text-gray-800 flex items-center">
                 <i class="fas fa-video mr-2 text-green-600"></i>
                 動画管理
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
               </h2>
-              <button onclick="loadAdminVideos()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+              <button onclick="event.stopPropagation(); loadAdminVideos()" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs">
                 <i class="fas fa-sync-alt mr-1"></i>再読み込み
               </button>
-            </div>
-            <div class="p-4">
+            </summary>
+            <div class="p-3 max-h-96 overflow-y-auto">
               <div id="admin-videos-list" class="overflow-x-auto">
-                <div class="text-center py-8 text-gray-500">
+                <div class="text-center py-8 text-gray-500 text-sm">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
             </div>
-          </div>
+          </details>
           
           <!-- Blog Management Section -->
-          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 class="text-base font-bold text-gray-800 flex items-center">
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group" open>
+            <summary class="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-orange-100 hover:to-amber-100 transition-colors">
+              <h2 class="text-sm font-bold text-gray-800 flex items-center">
                 <i class="fas fa-blog mr-2 text-orange-600"></i>
                 ブログ管理
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
               </h2>
               <div class="flex gap-2">
-                <button onclick="loadAdminBlogs()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+                <button onclick="event.stopPropagation(); loadAdminBlogs()" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors text-xs">
                   <i class="fas fa-sync-alt mr-1"></i>再読み込み
                 </button>
-                <button onclick="showBlogModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                <button onclick="event.stopPropagation(); showBlogModal()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors text-xs">
                   <i class="fas fa-plus mr-1"></i>新規作成
                 </button>
               </div>
-            </div>
-            <div class="p-4">
+            </summary>
+            <div class="p-3 max-h-96 overflow-y-auto">
               <div id="admin-blog-list" class="overflow-x-auto">
-                <div class="text-center py-8 text-gray-500">
+                <div class="text-center py-8 text-gray-500 text-sm">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
             </div>
-          </div>
+          </details>
           
           <!-- Announcements Management Section -->
-          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 class="text-base font-bold text-gray-800 flex items-center">
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
+            <summary class="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-blue-100 hover:to-cyan-100 transition-colors">
+              <h2 class="text-sm font-bold text-gray-800 flex items-center">
                 <i class="fas fa-bullhorn mr-2 text-blue-600"></i>
                 お知らせ管理
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
               </h2>
               <div class="flex gap-2">
-                <button onclick="loadAdminAnnouncements()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-sm">
+                <button onclick="event.stopPropagation(); loadAdminAnnouncements()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs">
                   <i class="fas fa-sync-alt mr-1"></i>再読み込み
                 </button>
-                <button onclick="showAnnouncementModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+                <button onclick="event.stopPropagation(); showAnnouncementModal()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors text-xs">
                   <i class="fas fa-plus mr-1"></i>新規作成
                 </button>
               </div>
-            </div>
-            <div class="p-4">
+            </summary>
+            <div class="p-3 max-h-96 overflow-y-auto">
               <div id="admin-announcements-list" class="overflow-x-auto">
-                <div class="text-center py-8 text-gray-500">
+                <div class="text-center py-8 text-gray-500 text-sm">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
             </div>
-          </div>
+          </details>
           
           <!-- Ad Banner Management Section -->
-          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 class="text-base font-bold text-gray-800 flex items-center">
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
+            <summary class="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-purple-100 hover:to-pink-100 transition-colors">
+              <h2 class="text-sm font-bold text-gray-800 flex items-center">
                 <i class="fas fa-ad mr-2 text-purple-600"></i>
                 広告バナー管理
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
               </h2>
-              <button onclick="showAdBannerModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+              <button onclick="event.stopPropagation(); showAdBannerModal()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-xs">
                 <i class="fas fa-plus mr-1"></i>新規作成
               </button>
-            </div>
-            <div class="p-4">
+            </summary>
+            <div class="p-3 max-h-96 overflow-y-auto">
               <div id="admin-ad-banners-list">
-                <div class="text-center py-8 text-gray-500">
+                <div class="text-center py-8 text-gray-500 text-sm">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
             </div>
-          </div>
+          </details>
           
 
           
           <!-- Testimonials Management Section -->
-          <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 border-b border-gray-200 px-5 py-4 flex items-center justify-between">
-              <h2 class="text-base font-bold text-gray-800 flex items-center">
-                <i class="fas fa-mountain mr-2 text-green-600"></i>
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
+            <summary class="bg-gradient-to-r from-teal-50 to-green-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-teal-100 hover:to-green-100 transition-colors">
+              <h2 class="text-sm font-bold text-gray-800 flex items-center">
+                <i class="fas fa-mountain mr-2 text-teal-600"></i>
                 クライマーメッセージ管理
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
               </h2>
-              <button onclick="showTestimonialModal()" class="px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded transition-colors text-sm">
+              <button onclick="event.stopPropagation(); showTestimonialModal()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors text-xs">
                 <i class="fas fa-plus mr-1"></i>新規作成
               </button>
-            </div>
-            <div class="p-4">
+            </summary>
+            <div class="p-3 max-h-96 overflow-y-auto">
               <div id="admin-testimonials-list">
-                <div class="text-center py-8 text-gray-500">
+                <div class="text-center py-8 text-gray-500 text-sm">
                   ${i18n.t('common.loading')}
                 </div>
               </div>
             </div>
-          </div>
+          </details>
           
         </div>
       </main>
