@@ -1231,10 +1231,9 @@ function renderFooter() {
               <strong>${i18n.t('footer.support_hours')}</strong>
             </p>
             <p class="text-sm mb-3">
-              <i class="fas fa-user-tie mr-2 text-purple-400"></i>
-              <strong>${i18n.t('footer.supervisor')}</strong><br>
-              <span class="ml-6">${i18n.t('footer.supervisor_name')}</span><br>
-              <span class="ml-6 text-xs">${i18n.t('footer.supervisor_address')}</span>
+              <i class="fas fa-mountain mr-2 text-purple-400"></i>
+              <strong>クライミングジム プロジェクト</strong><br>
+              <span class="ml-6 text-xs">〒224-0054 神奈川県横浜市都筑区佐江戸町417</span>
             </p>
             <p class="text-sm mb-3">
               <i class="fas fa-coffee mr-2 text-purple-400"></i>
