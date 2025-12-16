@@ -704,76 +704,80 @@ function renderHomePage() {
       ${state.testimonials && state.testimonials.length > 0 ? `
       <section class="bg-white border-b border-gray-200 py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="section-header mb-4">
-            <div class="section-title">
-              <i class="fas fa-mountain"></i>
-              <span>${i18n.t('testimonials.title')}</span>
-            </div>
-          </div>
-          
-          <div class="mt-6">
-            <div class="text-center mb-8">
-              <p class="text-gray-600 text-base">
-                ${i18n.t('testimonials.subtitle')}
-              </p>
-            </div>
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group" open>
+            <summary class="bg-gradient-to-r from-teal-50 to-green-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-teal-100 hover:to-green-100 transition-colors">
+              <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                <i class="fas fa-mountain mr-2 text-teal-600"></i>
+                ${i18n.t('testimonials.title')}
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
+              </h2>
+              <span class="text-sm text-gray-500">${state.testimonials.length}件のメッセージ</span>
+            </summary>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            ${state.testimonials.map(testimonial => {
-              const lang = i18n.getCurrentLanguage()
-              const climberName = testimonial[`climber_name_${lang}`] || testimonial.climber_name_en
-              const title = testimonial[`title_${lang}`] || testimonial.title_en
-              const comment = testimonial[`comment_${lang}`] || testimonial.comment_en
+            <div class="p-4">
+              <div class="text-center mb-4">
+                <p class="text-gray-600 text-sm">
+                  ${i18n.t('testimonials.subtitle')}
+                </p>
+              </div>
               
-              return `
-                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100">
-                  <div class="p-6">
-                    <div class="flex items-center mb-4">
-                      <img 
-                        src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop'}" 
-                        alt="${climberName}"
-                        class="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
-                      />
-                      <div class="ml-4 flex-1">
-                        <h3 class="font-bold text-lg text-gray-900">${climberName}</h3>
-                        <p class="text-sm text-purple-600 font-medium">${title}</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              ${state.testimonials.map(testimonial => {
+                const lang = i18n.getCurrentLanguage()
+                const climberName = testimonial[`climber_name_${lang}`] || testimonial.climber_name_en
+                const title = testimonial[`title_${lang}`] || testimonial.title_en
+                const comment = testimonial[`comment_${lang}`] || testimonial.comment_en
+                
+                return `
+                  <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
+                    <div class="p-4">
+                      <div class="flex items-center mb-3">
+                        <img 
+                          src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop'}" 
+                          alt="${climberName}"
+                          class="w-12 h-12 rounded-full object-cover border-2 border-purple-200"
+                        />
+                        <div class="ml-3 flex-1">
+                          <h3 class="font-bold text-base text-gray-900">${climberName}</h3>
+                          <p class="text-xs text-purple-600 font-medium">${title}</p>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                      <p class="text-gray-700 text-sm leading-relaxed italic">
-                        "${comment}"
-                      </p>
-                    </div>
-                    
-                    ${testimonial.instagram_url || testimonial.youtube_url || testimonial.website_url ? `
-                      <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-                        ${testimonial.instagram_url ? `
-                          <a href="${testimonial.instagram_url}" target="_blank" rel="noopener noreferrer" 
-                             class="text-gray-400 hover:text-pink-600 transition-colors">
-                            <i class="fab fa-instagram text-lg"></i>
-                          </a>
-                        ` : ''}
-                        ${testimonial.youtube_url ? `
-                          <a href="${testimonial.youtube_url}" target="_blank" rel="noopener noreferrer"
-                             class="text-gray-400 hover:text-red-600 transition-colors">
-                            <i class="fab fa-youtube text-lg"></i>
-                          </a>
-                        ` : ''}
-                        ${testimonial.website_url ? `
-                          <a href="${testimonial.website_url}" target="_blank" rel="noopener noreferrer"
-                             class="text-gray-400 hover:text-purple-600 transition-colors">
-                            <i class="fas fa-globe text-lg"></i>
-                          </a>
-                        ` : ''}
+                      
+                      <div class="mb-3">
+                        <p class="text-gray-700 text-xs leading-relaxed italic line-clamp-3">
+                          "${comment}"
+                        </p>
                       </div>
-                    ` : ''}
+                      
+                      ${testimonial.instagram_url || testimonial.youtube_url || testimonial.website_url ? `
+                        <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
+                          ${testimonial.instagram_url ? `
+                            <a href="${testimonial.instagram_url}" target="_blank" rel="noopener noreferrer" 
+                               class="text-gray-400 hover:text-pink-600 transition-colors">
+                              <i class="fab fa-instagram text-base"></i>
+                            </a>
+                          ` : ''}
+                          ${testimonial.youtube_url ? `
+                            <a href="${testimonial.youtube_url}" target="_blank" rel="noopener noreferrer"
+                               class="text-gray-400 hover:text-red-600 transition-colors">
+                              <i class="fab fa-youtube text-base"></i>
+                            </a>
+                          ` : ''}
+                          ${testimonial.website_url ? `
+                            <a href="${testimonial.website_url}" target="_blank" rel="noopener noreferrer"
+                               class="text-gray-400 hover:text-purple-600 transition-colors">
+                              <i class="fas fa-globe text-base"></i>
+                            </a>
+                          ` : ''}
+                        </div>
+                      ` : ''}
+                    </div>
                   </div>
-                </div>
-              `
-            }).join('')}
+                `
+              }).join('')}
+              </div>
             </div>
-          </div>
+          </details>
         </div>
       </section>
       ` : ''}
@@ -2133,7 +2137,13 @@ async function handlePremiumSubscribe(event) {
 
 // ============ Auth Modal (Continuing from previous implementation) ============
 function showAuthModal(type) {
+  console.log('🔐 showAuthModal called with type:', type);
   const modal = document.getElementById('auth-modal');
+  if (!modal) {
+    console.error('❌ auth-modal element not found!');
+    return;
+  }
+  console.log('✅ Modal element found, rendering content...');
   modal.innerHTML = `
     <div class="modal-content" style="max-width: 440px; width: 90%;">
       <!-- Header -->
@@ -2294,7 +2304,9 @@ function showAuthModal(type) {
       </div>
     </div>
   `;
+  console.log('✅ Modal content rendered');
   modal.classList.add('active');
+  console.log('✅ Modal activated with class "active"');
 }
 
 async function handleAuth(event, type) {
@@ -2330,6 +2342,7 @@ async function handleAuth(event, type) {
 
 // Quick Admin Login (Development/Testing Only)
 async function quickAdminLogin() {
+  console.log('👑 quickAdminLogin called');
   try {
     // Admin credentials
     const adminData = {
@@ -2337,7 +2350,11 @@ async function quickAdminLogin() {
       password: 'admin123'
     };
     
-    await axios.post('/api/auth/login', adminData);
+    console.log('📤 Posting login request...');
+    const response = await axios.post('/api/auth/login', adminData);
+    console.log('✅ Login response:', response.data);
+    
+    console.log('🔍 Checking auth status...');
     await checkAuth();
     
     // ログイン後にお気に入りをロード
@@ -2346,20 +2363,26 @@ async function quickAdminLogin() {
       await loadUserFavorites();
     }
     
+    console.log('👤 Current user after auth:', state.currentUser);
+    
     // Close auth modal
+    console.log('🚪 Closing modal...');
     closeModal('auth-modal');
     
     // Redirect to app
+    console.log('🔄 Re-rendering app...');
     renderApp();
     showToast('👑 管理者としてログインしました - マイページから管理画面へアクセスできます', 'success');
     
     // Navigate to mypage after short delay
+    console.log('⏱️ Scheduling navigation to mypage...');
     setTimeout(() => {
+      console.log('📍 Navigating to mypage now');
       navigateTo('mypage');
     }, 1000);
   } catch (error) {
-    showToast('管理者ログインに失敗しました', 'error');
-    console.error('Quick admin login error:', error);
+    console.error('❌ Quick admin login error:', error);
+    showToast('管理者ログインに失敗しました: ' + (error.response?.data?.error || error.message), 'error');
   }
 }
 
