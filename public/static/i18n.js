@@ -414,6 +414,14 @@ const translations = {
     'mypage.upload_history': '投稿履歴',
     'mypage.admin_panel': '管理画面',
     
+    // Admin Page
+    'admin.page_title': '管理ページ',
+    'admin.operations': 'ClimbHero 運営管理',
+    'admin.total_members': '総会員数',
+    'admin.total_videos': '動画数',
+    'admin.total_blogs': 'ブログ記事',
+    'admin.total_announcements': 'お知らせ',
+    
     // Announcements Modal
     'announcements.modal_title': 'お知らせ一覧',
     'announcements.all': 'すべて',
@@ -1088,6 +1096,14 @@ const translations = {
     'mypage.liked_videos': 'Liked Videos',
     'mypage.upload_history': 'Upload History',
     'mypage.admin_panel': 'Admin Panel',
+    
+    // Admin Page
+    'admin.page_title': 'Admin Page',
+    'admin.operations': 'ClimbHero Operations Management',
+    'admin.total_members': 'Total Members',
+    'admin.total_videos': 'Videos',
+    'admin.total_blogs': 'Blog Posts',
+    'admin.total_announcements': 'Announcements',
     
     // Announcements Modal
     'announcements.modal_title': 'All Announcements',

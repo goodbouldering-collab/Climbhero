@@ -453,10 +453,10 @@ function renderHomePage() {
               ${i18n.getAvailableLanguages().map(lang => `
                 <button 
                   onclick="switchLanguage('${lang.code}')" 
-                  class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded transition-all text-sm sm:text-base ${
+                  class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-all text-lg sm:text-xl ${
                     i18n.getCurrentLanguage() === lang.code 
-                      ? 'bg-gradient-to-r from-purple-100 to-pink-100 scale-110' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-gradient-to-r from-purple-100 to-pink-100 shadow-md ring-2 ring-purple-300 scale-110' 
+                      : 'bg-gray-50 hover:bg-gray-100 hover:shadow-sm'
                   }"
                   title="${lang.name}">
                   ${lang.flag}
@@ -468,17 +468,17 @@ function renderHomePage() {
               <!-- Favorites Button -->
               <button onclick="navigateTo('favorites')" class="btn btn-sm btn-secondary px-3 text-base flex items-center gap-1">
                 <i class="fas fa-star text-yellow-500"></i>
-                <span class="hidden sm:inline">お気に入り</span>
+                <span class="hidden sm:inline">${i18n.t('mypage.favorites')}</span>
               </button>
               
               <!-- My Page Button -->
               <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3 text-base">
-                マイページ
+                ${i18n.t('mypage.title')}
               </button>
               
               <!-- Logout Button -->
               <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
-                ログアウト
+                ${i18n.t('nav.logout')}
               </button>
             ` : `
               <button onclick="showAuthModal('login')" class="btn btn-sm btn-primary px-3 text-base">
