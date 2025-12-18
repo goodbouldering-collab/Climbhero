@@ -20,10 +20,12 @@
 
 ## 🌐 公開URL
 
-- **本番環境**: https://603b1a4a.project-02ceb497.pages.dev ⭐ **最新デプロイ（管理者認証修正・コンテンツ管理UI実装）**
-- **開発環境**: https://3000-iekbypsjbezyid8wqeonx-2e77fc33.sandbox.novita.ai ⚡ **統合お気に入り一覧実装済み**
-- **本番URL（メイン）**: https://project-02ceb497.pages.dev
+> 📌 **重要**: 最新のデプロイURLは `PROJECT_INFO.md` で常に管理されています
+
+- **本番環境（メイン）**: https://project-02ceb497.pages.dev
+- **最新デプロイ**: https://590fe900.project-02ceb497.pages.dev ⭐ **i18n翻訳対応・言語切替UI改善**
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
+- **開発環境**: https://3000-ihff41104hfhdqarv2j1z-de59bda9.sandbox.novita.ai
 - **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
 - **AI Plugin**: https://project-02ceb497.pages.dev/.well-known/ai-plugin.json
 - **LLMO**: https://project-02ceb497.pages.dev/llmo.txt
