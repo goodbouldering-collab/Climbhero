@@ -238,6 +238,10 @@ const translations = {
     'toast.user_updated': 'ユーザー情報を更新しました',
     'toast.blog_updated': 'ブログを更新しました',
     'toast.banner_updated': '広告バナーを更新しました',
+    'toast.language_switching': '言語を切り替えています...',
+    'toast.language_switched': '言語を切り替えました',
+    'toast.language_error': '言語切り替えに失敗しました',
+    'toast.content_loading': 'コンテンツを読み込み中...',
     
     // Footer
     'footer.description': 'クライミングコミュニティのための動画共有プラットフォーム',
@@ -921,6 +925,10 @@ const translations = {
     'toast.user_updated': 'User information updated successfully',
     'toast.blog_updated': 'Blog updated successfully',
     'toast.banner_updated': 'Banner updated successfully',
+    'toast.language_switching': 'Switching language...',
+    'toast.language_switched': 'Language switched',
+    'toast.language_error': 'Failed to switch language',
+    'toast.content_loading': 'Loading content...',
     
     // Footer
     'footer.description': 'Video sharing platform for the climbing community',
@@ -1562,6 +1570,10 @@ const translations = {
     'toast.user_updated': '用户信息已更新',
     'toast.blog_updated': '博客已更新',
     'toast.banner_updated': '横幅已更新',
+    'toast.language_switching': '正在切换语言...',
+    'toast.language_switched': '语言已切换',
+    'toast.language_error': '切换语言失败',
+    'toast.content_loading': '正在加载内容...',
     
     // Footer
     'footer.about': '关于ClimbHero',
@@ -1916,6 +1928,10 @@ const translations = {
     'toast.user_updated': '사용자 정보가 업데이트되었습니다',
     'toast.blog_updated': '블로그가 업데이트되었습니다',
     'toast.banner_updated': '배너가 업데이트되었습니다',
+    'toast.language_switching': '언어 전환 중...',
+    'toast.language_switched': '언어가 전환되었습니다',
+    'toast.language_error': '언어 전환 실패',
+    'toast.content_loading': '콘텐츠 로드 중...',
     
     // Footer
     'footer.description': '클라이밍 커뮤니티를 위한 비디오 공유 플랫폼',

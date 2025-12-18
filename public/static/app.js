@@ -44,8 +44,50 @@ const state = {
     platform: '',
     category: '',
     search: ''
-  }
+  },
+  // Translation cache for all languages
+  translationCache: {},
+  isPreloadingTranslations: false
 };
+
+// ============ Translation Preloading ============
+// Preload all language translations in background
+async function preloadAllTranslations() {
+  if (state.isPreloadingTranslations) return;
+  state.isPreloadingTranslations = true;
+  
+  const languages = ['ja', 'en', 'zh', 'ko'];
+  const currentLang = i18n.getCurrentLanguage();
+  
+  // Prioritize other languages (not current)
+  const otherLangs = languages.filter(l => l !== currentLang);
+  
+  console.log('🔄 Preloading translations for:', otherLangs);
+  
+  for (const lang of otherLangs) {
+    if (!state.translationCache[lang]) {
+      try {
+        const [blogRes, newsRes, announcementsRes] = await Promise.all([
+          axios.get(`/api/blog?lang=${lang}`),
+          axios.get(`/api/news?lang=${lang}&limit=10`),
+          axios.get(`/api/announcements?lang=${lang}`)
+        ]);
+        
+        state.translationCache[lang] = {
+          blog: blogRes.data || [],
+          news: newsRes.data.articles || [],
+          announcements: announcementsRes.data || []
+        };
+        
+        console.log(`✅ Cached ${lang} translations`);
+      } catch (error) {
+        console.warn(`Failed to preload ${lang}:`, error);
+      }
+    }
+  }
+  
+  state.isPreloadingTranslations = false;
+}
 
 // ============ Language Support ============
 window.addEventListener('languageChanged', async (e) => {
@@ -59,26 +101,53 @@ window.addEventListener('languageChanged', async (e) => {
     const lang = state.currentLanguage || 'ja'
     console.log(`🌍 Loading content in ${lang}...`);
     
-    const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes, newsRes] = await Promise.all([
-      axios.get(`/api/blog?lang=${lang}`),
-      axios.get(`/api/announcements?lang=${lang}`),
-      axios.get(`/api/videos?limit=20&lang=${lang}`),
-      axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
-      axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`),
-      axios.get(`/api/news?lang=${lang}&limit=10`)
-    ]);
-    
-    state.blogPosts = blogRes.data || [];
-    state.announcements = announcementsRes.data || [];
-    state.videos = videosRes.data.videos || [];
-    state.trendingVideos = trendingRes.data.videos || [];
-    state.topLikedVideos = topLikedRes.data.videos || [];
-    state.newsArticles = newsRes.data.articles || [];
+    // Check cache first
+    if (state.translationCache[lang]) {
+      console.log(`⚡ Using cached ${lang} translations`);
+      state.blogPosts = state.translationCache[lang].blog || [];
+      state.newsArticles = state.translationCache[lang].news || [];
+      state.announcements = state.translationCache[lang].announcements || [];
+      
+      // Load only videos in parallel (not cached)
+      const [videosRes, trendingRes, topLikedRes] = await Promise.all([
+        axios.get(`/api/videos?limit=20&lang=${lang}`),
+        axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
+        axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`)
+      ]);
+      
+      state.videos = videosRes.data.videos || [];
+      state.trendingVideos = trendingRes.data.videos || [];
+      state.topLikedVideos = topLikedRes.data.videos || [];
+    } else {
+      // No cache, load all data
+      const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes, newsRes] = await Promise.all([
+        axios.get(`/api/blog?lang=${lang}`),
+        axios.get(`/api/announcements?lang=${lang}`),
+        axios.get(`/api/videos?limit=20&lang=${lang}`),
+        axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
+        axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`),
+        axios.get(`/api/news?lang=${lang}&limit=10`)
+      ]);
+      
+      state.blogPosts = blogRes.data || [];
+      state.announcements = announcementsRes.data || [];
+      state.videos = videosRes.data.videos || [];
+      state.trendingVideos = trendingRes.data.videos || [];
+      state.topLikedVideos = topLikedRes.data.videos || [];
+      state.newsArticles = newsRes.data.articles || [];
+      
+      // Cache the loaded data
+      state.translationCache[lang] = {
+        blog: state.blogPosts,
+        news: state.newsArticles,
+        announcements: state.announcements
+      };
+    }
     
     console.log(`✅ Content loaded in ${lang}`);
   } catch (error) {
     console.error('Error reloading data for language change:', error);
-    showToast('コンテンツの読み込みに失敗しました', 'error');
+    showToast(i18n.t('toast.data_load_error'), 'error');
   }
   
   renderApp();
@@ -291,7 +360,7 @@ async function loadSecondaryData(lang) {
     
     // Preload other languages in background (non-blocking, delayed)
     setTimeout(() => {
-      preloadAllLanguages(lang);
+      preloadAllTranslations();
     }, 3000); // Wait 3 seconds after initial load
     
   } catch (error) {
@@ -300,30 +369,10 @@ async function loadSecondaryData(lang) {
 }
 
 // Preload all languages in background for instant switching
+// Keep old function for backward compatibility
 async function preloadAllLanguages(currentLang) {
-  const languages = ['ja', 'en', 'zh', 'ko'].filter(l => l !== currentLang);
-  
-  console.log('🌐 Starting background preload for languages:', languages.join(', '));
-  
-  for (const lang of languages) {
-    try {
-      // Delay between requests to avoid overwhelming the server
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      await Promise.all([
-        axios.get(`/api/blog?lang=${lang}&limit=10`),
-        axios.get(`/api/news?lang=${lang}&limit=10`),
-        axios.get(`/api/videos?lang=${lang}&limit=10`),
-        axios.get(`/api/announcements?lang=${lang}`)
-      ]);
-      
-      console.log(`✅ Preloaded ${lang}`);
-    } catch (error) {
-      console.warn(`⚠️ Preload failed for ${lang}:`, error.message);
-    }
-  }
-  
-  console.log('🎉 All languages preloaded!');
+  console.log('⚠️ Deprecated: Use preloadAllTranslations() instead');
+  await preloadAllTranslations();
 }
 
 // Load user like status for all videos
@@ -1959,7 +2008,7 @@ async function switchLanguage(lang) {
     // renderApp() will be called automatically by languageChanged event
   } catch (error) {
     console.error('Language switch error:', error);
-    showToast('言語切り替えに失敗しました', 'error');
+    showToast(i18n.t('toast.language_error'), 'error');
   } finally {
     // Hide loading indicator after render
     setTimeout(() => showLanguageLoadingIndicator(false), 300);
@@ -1973,15 +2022,21 @@ function showLanguageLoadingIndicator(show, lang = '') {
     const btnLang = btn.getAttribute('onclick').match(/switchLanguage\('(\w+)'\)/)?.[1];
     if (show && btnLang === lang) {
       btn.classList.add('loading');
-      btn.style.opacity = '0.6';
+      // Add pulsing gradient background + scale animation
+      btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      btn.style.transform = 'scale(1.15)';
+      btn.style.boxShadow = '0 0 20px rgba(102, 126, 234, 0.6)';
       btn.style.pointerEvents = 'none';
+      btn.style.transition = 'all 0.3s ease';
       // Add spinning animation to flag
       const originalContent = btn.innerHTML;
       btn.dataset.originalContent = originalContent;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      btn.innerHTML = '<i class="fas fa-sync-alt fa-spin text-white"></i>';
     } else if (!show) {
       btn.classList.remove('loading');
-      btn.style.opacity = '1';
+      btn.style.background = '';
+      btn.style.transform = '';
+      btn.style.boxShadow = '';
       btn.style.pointerEvents = 'auto';
       if (btn.dataset.originalContent) {
         btn.innerHTML = btn.dataset.originalContent;
@@ -2083,22 +2138,24 @@ function showPageLoadingOverlay(show, lang = '') {
       overlay = document.createElement('div');
       overlay.id = 'language-loading-overlay';
       overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
-      overlay.innerHTML = `
-        <div class="bg-white rounded-lg p-8 shadow-2xl text-center max-w-sm mx-4">
-          <div class="mb-4">
-            <i class="fas fa-language text-6xl text-purple-600 animate-pulse"></i>
-          </div>
-          <h3 class="text-xl font-bold text-gray-800 mb-2">言語を切り替えています</h3>
-          <p class="text-gray-600 mb-4">コンテンツを読み込み中...</p>
-          <div class="flex items-center justify-center gap-2">
-            <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
-            <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-            <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-          </div>
-        </div>
-      `;
       document.body.appendChild(overlay);
     }
+    
+    // Update overlay content with current language
+    overlay.innerHTML = `
+      <div class="bg-white rounded-lg p-8 shadow-2xl text-center max-w-sm mx-4">
+        <div class="mb-4">
+          <i class="fas fa-language text-6xl text-purple-600 animate-pulse"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">${i18n.t('toast.language_switching')}</h3>
+        <p class="text-gray-600 mb-4">${i18n.t('toast.content_loading')}</p>
+        <div class="flex items-center justify-center gap-2">
+          <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+          <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+          <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        </div>
+      </div>
+    `;
     overlay.style.display = 'flex';
   } else {
     if (overlay) {
