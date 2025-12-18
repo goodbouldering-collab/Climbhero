@@ -50,25 +50,41 @@ const state = {
 // ============ Language Support ============
 window.addEventListener('languageChanged', async (e) => {
   state.currentLanguage = e.detail.language;
-  // Reload blog posts, announcements, and videos with new language
+  
+  // Show loading overlay
+  showPageLoadingOverlay(true, e.detail.language);
+  
+  // Reload blog posts, announcements, videos, and news with new language
   try {
     const lang = state.currentLanguage || 'ja'
-    const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes] = await Promise.all([
+    console.log(`🌍 Loading content in ${lang}...`);
+    
+    const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes, newsRes] = await Promise.all([
       axios.get(`/api/blog?lang=${lang}`),
       axios.get(`/api/announcements?lang=${lang}`),
       axios.get(`/api/videos?limit=20&lang=${lang}`),
       axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
-      axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`)
+      axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`),
+      axios.get(`/api/news?lang=${lang}&limit=10`)
     ]);
+    
     state.blogPosts = blogRes.data || [];
     state.announcements = announcementsRes.data || [];
     state.videos = videosRes.data.videos || [];
     state.trendingVideos = trendingRes.data.videos || [];
     state.topLikedVideos = topLikedRes.data.videos || [];
+    state.newsArticles = newsRes.data.articles || [];
+    
+    console.log(`✅ Content loaded in ${lang}`);
   } catch (error) {
     console.error('Error reloading data for language change:', error);
+    showToast('コンテンツの読み込みに失敗しました', 'error');
   }
+  
   renderApp();
+  
+  // Hide loading overlay
+  setTimeout(() => showPageLoadingOverlay(false), 200);
 });
 
 // ============ Initialize App ============
@@ -272,9 +288,42 @@ async function loadSecondaryData(lang) {
     if (state.currentView === 'home') {
       renderApp();
     }
+    
+    // Preload other languages in background (non-blocking, delayed)
+    setTimeout(() => {
+      preloadAllLanguages(lang);
+    }, 3000); // Wait 3 seconds after initial load
+    
   } catch (error) {
     console.error('Failed to load secondary data:', error);
   }
+}
+
+// Preload all languages in background for instant switching
+async function preloadAllLanguages(currentLang) {
+  const languages = ['ja', 'en', 'zh', 'ko'].filter(l => l !== currentLang);
+  
+  console.log('🌐 Starting background preload for languages:', languages.join(', '));
+  
+  for (const lang of languages) {
+    try {
+      // Delay between requests to avoid overwhelming the server
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await Promise.all([
+        axios.get(`/api/blog?lang=${lang}&limit=10`),
+        axios.get(`/api/news?lang=${lang}&limit=10`),
+        axios.get(`/api/videos?lang=${lang}&limit=10`),
+        axios.get(`/api/announcements?lang=${lang}`)
+      ]);
+      
+      console.log(`✅ Preloaded ${lang}`);
+    } catch (error) {
+      console.warn(`⚠️ Preload failed for ${lang}:`, error.message);
+    }
+  }
+  
+  console.log('🎉 All languages preloaded!');
 }
 
 // Load user like status for all videos
@@ -1894,11 +1943,82 @@ function renderFilterButtons(filterType, currentValue, options) {
 
 // ============ Helper Functions ============
 
-// Language switcher
-function switchLanguage(lang) {
-  i18n.setLanguage(lang);
-  state.currentLanguage = lang;
-  // renderApp() will be called automatically by languageChanged event
+// Language switcher with loading indicator and preloading
+async function switchLanguage(lang) {
+  // Show loading indicator
+  showLanguageLoadingIndicator(true, lang);
+  
+  try {
+    // Update language
+    i18n.setLanguage(lang);
+    state.currentLanguage = lang;
+    
+    // Preload content in background for next language switch
+    setTimeout(() => preloadLanguageContent(lang), 100);
+    
+    // renderApp() will be called automatically by languageChanged event
+  } catch (error) {
+    console.error('Language switch error:', error);
+    showToast('言語切り替えに失敗しました', 'error');
+  } finally {
+    // Hide loading indicator after render
+    setTimeout(() => showLanguageLoadingIndicator(false), 300);
+  }
+}
+
+// Show language loading indicator
+function showLanguageLoadingIndicator(show, lang = '') {
+  const buttons = document.querySelectorAll('[onclick^="switchLanguage"]');
+  buttons.forEach(btn => {
+    const btnLang = btn.getAttribute('onclick').match(/switchLanguage\('(\w+)'\)/)?.[1];
+    if (show && btnLang === lang) {
+      btn.classList.add('loading');
+      btn.style.opacity = '0.6';
+      btn.style.pointerEvents = 'none';
+      // Add spinning animation to flag
+      const originalContent = btn.innerHTML;
+      btn.dataset.originalContent = originalContent;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    } else if (!show) {
+      btn.classList.remove('loading');
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+      if (btn.dataset.originalContent) {
+        btn.innerHTML = btn.dataset.originalContent;
+        delete btn.dataset.originalContent;
+      }
+    }
+  });
+}
+
+// Preload content for other languages in background
+async function preloadLanguageContent(currentLang) {
+  const languages = ['ja', 'en', 'zh', 'ko'];
+  const nextLangs = languages.filter(l => l !== currentLang);
+  
+  // Preload in background (non-blocking)
+  for (const lang of nextLangs) {
+    try {
+      // Preload blog posts
+      if (state.blogPosts && state.blogPosts.length > 0) {
+        await axios.get(`/api/blog?lang=${lang}&limit=10`);
+      }
+      
+      // Preload news
+      if (state.newsArticles && state.newsArticles.length > 0) {
+        await axios.get(`/api/news?lang=${lang}&limit=10`);
+      }
+      
+      // Preload videos
+      if (state.videos && state.videos.length > 0) {
+        await axios.get(`/api/videos?lang=${lang}&limit=10`);
+      }
+      
+      console.log(`✅ Preloaded content for ${lang}`);
+    } catch (error) {
+      console.warn(`Preload warning for ${lang}:`, error);
+    }
+  }
 }
 
 function getCategoryName(category) {
@@ -1952,6 +2072,44 @@ function showToast(message, type = 'info') {
     toast.style.animation = 'slideInRight 0.3s reverse';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+// Show page loading overlay for language switching
+function showPageLoadingOverlay(show, lang = '') {
+  let overlay = document.getElementById('language-loading-overlay');
+  
+  if (show) {
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'language-loading-overlay';
+      overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+      overlay.innerHTML = `
+        <div class="bg-white rounded-lg p-8 shadow-2xl text-center max-w-sm mx-4">
+          <div class="mb-4">
+            <i class="fas fa-language text-6xl text-purple-600 animate-pulse"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">言語を切り替えています</h3>
+          <p class="text-gray-600 mb-4">コンテンツを読み込み中...</p>
+          <div class="flex items-center justify-center gap-2">
+            <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+            <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+  } else {
+    if (overlay) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.3s';
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        overlay.style.opacity = '1';
+      }, 300);
+    }
+  }
 }
 
 function navigateTo(view) {
