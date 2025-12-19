@@ -47,7 +47,16 @@ const state = {
   },
   // Translation cache for all languages
   translationCache: {},
-  isPreloadingTranslations: false
+  isPreloadingTranslations: false,
+  // Auto-play video section
+  autoPlay: {
+    isPlaying: true,
+    currentIndex: 0,
+    playlist: [],
+    player: null,
+    interval: null,
+    videoDuration: 15000 // Default 15 seconds per video
+  }
 };
 
 // ============ Translation Preloading ============
@@ -498,6 +507,12 @@ function renderApp() {
   if (state.currentView === 'home') {
     root.innerHTML = renderHomePage();
     initializeCarousels();
+    // Initialize auto-play after a short delay
+    setTimeout(() => {
+      if (state.topLikedVideos.length > 0) {
+        initAutoPlayPlaylist();
+      }
+    }, 500);
   } else if (state.currentView === 'videos') {
     root.innerHTML = renderVideosPage();
   } else if (state.currentView === 'favorites') {
@@ -636,6 +651,77 @@ function renderHomePage() {
               ` : ''}
             </div>
           ` : ''}
+        </div>
+      </section>
+      
+      <!-- Auto-Play Video Section (Ranking Videos) -->
+      <section class="py-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <i class="fas fa-play text-white"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-white">${i18n.t('section.autoplay')}</h2>
+                <p class="text-sm text-gray-400">${i18n.t('section.autoplay_subtitle')}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all">
+                <i id="autoplay-icon" class="fas fa-pause mr-2"></i>
+                <span id="autoplay-text">${i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지'}</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Video Player Container -->
+          <div class="relative bg-black rounded-xl overflow-hidden shadow-2xl">
+            <div id="autoplay-video-container" class="aspect-video">
+              <!-- Video will be loaded here -->
+              <div class="w-full h-full flex items-center justify-center text-white">
+                <div class="text-center">
+                  <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+                  <p>動画を読み込み中...</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Video Info Overlay -->
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1">
+                  <h3 id="current-video-title" class="text-xl font-bold text-white mb-2">動画タイトル</h3>
+                  <div class="flex items-center gap-4 text-sm text-gray-300">
+                    <span id="current-video-views"><i class="fas fa-eye mr-1"></i>0 回視聴</span>
+                    <span id="current-video-likes"><i class="fas fa-heart mr-1"></i>0 いいね</span>
+                    <span id="current-video-platform" class="px-2 py-1 bg-white/20 rounded">YouTube</span>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-2">
+                  <button onclick="skipToNextVideo()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all">
+                    <i class="fas fa-forward mr-2"></i>次へ
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Progress Indicator -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-white/20">
+              <div id="autoplay-progress" class="h-full bg-gradient-to-r from-red-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <!-- Playlist Queue -->
+          <div class="mt-6">
+            <h3 class="text-lg font-semibold text-white mb-3">
+              <i class="fas fa-list mr-2"></i>${i18n.getCurrentLanguage() === 'ja' ? '再生リスト' : i18n.getCurrentLanguage() === 'en' ? 'Playlist' : i18n.getCurrentLanguage() === 'zh' ? '播放列表' : '재생목록'}
+              <span id="autoplay-queue-count" class="ml-2 text-sm text-gray-400">(0/0)</span>
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3" id="autoplay-queue">
+              <!-- Queue items will be inserted here -->
+            </div>
+          </div>
         </div>
       </section>
       
@@ -8931,3 +9017,232 @@ window.deleteCollection = deleteCollection;
 window.viewCollection = viewCollection;
 window.addToCollection = addToCollection;
 window.confirmAddToCollection = confirmAddToCollection;
+
+// ============ Auto-Play Video Feature ============
+
+// Initialize auto-play playlist from top-ranked videos
+function initAutoPlayPlaylist() {
+  // Get top 20 videos from rankings (prioritize videos with embeddable players)
+  const playlist = state.topLikedVideos
+    .filter(v => v.media_source === 'youtube' || v.media_source === 'vimeo')
+    .slice(0, 20);
+  
+  if (playlist.length === 0) {
+    console.warn('No embeddable videos available for auto-play');
+    return;
+  }
+  
+  state.autoPlay.playlist = playlist;
+  state.autoPlay.currentIndex = 0;
+  
+  console.log(`🎬 Auto-play playlist initialized with ${playlist.length} videos`);
+  
+  // Render queue
+  renderAutoPlayQueue();
+  
+  // Load first video
+  loadAutoPlayVideo(0);
+  
+  // Start auto-play timer
+  startAutoPlayTimer();
+}
+
+// Render auto-play queue
+function renderAutoPlayQueue() {
+  const queueContainer = document.getElementById('autoplay-queue');
+  const countSpan = document.getElementById('autoplay-queue-count');
+  
+  if (!queueContainer || !state.autoPlay.playlist.length) return;
+  
+  countSpan.textContent = `(${state.autoPlay.currentIndex + 1}/${state.autoPlay.playlist.length})`;
+  
+  queueContainer.innerHTML = state.autoPlay.playlist.map((video, index) => `
+    <div 
+      class="relative cursor-pointer rounded-lg overflow-hidden transition-all ${
+        index === state.autoPlay.currentIndex 
+          ? 'ring-2 ring-red-500 scale-105' 
+          : 'hover:scale-105 opacity-70 hover:opacity-100'
+      }"
+      onclick="loadAutoPlayVideo(${index})">
+      <img 
+        src="${video.thumbnail_url || 'https://via.placeholder.com/320x180?text=No+Image'}" 
+        alt="${video.title || 'Video'}"
+        class="w-full aspect-video object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
+        <div class="text-white text-xs truncate w-full">
+          ${index + 1}. ${video.title || 'Untitled'}
+        </div>
+      </div>
+      ${index === state.autoPlay.currentIndex ? `
+        <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+          再生中
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+// Load specific video in auto-play player
+function loadAutoPlayVideo(index) {
+  if (index < 0 || index >= state.autoPlay.playlist.length) return;
+  
+  state.autoPlay.currentIndex = index;
+  const video = state.autoPlay.playlist[index];
+  
+  console.log(`▶️ Loading video ${index + 1}/${state.autoPlay.playlist.length}:`, video.title);
+  
+  // Update info display
+  document.getElementById('current-video-title').textContent = video.title || 'Untitled';
+  document.getElementById('current-video-views').innerHTML = `<i class="fas fa-eye mr-1"></i>${formatNumber(video.views || 0)} 回視聴`;
+  document.getElementById('current-video-likes').innerHTML = `<i class="fas fa-heart mr-1"></i>${formatNumber(video.likes || 0)} いいね`;
+  
+  const platformIcons = {
+    youtube: '🎬 YouTube',
+    vimeo: '🎥 Vimeo',
+    tiktok: '🎵 TikTok',
+    instagram: '📷 Instagram'
+  };
+  document.getElementById('current-video-platform').textContent = platformIcons[video.media_source] || video.media_source;
+  
+  // Update queue display
+  renderAutoPlayQueue();
+  
+  // Load video player
+  const container = document.getElementById('autoplay-video-container');
+  
+  if (video.media_source === 'youtube') {
+    const videoId = extractYouTubeVideoId(video.media_url);
+    container.innerHTML = `
+      <iframe 
+        width="100%" 
+        height="100%" 
+        src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&enablejsapi=1" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen
+        class="w-full h-full">
+      </iframe>
+    `;
+  } else if (video.media_source === 'vimeo') {
+    const videoId = extractVimeoVideoId(video.media_url);
+    container.innerHTML = `
+      <iframe 
+        src="https://player.vimeo.com/video/${videoId}?autoplay=1&muted=0" 
+        width="100%" 
+        height="100%" 
+        frameborder="0" 
+        allow="autoplay; fullscreen; picture-in-picture" 
+        allowfullscreen
+        class="w-full h-full">
+      </iframe>
+    `;
+  }
+  
+  // Reset progress bar
+  document.getElementById('autoplay-progress').style.width = '0%';
+  
+  // Restart timer if playing
+  if (state.autoPlay.isPlaying) {
+    startAutoPlayTimer();
+  }
+}
+
+// Start auto-play timer
+function startAutoPlayTimer() {
+  // Clear existing interval
+  if (state.autoPlay.interval) {
+    clearInterval(state.autoPlay.interval);
+  }
+  
+  if (!state.autoPlay.isPlaying) return;
+  
+  const duration = state.autoPlay.videoDuration;
+  const startTime = Date.now();
+  
+  state.autoPlay.interval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min((elapsed / duration) * 100, 100);
+    
+    document.getElementById('autoplay-progress').style.width = `${progress}%`;
+    
+    if (progress >= 100) {
+      // Move to next video
+      skipToNextVideo();
+    }
+  }, 100);
+}
+
+// Toggle auto-play on/off
+function toggleAutoPlay() {
+  state.autoPlay.isPlaying = !state.autoPlay.isPlaying;
+  
+  const iconEl = document.getElementById('autoplay-icon');
+  const textEl = document.getElementById('autoplay-text');
+  
+  if (state.autoPlay.isPlaying) {
+    iconEl.className = 'fas fa-pause mr-2';
+    textEl.textContent = '停止';
+    startAutoPlayTimer();
+    console.log('▶️ Auto-play resumed');
+  } else {
+    iconEl.className = 'fas fa-play mr-2';
+    textEl.textContent = '再生';
+    if (state.autoPlay.interval) {
+      clearInterval(state.autoPlay.interval);
+    }
+    console.log('⏸️ Auto-play paused');
+  }
+}
+
+// Skip to next video
+function skipToNextVideo() {
+  const nextIndex = (state.autoPlay.currentIndex + 1) % state.autoPlay.playlist.length;
+  loadAutoPlayVideo(nextIndex);
+}
+
+// Extract YouTube video ID from URL
+function extractYouTubeVideoId(url) {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  
+  return url;
+}
+
+// Extract Vimeo video ID from URL
+function extractVimeoVideoId(url) {
+  const match = url.match(/vimeo\.com\/(\d+)/);
+  return match ? match[1] : url;
+}
+
+// Format large numbers
+function formatNumber(num) {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+}
+
+// Initialize auto-play when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for data to load
+  setTimeout(() => {
+    if (state.currentView === 'home' && state.topLikedVideos.length > 0) {
+      initAutoPlayPlaylist();
+    }
+  }, 2000);
+});
+
+// Export functions to window
+window.initAutoPlayPlaylist = initAutoPlayPlaylist;
+window.toggleAutoPlay = toggleAutoPlay;
+window.skipToNextVideo = skipToNextVideo;
+window.loadAutoPlayVideo = loadAutoPlayVideo;
