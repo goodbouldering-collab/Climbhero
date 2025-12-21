@@ -654,72 +654,84 @@ function renderHomePage() {
         </div>
       </section>
       
-      <!-- Auto-Play Video Section (Ranking Videos) -->
-      <section class="py-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <!-- Auto-Play Video Carousel (Ranking Videos) -->
+      <section class="py-6 bg-gradient-to-br from-gray-900 via-black to-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <i class="fas fa-play text-white"></i>
               </div>
               <div>
-                <h2 class="text-2xl font-bold text-white">${i18n.t('section.autoplay')}</h2>
-                <p class="text-sm text-gray-400">${i18n.t('section.autoplay_subtitle')}</p>
+                <h2 class="text-xl md:text-2xl font-bold text-white">${i18n.t('section.autoplay')}</h2>
+                <p class="text-xs md:text-sm text-gray-400">${i18n.t('section.autoplay_subtitle')}</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all">
-                <i id="autoplay-icon" class="fas fa-pause mr-2"></i>
-                <span id="autoplay-text">${i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지'}</span>
+              <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="px-3 py-1.5 md:px-4 md:py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm">
+                <i id="autoplay-icon" class="fas fa-pause mr-1 md:mr-2"></i>
+                <span id="autoplay-text" class="hidden md:inline">${i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지'}</span>
               </button>
             </div>
           </div>
           
-          <!-- Video Player Container -->
-          <div class="relative bg-black rounded-xl overflow-hidden shadow-2xl">
-            <div id="autoplay-video-container" class="aspect-video">
-              <!-- Video will be loaded here -->
-              <div class="w-full h-full flex items-center justify-center text-white">
-                <div class="text-center">
-                  <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
-                  <p>動画を読み込み中...</p>
-                </div>
-              </div>
-            </div>
+          <!-- Video Carousel Container with Flip Animation -->
+          <div class="relative">
+            <!-- Previous Button (Left) -->
+            <button 
+              onclick="skipToPreviousVideo()" 
+              class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
+              id="prev-video-btn">
+              <i class="fas fa-chevron-left"></i>
+            </button>
             
-            <!-- Video Info Overlay -->
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-6">
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex-1">
-                  <h3 id="current-video-title" class="text-xl font-bold text-white mb-2">動画タイトル</h3>
-                  <div class="flex items-center gap-4 text-sm text-gray-300">
-                    <span id="current-video-views"><i class="fas fa-eye mr-1"></i>0 回視聴</span>
-                    <span id="current-video-likes"><i class="fas fa-heart mr-1"></i>0 いいね</span>
-                    <span id="current-video-platform" class="px-2 py-1 bg-white/20 rounded">YouTube</span>
+            <!-- Next Button (Right) -->
+            <button 
+              onclick="skipToNextVideo()" 
+              class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
+              id="next-video-btn">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+            
+            <!-- Video Player with Flip Effect -->
+            <div class="relative bg-black rounded-xl overflow-hidden shadow-2xl" id="video-carousel-wrapper">
+              <div id="autoplay-video-container" class="aspect-video transition-all duration-500 ease-out" style="perspective: 1000px;">
+                <!-- Video will be loaded here -->
+                <div class="w-full h-full flex items-center justify-center text-white">
+                  <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+                    <p class="text-sm">${i18n.getCurrentLanguage() === 'ja' ? '動画を読み込み中...' : i18n.getCurrentLanguage() === 'en' ? 'Loading video...' : i18n.getCurrentLanguage() === 'zh' ? '正在加载视频...' : '동영상 로딩 중...'}</p>
                   </div>
                 </div>
-                <div class="flex flex-col gap-2">
-                  <button onclick="skipToNextVideo()" class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all">
-                    <i class="fas fa-forward mr-2"></i>次へ
-                  </button>
+              </div>
+              
+              <!-- Video Info Overlay (Compact) -->
+              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 md:p-4">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <h3 id="current-video-title" class="text-sm md:text-lg font-bold text-white mb-1 truncate">動画タイトル</h3>
+                    <div class="flex items-center gap-2 md:gap-3 text-xs text-gray-300">
+                      <span id="current-video-views"><i class="fas fa-eye mr-1"></i>0</span>
+                      <span id="current-video-likes"><i class="fas fa-heart mr-1"></i>0</span>
+                      <span id="current-video-platform" class="px-1.5 py-0.5 bg-white/20 rounded text-xs">YouTube</span>
+                    </div>
+                  </div>
+                  <!-- Progress Counter -->
+                  <div class="text-white text-xs bg-black/50 px-2 py-1 rounded">
+                    <span id="autoplay-queue-count">1/20</span>
+                  </div>
                 </div>
+              </div>
+              
+              <!-- Progress Indicator (Top) -->
+              <div class="absolute top-0 left-0 right-0 h-1 bg-white/20">
+                <div id="autoplay-progress" class="h-full bg-gradient-to-r from-red-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
               </div>
             </div>
             
-            <!-- Progress Indicator -->
-            <div class="absolute top-0 left-0 right-0 h-1 bg-white/20">
-              <div id="autoplay-progress" class="h-full bg-gradient-to-r from-red-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
-            </div>
-          </div>
-          
-          <!-- Playlist Queue -->
-          <div class="mt-6">
-            <h3 class="text-lg font-semibold text-white mb-3">
-              <i class="fas fa-list mr-2"></i>${i18n.getCurrentLanguage() === 'ja' ? '再生リスト' : i18n.getCurrentLanguage() === 'en' ? 'Playlist' : i18n.getCurrentLanguage() === 'zh' ? '播放列表' : '재생목록'}
-              <span id="autoplay-queue-count" class="ml-2 text-sm text-gray-400">(0/0)</span>
-            </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3" id="autoplay-queue">
-              <!-- Queue items will be inserted here -->
+            <!-- Dots Indicator -->
+            <div class="flex items-center justify-center gap-1.5 mt-3" id="carousel-dots">
+              <!-- Dots will be inserted here -->
             </div>
           </div>
         </div>
@@ -9037,57 +9049,87 @@ function initAutoPlayPlaylist() {
   
   console.log(`🎬 Auto-play playlist initialized with ${playlist.length} videos`);
   
-  // Render queue
-  renderAutoPlayQueue();
+  // Render dots indicator
+  renderCarouselDots();
   
   // Load first video
-  loadAutoPlayVideo(0);
+  loadAutoPlayVideo(0, 'none');
   
   // Start auto-play timer
   startAutoPlayTimer();
 }
 
-// Render auto-play queue
-function renderAutoPlayQueue() {
-  const queueContainer = document.getElementById('autoplay-queue');
+// Render carousel dots indicator
+function renderCarouselDots() {
+  const dotsContainer = document.getElementById('carousel-dots');
   const countSpan = document.getElementById('autoplay-queue-count');
   
-  if (!queueContainer || !state.autoPlay.playlist.length) return;
+  if (!dotsContainer || !state.autoPlay.playlist.length) return;
   
-  countSpan.textContent = `(${state.autoPlay.currentIndex + 1}/${state.autoPlay.playlist.length})`;
+  // Update counter
+  countSpan.textContent = `${state.autoPlay.currentIndex + 1}/${state.autoPlay.playlist.length}`;
   
-  queueContainer.innerHTML = state.autoPlay.playlist.map((video, index) => `
-    <div 
-      class="relative cursor-pointer rounded-lg overflow-hidden transition-all ${
-        index === state.autoPlay.currentIndex 
-          ? 'ring-2 ring-red-500 scale-105' 
-          : 'hover:scale-105 opacity-70 hover:opacity-100'
-      }"
-      onclick="loadAutoPlayVideo(${index})">
-      <img 
-        src="${video.thumbnail_url || 'https://via.placeholder.com/320x180?text=No+Image'}" 
-        alt="${video.title || 'Video'}"
-        class="w-full aspect-video object-cover">
-      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
-        <div class="text-white text-xs truncate w-full">
-          ${index + 1}. ${video.title || 'Untitled'}
-        </div>
+  // Create dots (max 10 visible, show relevant range)
+  const totalDots = state.autoPlay.playlist.length;
+  const maxVisibleDots = Math.min(10, totalDots);
+  const currentIndex = state.autoPlay.currentIndex;
+  
+  let startDot = Math.max(0, currentIndex - Math.floor(maxVisibleDots / 2));
+  let endDot = Math.min(totalDots, startDot + maxVisibleDots);
+  
+  // Adjust if at the end
+  if (endDot === totalDots) {
+    startDot = Math.max(0, endDot - maxVisibleDots);
+  }
+  
+  let dotsHTML = '';
+  
+  // Show first dot if not in range
+  if (startDot > 0) {
+    dotsHTML += `<div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>`;
+    if (startDot > 1) {
+      dotsHTML += `<div class="text-white/50 text-xs">...</div>`;
+    }
+  }
+  
+  // Show visible dots
+  for (let i = startDot; i < endDot; i++) {
+    const isActive = i === currentIndex;
+    dotsHTML += `
+      <div 
+        class="transition-all cursor-pointer ${
+          isActive 
+            ? 'w-6 h-1.5 bg-gradient-to-r from-red-500 to-pink-500' 
+            : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/60'
+        } rounded-full"
+        onclick="loadAutoPlayVideo(${i}, 'flip')">
       </div>
-      ${index === state.autoPlay.currentIndex ? `
-        <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-          再生中
-        </div>
-      ` : ''}
-    </div>
-  `).join('');
+    `;
+  }
+  
+  // Show last dot if not in range
+  if (endDot < totalDots) {
+    if (endDot < totalDots - 1) {
+      dotsHTML += `<div class="text-white/50 text-xs">...</div>`;
+    }
+    dotsHTML += `<div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>`;
+  }
+  
+  dotsContainer.innerHTML = dotsHTML;
 }
 
-// Load specific video in auto-play player
-function loadAutoPlayVideo(index) {
+// Load specific video in auto-play player with flip animation
+function loadAutoPlayVideo(index, direction = 'right') {
   if (index < 0 || index >= state.autoPlay.playlist.length) return;
   
+  const prevIndex = state.autoPlay.currentIndex;
   state.autoPlay.currentIndex = index;
   const video = state.autoPlay.playlist[index];
+  
+  // Determine animation direction
+  if (direction === 'flip') {
+    direction = index > prevIndex ? 'right' : 'left';
+  }
   
   console.log(`▶️ Loading video ${index + 1}/${state.autoPlay.playlist.length}:`, video.title);
   
@@ -9104,11 +9146,37 @@ function loadAutoPlayVideo(index) {
   };
   document.getElementById('current-video-platform').textContent = platformIcons[video.media_source] || video.media_source;
   
-  // Update queue display
-  renderAutoPlayQueue();
+  // Update dots display
+  renderCarouselDots();
   
-  // Load video player
+  // Load video player with animation
   const container = document.getElementById('autoplay-video-container');
+  
+  // Apply flip animation
+  if (direction !== 'none') {
+    container.style.transform = direction === 'right' ? 'rotateY(90deg)' : 'rotateY(-90deg)';
+    container.style.opacity = '0';
+    
+    setTimeout(() => {
+      loadVideoIframe(container, video);
+      container.style.transform = 'rotateY(0deg)';
+      container.style.opacity = '1';
+    }, 250);
+  } else {
+    loadVideoIframe(container, video);
+  }
+  
+  // Reset progress bar
+  document.getElementById('autoplay-progress').style.width = '0%';
+  
+  // Restart timer if playing
+  if (state.autoPlay.isPlaying) {
+    startAutoPlayTimer();
+  }
+}
+
+// Load video iframe
+function loadVideoIframe(container, video) {
   
   if (video.media_source === 'youtube') {
     const videoId = extractYouTubeVideoId(video.media_url);
@@ -9136,14 +9204,6 @@ function loadAutoPlayVideo(index) {
         class="w-full h-full">
       </iframe>
     `;
-  }
-  
-  // Reset progress bar
-  document.getElementById('autoplay-progress').style.width = '0%';
-  
-  // Restart timer if playing
-  if (state.autoPlay.isPlaying) {
-    startAutoPlayTimer();
   }
 }
 
@@ -9180,13 +9240,13 @@ function toggleAutoPlay() {
   const textEl = document.getElementById('autoplay-text');
   
   if (state.autoPlay.isPlaying) {
-    iconEl.className = 'fas fa-pause mr-2';
-    textEl.textContent = '停止';
+    iconEl.className = 'fas fa-pause mr-1 md:mr-2';
+    if (textEl) textEl.textContent = '停止';
     startAutoPlayTimer();
     console.log('▶️ Auto-play resumed');
   } else {
-    iconEl.className = 'fas fa-play mr-2';
-    textEl.textContent = '再生';
+    iconEl.className = 'fas fa-play mr-1 md:mr-2';
+    if (textEl) textEl.textContent = '再生';
     if (state.autoPlay.interval) {
       clearInterval(state.autoPlay.interval);
     }
@@ -9197,7 +9257,15 @@ function toggleAutoPlay() {
 // Skip to next video
 function skipToNextVideo() {
   const nextIndex = (state.autoPlay.currentIndex + 1) % state.autoPlay.playlist.length;
-  loadAutoPlayVideo(nextIndex);
+  loadAutoPlayVideo(nextIndex, 'right');
+}
+
+// Skip to previous video
+function skipToPreviousVideo() {
+  const prevIndex = state.autoPlay.currentIndex === 0 
+    ? state.autoPlay.playlist.length - 1 
+    : state.autoPlay.currentIndex - 1;
+  loadAutoPlayVideo(prevIndex, 'left');
 }
 
 // Extract YouTube video ID from URL
@@ -9245,4 +9313,5 @@ document.addEventListener('DOMContentLoaded', () => {
 window.initAutoPlayPlaylist = initAutoPlayPlaylist;
 window.toggleAutoPlay = toggleAutoPlay;
 window.skipToNextVideo = skipToNextVideo;
+window.skipToPreviousVideo = skipToPreviousVideo;
 window.loadAutoPlayVideo = loadAutoPlayVideo;
