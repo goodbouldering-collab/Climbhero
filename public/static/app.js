@@ -115,16 +115,34 @@ window.addEventListener('languageChanged', async (e) => {
     
     // Check cache first
     if (state.translationCache[lang]) {
-      console.log(`⚡ Using cached ${lang} translations`);
+      console.log(`⚡ Using cached ${lang} translations - instant switch`);
       state.blogPosts = state.translationCache[lang].blog || [];
       state.newsArticles = state.translationCache[lang].news || [];
       state.announcements = state.translationCache[lang].announcements || [];
       
-      // Load only essential video data (top-liked for auto-play)
-      const topLikedRes = await axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`);
-      state.topLikedVideos = topLikedRes.data.videos || [];
+      // Immediately render with cached data
+      renderApp();
       
-      // Other video data loaded on-demand when needed
+      // Reload videos in background (for updated translations)
+      console.log(`🔄 Reloading videos in background for ${lang}...`);
+      Promise.all([
+        axios.get(`/api/videos?limit=20&lang=${lang}`),
+        axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
+        axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`)
+      ]).then(([videosRes, trendingRes, topLikedRes]) => {
+        state.videos = videosRes.data.videos || [];
+        state.trendingVideos = trendingRes.data.videos || [];
+        state.topLikedVideos = topLikedRes.data.videos || [];
+        console.log(`✅ Videos updated in background`);
+        // Re-render video sections only
+        renderApp();
+      }).catch(err => {
+        console.warn('Background video update failed:', err);
+      });
+      
+      // Hide loading overlay immediately
+      setTimeout(() => showPageLoadingOverlay(false), 100);
+      return;
     } else {
       // No cache, load all data
       const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes, newsRes] = await Promise.all([
@@ -149,18 +167,18 @@ window.addEventListener('languageChanged', async (e) => {
         news: state.newsArticles,
         announcements: state.announcements
       };
+      
+      console.log(`✅ Content loaded in ${lang}`);
+      renderApp();
+      
+      // Hide loading overlay
+      setTimeout(() => showPageLoadingOverlay(false), 200);
     }
-    
-    console.log(`✅ Content loaded in ${lang}`);
   } catch (error) {
     console.error('Error reloading data for language change:', error);
     showToast(i18n.t('toast.data_load_error'), 'error');
+    setTimeout(() => showPageLoadingOverlay(false), 200);
   }
-  
-  renderApp();
-  
-  // Hide loading overlay
-  setTimeout(() => showPageLoadingOverlay(false), 200);
 });
 
 // ============ Initialize App ============
@@ -9253,9 +9271,13 @@ function loadVideoIframe(container, video) {
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
         allowfullscreen
         class="w-full h-full"
-        id="youtube-player-${videoId}">
+        id="youtube-player-${videoId}"
+        onerror="console.error('❌ Failed to load YouTube iframe:', '${videoId}'); if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) { state.autoPlay.skipRetryCount++; setTimeout(() => skipToNextVideo(), 1000); }">
       </iframe>
     `;
+    
+    // Log successful iframe creation
+    console.log(`✅ YouTube iframe created for: ${videoId}`);
   } else if (video.media_source === 'vimeo') {
     const videoId = extractVimeoVideoId(videoUrl);
     
@@ -9277,9 +9299,13 @@ function loadVideoIframe(container, video) {
         allow="autoplay; fullscreen; picture-in-picture" 
         allowfullscreen
         class="w-full h-full"
-        id="vimeo-player-${videoId}">
+        id="vimeo-player-${videoId}"
+        onerror="console.error('❌ Failed to load Vimeo iframe:', '${videoId}'); if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) { state.autoPlay.skipRetryCount++; setTimeout(() => skipToNextVideo(), 1000); }">
       </iframe>
     `;
+    
+    // Log successful iframe creation
+    console.log(`✅ Vimeo iframe created for: ${videoId}`);
   }
 }
 
@@ -9363,6 +9389,24 @@ function extractYouTubeVideoId(url) {
 function extractVimeoVideoId(url) {
   const match = url.match(/vimeo\.com\/(\d+)/);
   return match ? match[1] : url;
+}
+
+// Get thumbnail URL with fallback
+function getThumbnailUrl(mediaSource, thumbnailUrl, externalVideoId) {
+  // If thumbnail URL exists, use it
+  if (thumbnailUrl && thumbnailUrl !== 'null' && thumbnailUrl !== '') {
+    return thumbnailUrl;
+  }
+  
+  // Fallback to platform defaults
+  if (mediaSource === 'youtube' && externalVideoId) {
+    return `https://i.ytimg.com/vi/${externalVideoId}/hqdefault.jpg`;
+  } else if (mediaSource === 'vimeo' && externalVideoId) {
+    return `https://vumbnail.com/${externalVideoId}.jpg`;
+  }
+  
+  // Default fallback image
+  return 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80';
 }
 
 // Format large numbers

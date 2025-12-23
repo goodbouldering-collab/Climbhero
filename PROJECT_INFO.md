@@ -9,7 +9,7 @@
 
 ### 本番環境
 - **メインURL**: https://project-02ceb497.pages.dev
-- **最新デプロイ**: https://2181bdd5.project-02ceb497.pages.dev
+- **最新デプロイ**: https://50b4e876.project-02ceb497.pages.dev
 - **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 
 ### サンドボックス環境
