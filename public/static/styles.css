@@ -156,7 +156,8 @@ button:disabled {
   display: flex;
   align-items: center;
   overflow: hidden;
-  background: #000;
+  background: linear-gradient(to bottom, #000 0%, #111827 100%);
+  padding-bottom: 3rem;
 }
 
 @media (max-width: 768px) {

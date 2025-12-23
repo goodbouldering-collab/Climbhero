@@ -632,30 +632,25 @@ function renderHomePage() {
             ` : ''}
           </div>
           
-          <!-- Announcements inside Hero (2 lines max) -->
+          <!-- Announcements inside Hero (2 lines max, clickable) -->
           ${state.announcements && state.announcements.length > 0 ? `
             <div class="mt-6 space-y-2">
               ${state.announcements.slice(0, 2).map(a => `
-                <div class="text-white text-sm bg-black/20 backdrop-blur-sm px-4 py-2 rounded">
+                <div 
+                  onclick="showAnnouncementsModal()" 
+                  class="text-white text-sm bg-black/20 backdrop-blur-sm px-4 py-2 rounded cursor-pointer hover:bg-black/30 transition-all">
                   <div class="line-clamp-2">
                     <span class="font-bold">● ${a.title}:</span> ${a.content}
                   </div>
                 </div>
               `).join('')}
-              ${state.announcements.length > 2 ? `
-                <div class="text-center mt-4">
-                  <a href="javascript:void(0)" onclick="showAnnouncementsModal()" class="text-white text-sm font-semibold hover:text-gray-200 hover:underline transition-all">
-                    ${i18n.t('announcement.view_all_count').replace('{count}', state.announcements.length)}
-                  </a>
-                </div>
-              ` : ''}
             </div>
           ` : ''}
         </div>
       </section>
       
-      <!-- Auto-Play Video Carousel (Ranking Digest) - After Hero Announcements -->
-      <section class="py-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
+      <!-- Auto-Play Video Carousel (Ranking Digest) - Seamlessly connected to Hero -->
+      <section class="bg-gradient-to-br from-gray-900 via-black to-gray-900" style="padding-top: 0; margin-top: -2rem;">
         <div class="w-full px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
