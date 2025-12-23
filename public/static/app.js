@@ -822,19 +822,18 @@ function renderHomePage() {
       ` : ''}
       
       <!-- How to Use ClimbHero Section (Collapsible) -->
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button 
-            onclick="toggleFeatureSection()" 
-            class="w-full flex items-center justify-between py-2 text-left hover:bg-gray-50 rounded transition">
-            <h2 class="text-lg font-bold text-gray-900">
-              <i class="fas fa-info-circle text-purple-600 mr-2"></i>
-              ${i18n.t('feature.title')}
-            </h2>
-            <i id="feature-toggle-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-          </button>
-          
-          <div id="feature-content" class="hidden mt-4">
+      <section class="bg-white border-b border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
+            <summary class="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-purple-100 hover:to-blue-100 transition-colors">
+              <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                <i class="fas fa-info-circle mr-2 text-purple-600"></i>
+                ${i18n.t('feature.title')}
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
+              </h2>
+            </summary>
+            
+            <div class="p-4">
             <!-- Mission Statement -->
             <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 rounded-lg p-4 mb-6">
               <p class="text-sm text-gray-700 leading-relaxed">
@@ -889,9 +888,10 @@ function renderHomePage() {
                 ${i18n.t('feature.upgrade')}
               </button>
             </div>
-          </div>
+            </div>
+          </details>
         </div>
-      </div>
+      </section>
       
       <!-- Climber Testimonials Section -->
       ${state.testimonials && state.testimonials.length > 0 ? `
@@ -2274,32 +2274,8 @@ function navigateToMyPage() {
 }
 
 // ============ Feature Section Toggle ============
-function toggleFeatureSection() {
-  const content = document.getElementById('feature-content');
-  const icon = document.getElementById('feature-toggle-icon');
-  
-  if (content.classList.contains('hidden')) {
-    content.classList.remove('hidden');
-    icon.classList.add('rotate-180');
-  } else {
-    content.classList.add('hidden');
-    icon.classList.remove('rotate-180');
-  }
-}
-
-// ============ Testimonials Section Toggle ============
-function toggleTestimonialsSection() {
-  const content = document.getElementById('testimonials-content');
-  const icon = document.getElementById('testimonials-toggle-icon');
-  
-  if (content.classList.contains('hidden')) {
-    content.classList.remove('hidden');
-    icon.classList.add('rotate-180');
-  } else {
-    content.classList.add('hidden');
-    icon.classList.remove('rotate-180');
-  }
-}
+// Feature and Testimonials sections now use native <details> accordion
+// No toggle functions needed
 
 // ============ Pricing Modal ============
 function showPricingModal() {
