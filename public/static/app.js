@@ -9036,6 +9036,13 @@ function initAutoPlayPlaylist() {
         return false;
       }
       
+      // Must have valid thumbnail
+      const thumbnailUrl = v.thumbnail_url;
+      if (!thumbnailUrl || thumbnailUrl === '' || thumbnailUrl === 'null') {
+        console.warn('⚠️ Skipping video without thumbnail:', v.title);
+        return false;
+      }
+      
       // Validate URL format
       if (v.media_source === 'youtube') {
         const hasValidYouTubeUrl = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/.test(videoUrl);
