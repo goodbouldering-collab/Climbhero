@@ -656,7 +656,7 @@ function renderHomePage() {
       
       <!-- Auto-Play Video Carousel (Ranking Videos) -->
       <section class="py-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
-        <div class="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
@@ -695,7 +695,7 @@ function renderHomePage() {
             
             <!-- Video Player with Flip Effect -->
             <div class="relative bg-black rounded-xl overflow-hidden shadow-2xl" id="video-carousel-wrapper">
-              <div id="autoplay-video-container" class="w-full transition-all duration-500 ease-out" style="perspective: 1000px; height: 70vh; min-height: 500px; max-height: 800px;">
+              <div id="autoplay-video-container" class="w-full aspect-video transition-all duration-500 ease-out" style="perspective: 1000px;">
                 <!-- Video will be loaded here -->
                 <div class="w-full h-full flex items-center justify-center text-white">
                   <div class="text-center">
@@ -9169,7 +9169,7 @@ function loadVideoIframe(container, video) {
       <iframe 
         width="100%" 
         height="100%" 
-        src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1" 
+        src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&loop=0" 
         frameborder="0" 
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
         allowfullscreen
@@ -9181,7 +9181,7 @@ function loadVideoIframe(container, video) {
     const videoId = extractVimeoVideoId(video.media_url);
     container.innerHTML = `
       <iframe 
-        src="https://player.vimeo.com/video/${videoId}?autoplay=1&muted=0&loop=0&controls=1&playsinline=1" 
+        src="https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=0&controls=1&playsinline=1" 
         width="100%" 
         height="100%" 
         frameborder="0" 
