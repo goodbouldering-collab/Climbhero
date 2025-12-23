@@ -7203,7 +7203,7 @@ async function saveSettings(event) {
   
   const settings = {
     youtube_api_key: formData.get('youtube_api_key'),
-    openai_api_key: formData.get('openai_api_key'),
+    gemini_api_key: formData.get('gemini_api_key'),
     vimeo_access_token: formData.get('vimeo_access_token'),
     instagram_access_token: formData.get('instagram_access_token'),
     tiktok_access_token: formData.get('tiktok_access_token'),
@@ -7231,8 +7231,8 @@ async function analyzeVideoUrl() {
     return;
   }
   
-  if (!state.userSettings?.openai_api_key) {
-    showToast('OpenAI APIキーを設定ページで設定してください', 'error');
+  if (!state.userSettings?.gemini_api_key) {
+    showToast('Gemini APIキーを設定ページで設定してください', 'error');
     window.location.hash = 'settings';
     return;
   }
@@ -7244,7 +7244,7 @@ async function analyzeVideoUrl() {
   try {
     const res = await axios.post('/api/videos/analyze-url', {
       url,
-      openai_api_key: state.userSettings.openai_api_key
+      gemini_api_key: state.userSettings.gemini_api_key
     });
     
     const data = res.data.data;
@@ -7464,9 +7464,9 @@ function renderSettingsPage() {
                   <i class="fas fa-info-circle text-blue-600 text-xl mt-0.5"></i>
                   <div>
                     <p class="font-bold text-blue-900 mb-1">AI動画解析に必要</p>
-                    <p class="text-sm text-blue-800">動画URLの自動解析にはOpenAI APIキーが必須です。</p>
-                    <a href="https://platform.openai.com/api-keys" target="_blank" class="text-sm text-blue-600 hover:underline mt-1 inline-block">
-                      OpenAI APIキーを取得する →
+                    <p class="text-sm text-blue-800">動画URLの自動解析にはGemini APIキーが必須です。</p>
+                    <a href="https://aistudio.google.com/apikey" target="_blank" class="text-sm text-blue-600 hover:underline mt-1 inline-block">
+                      Gemini APIキーを取得する →
                     </a>
                   </div>
                 </div>
@@ -7474,12 +7474,12 @@ function renderSettingsPage() {
               
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  <i class="fas fa-robot text-purple-600"></i> OpenAI API Key（必須）
+                  <i class="fas fa-robot text-purple-600"></i> Gemini API Key（必須）
                 </label>
                 <input 
                   type="password" 
-                  name="openai_api_key" 
-                  value="${settings.openai_api_key || ''}"
+                  name="gemini_api_key" 
+                  value="${settings.gemini_api_key || ''}"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="sk-..."
                 />

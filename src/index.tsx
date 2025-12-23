@@ -4450,14 +4450,14 @@ app.post('/api/videos/analyze-url', async (c) => {
   
   try {
     const body = await c.req.json()
-    const { url, openai_api_key } = body
+    const { url, gemini_api_key } = body
     
     if (!url) {
       return c.json({ error: 'URL is required' }, 400)
     }
     
-    if (!openai_api_key) {
-      return c.json({ error: 'OpenAI API key is required. Please set it in Settings.' }, 400)
+    if (!gemini_api_key) {
+      return c.json({ error: 'Gemini API key is required. Please set it in Settings.' }, 400)
     }
     
     // Detect platform from URL
@@ -4482,35 +4482,31 @@ app.post('/api/videos/analyze-url', async (c) => {
       videoId = match ? match[1] : ''
     }
     
-    // Call OpenAI to extract metadata
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Gemini AI to extract metadata
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${gemini_api_key}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openai_api_key}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that extracts metadata from video URLs. Return a JSON object with: title (creative title based on URL), description (brief description), grade (climbing grade if applicable), location (if mentioned in URL), tags (comma-separated keywords).'
-          },
-          {
-            role: 'user',
-            content: `Extract metadata from this video URL: ${url}`
-          }
-        ],
-        response_format: { type: 'json_object' }
+        contents: [{
+          parts: [{
+            text: `You are a helpful assistant that extracts metadata from video URLs. Analyze this video URL and return a JSON object with the following fields:\n- title: creative title based on URL\n- description: brief description\n- grade: climbing grade if applicable\n- location: if mentioned in URL\n- tags: comma-separated keywords\n\nVideo URL: ${url}\n\nReturn only valid JSON.`
+          }]
+        }],
+        generationConfig: {
+          response_mime_type: 'application/json'
+        }
       })
     })
     
-    if (!openaiResponse.ok) {
-      throw new Error('OpenAI API request failed')
+    if (!geminiResponse.ok) {
+      throw new Error('Gemini API request failed')
     }
     
-    const openaiData = await openaiResponse.json()
-    const metadata = JSON.parse(openaiData.choices[0].message.content)
+    const geminiData = await geminiResponse.json()
+    const responseText = geminiData.candidates[0].content.parts[0].text
+    const metadata = JSON.parse(responseText)
     
     // Generate thumbnail URL based on platform
     let thumbnailUrl = ''
@@ -4582,7 +4578,7 @@ app.put('/api/settings', async (c) => {
     const body = await c.req.json()
     const { 
       youtube_api_key, 
-      openai_api_key,
+      gemini_api_key,
       vimeo_access_token,
       instagram_access_token,
       tiktok_access_token,
@@ -5151,7 +5147,7 @@ app.get('/api/admin/news/settings', async (c) => {
     const safeSettings = {
       ...settings,
       google_api_key: settings.google_api_key ? '***' : null,
-      openai_api_key: settings.openai_api_key ? '***' : null
+      gemini_api_key: settings.gemini_api_key ? '***' : null
     }
     
     return c.json({ settings: safeSettings })
@@ -5180,7 +5176,7 @@ app.put('/api/admin/news/settings', async (c) => {
       max_articles_per_crawl,
       retention_days,
       google_api_key,
-      openai_api_key,
+      gemini_api_key,
       is_enabled
     } = body
     
@@ -5223,9 +5219,9 @@ app.put('/api/admin/news/settings', async (c) => {
       params.push(google_api_key)
     }
     
-    if (openai_api_key && openai_api_key !== '***') {
-      updateFields.push('openai_api_key = ?')
-      params.push(openai_api_key)
+    if (gemini_api_key && gemini_api_key !== '***') {
+      updateFields.push('gemini_api_key = ?')
+      params.push(gemini_api_key)
     }
     
     if (is_enabled !== undefined) {
