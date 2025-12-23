@@ -31,7 +31,7 @@ const translations = {
     'section.rankings': 'ランキング',
     'section.blog': 'ブログ記事',
     'section.news': 'クライミングニュース',
-    'section.autoplay': 'トップランキング動画',
+    'section.autoplay': 'ランキングダイジェスト',
     'section.autoplay_subtitle': '人気の動画を自動連続再生',
     
     // News Section
@@ -720,7 +720,7 @@ const translations = {
     'section.rankings': 'Rankings',
     'section.blog': 'Blog Posts',
     'section.news': 'Climbing News',
-    'section.autoplay': 'Top Ranking Videos',
+    'section.autoplay': 'Ranking Digest',
     'section.autoplay_subtitle': 'Auto-play popular videos continuously',
     
     // News Section
@@ -1414,7 +1414,7 @@ const translations = {
     'section.featured': '精选视频',
     'section.favorites': '收藏视频',
     'section.news': '攀岩新闻',
-    'section.autoplay': '热门排行视频',
+    'section.autoplay': '排名摘要',
     'section.autoplay_subtitle': '自动连续播放热门视频',
     
     // News Section
@@ -1774,7 +1774,7 @@ const translations = {
     'section.featured': '주요 동영상',
     'section.favorites': '즐겨찾기 동영상',
     'section.news': '클라이밍 뉴스',
-    'section.autoplay': '인기 랭킹 동영상',
+    'section.autoplay': '랭킹 다이제스트',
     'section.autoplay_subtitle': '인기 동영상 자동 연속 재생',
     
     // News Section
