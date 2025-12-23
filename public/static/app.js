@@ -55,7 +55,8 @@ const state = {
     playlist: [],
     player: null,
     interval: null,
-    videoDuration: 15000 // Default 15 seconds per video
+    videoDuration: 15000, // Default 15 seconds per video
+    initialized: false // Prevent multiple initializations
   }
 };
 
@@ -117,16 +118,11 @@ window.addEventListener('languageChanged', async (e) => {
       state.newsArticles = state.translationCache[lang].news || [];
       state.announcements = state.translationCache[lang].announcements || [];
       
-      // Load only videos in parallel (not cached)
-      const [videosRes, trendingRes, topLikedRes] = await Promise.all([
-        axios.get(`/api/videos?limit=20&lang=${lang}`),
-        axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
-        axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`)
-      ]);
-      
-      state.videos = videosRes.data.videos || [];
-      state.trendingVideos = trendingRes.data.videos || [];
+      // Load only essential video data (top-liked for auto-play)
+      const topLikedRes = await axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`);
       state.topLikedVideos = topLikedRes.data.videos || [];
+      
+      // Other video data loaded on-demand when needed
     } else {
       // No cache, load all data
       const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes, newsRes] = await Promise.all([
@@ -9018,6 +9014,12 @@ window.confirmAddToCollection = confirmAddToCollection;
 
 // Initialize auto-play playlist from top-ranked videos
 function initAutoPlayPlaylist() {
+  // Prevent multiple initializations
+  if (state.autoPlay.initialized) {
+    console.log('⏭️ Auto-play already initialized, skipping...');
+    return;
+  }
+  
   // Get top 20 videos from rankings (prioritize videos with embeddable players)
   const playlist = state.topLikedVideos
     .filter(v => v.media_source === 'youtube' || v.media_source === 'vimeo')
@@ -9030,6 +9032,7 @@ function initAutoPlayPlaylist() {
   
   state.autoPlay.playlist = playlist;
   state.autoPlay.currentIndex = 0;
+  state.autoPlay.initialized = true;
   
   console.log(`🎬 Auto-play playlist initialized with ${playlist.length} videos`);
   
@@ -9161,9 +9164,17 @@ function loadAutoPlayVideo(index, direction = 'right') {
 
 // Load video iframe
 function loadVideoIframe(container, video) {
+  // Use url or media_url field (fallback for compatibility)
+  const videoUrl = video.url || video.media_url;
+  
+  if (!videoUrl) {
+    console.error('❌ No video URL found:', video);
+    container.innerHTML = '<div class="w-full h-full flex items-center justify-center text-white"><p>動画URLが見つかりません</p></div>';
+    return;
+  }
   
   if (video.media_source === 'youtube') {
-    const videoId = extractYouTubeVideoId(video.media_url);
+    const videoId = extractYouTubeVideoId(videoUrl);
     // Add rel=0 to minimize related videos, playlist for continuous play
     container.innerHTML = `
       <iframe 
@@ -9178,7 +9189,7 @@ function loadVideoIframe(container, video) {
       </iframe>
     `;
   } else if (video.media_source === 'vimeo') {
-    const videoId = extractVimeoVideoId(video.media_url);
+    const videoId = extractVimeoVideoId(videoUrl);
     container.innerHTML = `
       <iframe 
         src="https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=0&controls=1&playsinline=1" 
@@ -9286,15 +9297,8 @@ function formatNumber(num) {
   return num.toString();
 }
 
-// Initialize auto-play when page loads
-document.addEventListener('DOMContentLoaded', () => {
-  // Wait for data to load
-  setTimeout(() => {
-    if (state.currentView === 'home' && state.topLikedVideos.length > 0) {
-      initAutoPlayPlaylist();
-    }
-  }, 2000);
-});
+// Auto-play will be initialized by renderApp after data loads
+// No need for separate DOMContentLoaded listener
 
 // Export functions to window
 window.initAutoPlayPlaylist = initAutoPlayPlaylist;
