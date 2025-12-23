@@ -56,7 +56,9 @@ const state = {
     player: null,
     interval: null,
     videoDuration: 15000, // Default 15 seconds per video
-    initialized: false // Prevent multiple initializations
+    initialized: false, // Prevent multiple initializations
+    skipRetryCount: 0, // Track skip retries to prevent infinite loops
+    maxSkipRetries: 5 // Maximum number of consecutive skips
   }
 };
 
@@ -9021,14 +9023,49 @@ function initAutoPlayPlaylist() {
   }
   
   // Get top 20 videos from rankings (prioritize videos with embeddable players)
+  // Filter only videos with valid URLs that can be played
   const playlist = state.topLikedVideos
-    .filter(v => v.media_source === 'youtube' || v.media_source === 'vimeo')
+    .filter(v => {
+      // Must be YouTube or Vimeo
+      if (v.media_source !== 'youtube' && v.media_source !== 'vimeo') return false;
+      
+      // Must have valid URL
+      const videoUrl = v.url || v.media_url;
+      if (!videoUrl) {
+        console.warn('⚠️ Skipping video without URL:', v.title);
+        return false;
+      }
+      
+      // Validate URL format
+      if (v.media_source === 'youtube') {
+        const hasValidYouTubeUrl = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/.test(videoUrl);
+        if (!hasValidYouTubeUrl) {
+          console.warn('⚠️ Skipping invalid YouTube URL:', v.title, videoUrl);
+          return false;
+        }
+      } else if (v.media_source === 'vimeo') {
+        const hasValidVimeoUrl = /vimeo\.com\/(\d+)/.test(videoUrl);
+        if (!hasValidVimeoUrl) {
+          console.warn('⚠️ Skipping invalid Vimeo URL:', v.title, videoUrl);
+          return false;
+        }
+      }
+      
+      return true;
+    })
     .slice(0, 20);
   
   if (playlist.length === 0) {
-    console.warn('No embeddable videos available for auto-play');
+    console.warn('❌ No playable videos available for auto-play');
+    // Hide auto-play section
+    const autoPlaySection = document.querySelector('.bg-gradient-to-br.from-gray-900');
+    if (autoPlaySection) {
+      autoPlaySection.style.display = 'none';
+    }
     return;
   }
+  
+  console.log(`✅ Found ${playlist.length} playable videos out of ${state.topLikedVideos.length} total`);
   
   state.autoPlay.playlist = playlist;
   state.autoPlay.currentIndex = 0;
@@ -9113,6 +9150,11 @@ function loadAutoPlayVideo(index, direction = 'right') {
   state.autoPlay.currentIndex = index;
   const video = state.autoPlay.playlist[index];
   
+  // Reset skip retry counter when manually changing video
+  if (direction === 'flip' || direction === 'left' || direction === 'right') {
+    state.autoPlay.skipRetryCount = 0;
+  }
+  
   // Determine animation direction
   if (direction === 'flip') {
     direction = index > prevIndex ? 'right' : 'left';
@@ -9169,12 +9211,34 @@ function loadVideoIframe(container, video) {
   
   if (!videoUrl) {
     console.error('❌ No video URL found:', video);
-    container.innerHTML = '<div class="w-full h-full flex items-center justify-center text-white"><p>動画URLが見つかりません</p></div>';
+    // Skip to next video instead of showing error (with retry limit)
+    if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) {
+      state.autoPlay.skipRetryCount++;
+      console.log(`⏭️ Skipping to next video... (${state.autoPlay.skipRetryCount}/${state.autoPlay.maxSkipRetries})`);
+      setTimeout(() => skipToNextVideo(), 500);
+    } else {
+      console.error('❌ Too many consecutive skips. Stopping auto-play.');
+      state.autoPlay.isPlaying = false;
+      container.innerHTML = '<div class="w-full h-full flex items-center justify-center text-white bg-gray-800"><p class="text-lg">再生可能な動画が見つかりません</p></div>';
+    }
     return;
   }
   
+  // Reset skip retry counter on successful URL
+  state.autoPlay.skipRetryCount = 0;
+  
   if (video.media_source === 'youtube') {
     const videoId = extractYouTubeVideoId(videoUrl);
+    
+    if (!videoId) {
+      console.error('❌ Failed to extract YouTube video ID from:', videoUrl);
+      if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) {
+        state.autoPlay.skipRetryCount++;
+        console.log(`⏭️ Skipping to next video... (${state.autoPlay.skipRetryCount}/${state.autoPlay.maxSkipRetries})`);
+        setTimeout(() => skipToNextVideo(), 500);
+      }
+      return;
+    }
     // Add rel=0 to minimize related videos, playlist for continuous play
     container.innerHTML = `
       <iframe 
@@ -9190,6 +9254,16 @@ function loadVideoIframe(container, video) {
     `;
   } else if (video.media_source === 'vimeo') {
     const videoId = extractVimeoVideoId(videoUrl);
+    
+    if (!videoId) {
+      console.error('❌ Failed to extract Vimeo video ID from:', videoUrl);
+      if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) {
+        state.autoPlay.skipRetryCount++;
+        console.log(`⏭️ Skipping to next video... (${state.autoPlay.skipRetryCount}/${state.autoPlay.maxSkipRetries})`);
+        setTimeout(() => skipToNextVideo(), 500);
+      }
+      return;
+    }
     container.innerHTML = `
       <iframe 
         src="https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=0&controls=1&playsinline=1" 
