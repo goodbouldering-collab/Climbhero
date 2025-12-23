@@ -650,7 +650,7 @@ function renderHomePage() {
       </section>
       
       <!-- Auto-Play Video Carousel (Ranking Digest) - Seamlessly connected to Hero -->
-      <section class="bg-gradient-to-br from-gray-900 via-black to-gray-900" style="padding-top: 0; margin-top: -2rem;">
+      <section class="py-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
         <div class="w-full px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
