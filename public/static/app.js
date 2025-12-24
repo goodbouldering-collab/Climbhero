@@ -4073,7 +4073,54 @@ function renderAdminPage() {
             </div>
           </details>
           
-
+          <!-- API Settings Section -->
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
+            <summary class="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-indigo-100 hover:to-blue-100 transition-colors">
+              <h2 class="text-sm font-bold text-gray-800 flex items-center">
+                <i class="fas fa-key mr-2 text-indigo-600"></i>
+                API設定
+                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
+              </h2>
+              <button onclick="event.stopPropagation(); loadApiSettings()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-xs">
+                <i class="fas fa-sync-alt mr-1"></i>再読み込み
+              </button>
+            </summary>
+            <div class="p-4">
+              <form onsubmit="saveApiSettings(event)" class="space-y-4">
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
+                  <div class="flex items-start gap-2">
+                    <i class="fas fa-info-circle text-blue-600 text-lg mt-0.5"></i>
+                    <div>
+                      <p class="font-bold text-blue-900 text-sm mb-1">AI動画解析に必要</p>
+                      <p class="text-xs text-blue-800">動画URLの自動解析にはGemini APIキーが必須です。ユーザーの動画アップロード時に使用されます。</p>
+                      <a href="https://aistudio.google.com/apikey" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                        Gemini APIキーを取得する →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-robot text-purple-600"></i> Gemini API Key（全ユーザー共通）
+                  </label>
+                  <input 
+                    type="password" 
+                    id="admin-gemini-api-key"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                    placeholder="AIzaSy..."
+                  />
+                  <p class="text-xs text-gray-500 mt-1">すべてのユーザーの動画URL自動解析で使用されます</p>
+                </div>
+                
+                <div class="flex justify-end">
+                  <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm font-medium">
+                    <i class="fas fa-save mr-1"></i>保存
+                  </button>
+                </div>
+              </form>
+            </div>
+          </details>
           
           <!-- Testimonials Management Section -->
           <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
@@ -4650,6 +4697,50 @@ async function loadAdminBlogs() {
         </div>
       `;
     }
+  }
+}
+
+// Load API settings
+async function loadApiSettings() {
+  try {
+    const response = await axios.get('/api/admin/user-settings/1');
+    const settings = response.data.settings;
+    
+    const geminiKeyInput = document.getElementById('admin-gemini-api-key');
+    if (geminiKeyInput && settings.gemini_api_key) {
+      geminiKeyInput.value = settings.gemini_api_key === '***' ? '' : settings.gemini_api_key;
+      geminiKeyInput.placeholder = settings.gemini_api_key === '***' ? '設定済み (変更する場合は新しいキーを入力)' : 'AIzaSy...';
+    }
+    
+    showToast('API設定を読み込みました', 'success');
+  } catch (error) {
+    console.error('Failed to load API settings:', error);
+    showToast('API設定の読み込みに失敗しました', 'error');
+  }
+}
+
+// Save API settings
+async function saveApiSettings(event) {
+  event.preventDefault();
+  
+  const geminiKey = document.getElementById('admin-gemini-api-key').value.trim();
+  
+  if (!geminiKey) {
+    showToast('Gemini APIキーを入力してください', 'error');
+    return;
+  }
+  
+  try {
+    await axios.put('/api/admin/user-settings/1', {
+      gemini_api_key: geminiKey
+    });
+    
+    showToast('API設定を保存しました', 'success');
+    // Reload to show masked key
+    await loadApiSettings();
+  } catch (error) {
+    console.error('Failed to save API settings:', error);
+    showToast('API設定の保存に失敗しました', 'error');
   }
 }
 
@@ -5833,6 +5924,7 @@ async function loadAdminData() {
     await loadAdminVideos();
     await loadAdminBlogs();
     await loadAdminAnnouncements();
+    await loadApiSettings();
     
   } catch (error) {
     console.error('Failed to load admin data:', error);
@@ -7231,11 +7323,8 @@ async function analyzeVideoUrl() {
     return;
   }
   
-  if (!state.userSettings?.gemini_api_key) {
-    showToast('Gemini APIキーを設定ページで設定してください', 'error');
-    window.location.hash = 'settings';
-    return;
-  }
+  // Gemini API key is now managed by admin, not in user settings
+  // The API will use the admin-configured key automatically
   
   const analyzeBtn = document.querySelector('#analyze-btn');
   analyzeBtn.disabled = true;
@@ -7244,7 +7333,7 @@ async function analyzeVideoUrl() {
   try {
     const res = await axios.post('/api/videos/analyze-url', {
       url,
-      gemini_api_key: state.userSettings.gemini_api_key
+      // gemini_api_key now configured by admin
     });
     
     const data = res.data.data;
@@ -7459,31 +7548,14 @@ function renderSettingsPage() {
             <div class="space-y-4">
               <h3 class="text-lg font-bold text-gray-900 border-b pb-2">API設定</h3>
               
-              <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+              <div class="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
                 <div class="flex items-start gap-3">
-                  <i class="fas fa-info-circle text-blue-600 text-xl mt-0.5"></i>
+                  <i class="fas fa-info-circle text-purple-600 text-xl mt-0.5"></i>
                   <div>
-                    <p class="font-bold text-blue-900 mb-1">AI動画解析に必要</p>
-                    <p class="text-sm text-blue-800">動画URLの自動解析にはGemini APIキーが必須です。</p>
-                    <a href="https://aistudio.google.com/apikey" target="_blank" class="text-sm text-blue-600 hover:underline mt-1 inline-block">
-                      Gemini APIキーを取得する →
-                    </a>
+                    <p class="font-bold text-purple-900 mb-1">管理者によるAPI設定</p>
+                    <p class="text-sm text-purple-800">Gemini API キーは管理者ページで設定されています。動画URLの自動解析機能を利用できます。</p>
                   </div>
                 </div>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  <i class="fas fa-robot text-purple-600"></i> Gemini API Key（必須）
-                </label>
-                <input 
-                  type="password" 
-                  name="gemini_api_key" 
-                  value="${settings.gemini_api_key || ''}"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="sk-..."
-                />
-                <p class="text-xs text-gray-500 mt-1">動画URLの自動解析・メタデータ抽出に使用</p>
               </div>
               
               <div>

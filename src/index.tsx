@@ -4450,14 +4450,21 @@ app.post('/api/videos/analyze-url', async (c) => {
   
   try {
     const body = await c.req.json()
-    const { url, gemini_api_key } = body
+    const { url } = body
     
     if (!url) {
       return c.json({ error: 'URL is required' }, 400)
     }
     
+    // Get Gemini API key from admin user settings (user_id = 1)
+    const adminSettings = await env.DB.prepare(
+      'SELECT gemini_api_key FROM user_settings WHERE user_id = 1'
+    ).first()
+    
+    const gemini_api_key = adminSettings?.gemini_api_key
+    
     if (!gemini_api_key) {
-      return c.json({ error: 'Gemini API key is required. Please set it in Settings.' }, 400)
+      return c.json({ error: 'Gemini API key not configured. Please ask admin to set it in Admin page.' }, 400)
     }
     
     // Detect platform from URL
