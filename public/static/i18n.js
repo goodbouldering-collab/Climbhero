@@ -344,7 +344,7 @@ const translations = {
     'admin.tag_delete': 'タグ削除',
     
     // Climber Testimonials
-    'testimonials.title': 'クライマーからのメッセージ',
+    'testimonials.title': 'クライマーメッセージ',
     'testimonials.subtitle': '世界中のトップクライマーがRemakeClimberを応援',
     'testimonials.no_testimonials': 'まだ応援メッセージがありません',
     'admin.testimonials_title': 'クライマー応援コメント管理',
@@ -1033,7 +1033,7 @@ const translations = {
     'admin.tag_delete': 'Delete Tag',
     
     // Climber Testimonials
-    'testimonials.title': 'Messages from Climbers',
+    'testimonials.title': 'Climber Messages',
     'testimonials.subtitle': 'World-class climbers supporting RemakeClimber',
     'testimonials.no_testimonials': 'No testimonials yet',
     'admin.testimonials_title': 'Climber Testimonials Management',
@@ -1669,7 +1669,7 @@ const translations = {
     'admin.csv_import': '导入CSV',
     
     // Climber Testimonials
-    'testimonials.title': '攀岩者的留言',
+    'testimonials.title': '攀岩者留言',
     'testimonials.subtitle': '世界级攀岩者支持RemakeClimber',
     'testimonials.no_testimonials': '暂无推荐',
     'admin.testimonials_title': '攀岩者推荐管理',
@@ -2029,7 +2029,7 @@ const translations = {
     'admin.csv_import': 'CSV 가져오기',
     
     // Climber Testimonials
-    'testimonials.title': '클라이머들의 메시지',
+    'testimonials.title': '클라이머 메시지',
     'testimonials.subtitle': '세계적인 클라이머들이 RemakeClimber를 지원합니다',
     'testimonials.no_testimonials': '아직 추천이 없습니다',
     'admin.testimonials_title': '클라이머 추천 관리',

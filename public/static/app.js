@@ -897,7 +897,7 @@ function renderHomePage() {
       ${state.testimonials && state.testimonials.length > 0 ? `
       <section class="bg-white border-b border-gray-200 py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group" open>
+          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
             <summary class="bg-gradient-to-r from-teal-50 to-green-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-teal-100 hover:to-green-100 transition-colors">
               <h2 class="text-lg font-bold text-gray-800 flex items-center">
                 <i class="fas fa-mountain mr-2 text-teal-600"></i>
