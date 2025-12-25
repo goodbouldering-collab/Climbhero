@@ -672,7 +672,7 @@ function renderHomePage() {
         <div class="w-full px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <i class="fas fa-play text-white"></i>
               </div>
               <div>
@@ -738,7 +738,7 @@ function renderHomePage() {
               
               <!-- Progress Indicator (Top) -->
               <div class="absolute top-0 left-0 right-0 h-1 bg-white/20">
-                <div id="autoplay-progress" class="h-full bg-gradient-to-r from-red-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
+                <div id="autoplay-progress" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
               </div>
             </div>
             
@@ -752,12 +752,12 @@ function renderHomePage() {
       
       <!-- ★ MY FAVORITES SECTION - TOP PRIORITY FOR LOGGED IN USERS ★ -->
       ${state.currentUser && state.allFavorites && state.allFavorites.length > 0 ? `
-      <section class="py-6 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 border-b-2 border-yellow-200 shadow-sm">
+      <section class="py-6 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 border-b-2 border-purple-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <!-- Section Header -->
           <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
                 <i class="fas fa-star text-white text-lg"></i>
               </div>
               <div>
@@ -781,7 +781,7 @@ function renderHomePage() {
                   ${state.favoriteCounts.news || 0}
                 </span>
               </div>
-              <button onclick="navigateTo('favorites')" class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md font-medium">
+              <button onclick="navigateTo('favorites')" class="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all shadow-md font-medium">
                 <i class="fas fa-th-list mr-1"></i>
                 すべて見る
               </button>
@@ -2338,8 +2338,8 @@ function showPricingModal() {
         </div>
         
         <!-- Annual Plan (50% OFF) -->
-        <div class="border-2 ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'border-yellow-500 bg-yellow-50' : 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50'} rounded-xl p-5 relative shadow-lg">
-          <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+        <div class="border-2 ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'border-yellow-500 bg-yellow-50' : 'border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50'} rounded-xl p-5 relative shadow-lg">
+          <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full">
             ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? '現在のプラン' : '🎉 50%OFF 一番人気！'}
           </div>
           <div class="text-center mb-4">
@@ -2359,7 +2359,7 @@ function showPricingModal() {
             <li class="flex items-center gap-2"><i class="fas fa-check text-orange-600"></i> 広告非表示</li>
             <li class="flex items-center gap-2"><i class="fas fa-star text-yellow-500"></i> <strong class="text-orange-600">月額の半額でお得！</strong></li>
           </ul>
-          <button onclick="startCheckout('annual')" class="w-full py-3 px-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold rounded-lg transition shadow-md ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'disabled' : ''}>
+          <button onclick="startCheckout('annual')" class="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold rounded-lg transition shadow-md ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? 'disabled' : ''}>
             <i class="fas fa-crown mr-2"></i>
             ${currentPlan === 'premium' && state.currentUser?.subscription_type === 'annual' ? '契約中' : '年間プランを始める'}
           </button>
@@ -3643,7 +3643,7 @@ function renderMyPage() {
             
             <!-- Subscription Management Card -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div class="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4">
+              <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
                 <h3 class="text-lg font-bold text-white flex items-center">
                   <i class="fas fa-crown mr-2"></i>
                   購読プラン管理
@@ -3768,7 +3768,7 @@ async function loadSubscriptionManagement() {
               <button onclick="startCheckout('monthly')" class="py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium">
                 月額 ¥980
               </button>
-              <button onclick="startCheckout('annual')" class="py-2 px-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg text-sm font-medium">
+              <button onclick="startCheckout('annual')" class="py-2 px-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg text-sm font-medium">
                 年間 ¥5,880
                 <span class="block text-xs opacity-80">50%OFF</span>
               </button>
