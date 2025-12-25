@@ -4645,6 +4645,135 @@ app.put('/api/settings', async (c) => {
   }
 })
 
+// ============ Admin Settings API ============
+
+// Get admin settings (user_id = 1)
+app.get('/api/admin/user-settings/:userId', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const userId = c.req.param('userId')
+  
+  // Check if current user is admin
+  if (!currentUser || (currentUser as any).role !== 'admin') {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  try {
+    const settings = await env.DB.prepare(
+      'SELECT * FROM user_settings WHERE user_id = ?'
+    ).bind(userId).first() as any
+    
+    if (!settings) {
+      // Create default settings for specified user
+      await env.DB.prepare(
+        'INSERT INTO user_settings (user_id) VALUES (?)'
+      ).bind(userId).run()
+      
+      return c.json({ settings: { user_id: parseInt(userId) } })
+    }
+    
+    // Mask API keys for security
+    const maskedSettings = {
+      ...settings,
+      gemini_api_key: settings.gemini_api_key ? '***' : null,
+      youtube_api_key: settings.youtube_api_key ? '***' : null,
+      vimeo_access_token: settings.vimeo_access_token ? '***' : null,
+      instagram_access_token: settings.instagram_access_token ? '***' : null,
+      tiktok_access_token: settings.tiktok_access_token ? '***' : null
+    }
+    
+    return c.json({ settings: maskedSettings })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Update admin settings (user_id = 1)
+app.put('/api/admin/user-settings/:userId', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const userId = c.req.param('userId')
+  
+  // Check if current user is admin
+  if (!currentUser || (currentUser as any).role !== 'admin') {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
+  
+  try {
+    const body = await c.req.json()
+    const { 
+      gemini_api_key,
+      youtube_api_key,
+      vimeo_access_token,
+      instagram_access_token,
+      tiktok_access_token,
+      notify_likes,
+      notify_comments,
+      profile_public,
+      allow_comments
+    } = body
+    
+    // Check if settings exist
+    const existing = await env.DB.prepare(
+      'SELECT * FROM user_settings WHERE user_id = ?'
+    ).bind(userId).first() as any
+    
+    if (!existing) {
+      // Insert new settings
+      await env.DB.prepare(`
+        INSERT INTO user_settings (
+          user_id, gemini_api_key, youtube_api_key, vimeo_access_token,
+          instagram_access_token, tiktok_access_token,
+          notify_likes, notify_comments, profile_public, allow_comments
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        userId,
+        gemini_api_key || null,
+        youtube_api_key || null,
+        vimeo_access_token || null,
+        instagram_access_token || null,
+        tiktok_access_token || null,
+        notify_likes !== undefined ? notify_likes : 1,
+        notify_comments !== undefined ? notify_comments : 1,
+        profile_public !== undefined ? profile_public : 1,
+        allow_comments !== undefined ? allow_comments : 1
+      ).run()
+    } else {
+      // Update existing settings
+      await env.DB.prepare(`
+        UPDATE user_settings SET
+          gemini_api_key = ?,
+          youtube_api_key = ?,
+          vimeo_access_token = ?,
+          instagram_access_token = ?,
+          tiktok_access_token = ?,
+          notify_likes = ?,
+          notify_comments = ?,
+          profile_public = ?,
+          allow_comments = ?
+        WHERE user_id = ?
+      `).bind(
+        gemini_api_key !== undefined ? gemini_api_key : existing.gemini_api_key,
+        youtube_api_key !== undefined ? youtube_api_key : existing.youtube_api_key,
+        vimeo_access_token !== undefined ? vimeo_access_token : existing.vimeo_access_token,
+        instagram_access_token !== undefined ? instagram_access_token : existing.instagram_access_token,
+        tiktok_access_token !== undefined ? tiktok_access_token : existing.tiktok_access_token,
+        notify_likes !== undefined ? notify_likes : existing.notify_likes,
+        notify_comments !== undefined ? notify_comments : existing.notify_comments,
+        profile_public !== undefined ? profile_public : existing.profile_public,
+        allow_comments !== undefined ? allow_comments : existing.allow_comments,
+        userId
+      ).run()
+    }
+    
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
 // ============ News Crawler API ============
 
 // Get news articles with filtering
@@ -5452,14 +5581,26 @@ async function generateMockNewsArticles(db: D1Database, settings: any): Promise<
 // Manual trigger for news crawl
 app.post('/api/admin/news/crawl-now', async (c) => {
   const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  // Check if current user is admin
+  if (!currentUser || (currentUser as any).role !== 'admin') {
+    return c.json({ error: 'Admin access required' }, 403)
+  }
   
   try {
     const { crawlNews, translateArticle, classifyGenre } = await import('./news-crawler')
     
-    const geminiApiKey = env.GEMINI_API_KEY
+    // Get Gemini API key from admin settings (user_id = 1)
+    const adminSettings = await env.DB.prepare(
+      'SELECT gemini_api_key FROM user_settings WHERE user_id = 1'
+    ).first() as any
+    
+    const geminiApiKey = adminSettings?.gemini_api_key
     
     if (!geminiApiKey) {
-      return c.json({ error: 'Gemini API key not configured. Set GEMINI_API_KEY environment variable.' }, 500)
+      return c.json({ error: 'Gemini API key not configured. Please set it in Admin page API settings.' }, 500)
     }
     
     console.log('🕷️  Starting news crawl...')
@@ -5553,9 +5694,17 @@ app.get('/api/news/:id/translate/:lang', async (c) => {
     }
     
     const { translateText } = await import('./news-crawler')
-    const geminiApiKey = env.GEMINI_API_KEY
     
-    if (!geminiApiKey) return c.json({ error: 'Translation unavailable' }, 500)
+    // Get Gemini API key from admin settings (user_id = 1)
+    const adminSettings = await env.DB.prepare(
+      'SELECT gemini_api_key FROM user_settings WHERE user_id = 1'
+    ).first() as any
+    
+    const geminiApiKey = adminSettings?.gemini_api_key
+    
+    if (!geminiApiKey) {
+      return c.json({ error: 'Translation unavailable. Please ask admin to set Gemini API key.' }, 500)
+    }
     
     const sourceLang = article.language || 'en'
     const translatedTitle = await translateText(article.title, sourceLang, lang, geminiApiKey)

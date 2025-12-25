@@ -4091,8 +4091,8 @@ function renderAdminPage() {
                   <div class="flex items-start gap-2">
                     <i class="fas fa-info-circle text-blue-600 text-lg mt-0.5"></i>
                     <div>
-                      <p class="font-bold text-blue-900 text-sm mb-1">AI動画解析に必要</p>
-                      <p class="text-xs text-blue-800">動画URLの自動解析にはGemini APIキーが必須です。ユーザーの動画アップロード時に使用されます。</p>
+                      <p class="font-bold text-blue-900 text-sm mb-1">AI機能に必要</p>
+                      <p class="text-xs text-blue-800">動画URLの自動解析、ニュース記事の収集・翻訳にGemini APIキーが必須です。</p>
                       <a href="https://aistudio.google.com/apikey" target="_blank" class="text-xs text-blue-600 hover:underline mt-1 inline-block">
                         Gemini APIキーを取得する →
                       </a>
@@ -4110,7 +4110,39 @@ function renderAdminPage() {
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                     placeholder="AIzaSy..."
                   />
-                  <p class="text-xs text-gray-500 mt-1">すべてのユーザーの動画URL自動解析で使用されます</p>
+                  <p class="text-xs text-gray-500 mt-1">すべてのユーザーの動画URL自動解析とニュース収集で使用されます</p>
+                </div>
+                
+                <!-- News Crawler Section -->
+                <div class="bg-gradient-to-r from-green-50 to-teal-50 border-2 border-green-200 rounded-lg p-4 mt-4">
+                  <div class="flex items-start gap-3">
+                    <i class="fas fa-newspaper text-green-600 text-2xl mt-1"></i>
+                    <div class="flex-1">
+                      <h3 class="font-bold text-green-900 text-sm mb-2">📰 ニュース収集機能</h3>
+                      <p class="text-xs text-green-800 mb-3">
+                        世界中のクライミングニュースを自動収集し、Gemini AIで日本語・英語・中国語・韓国語に翻訳します。
+                      </p>
+                      <div class="flex gap-2">
+                        <button 
+                          type="button"
+                          onclick="runNewsCrawler()" 
+                          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm hover:shadow-md"
+                        >
+                          <i class="fas fa-play mr-2"></i>今すぐニュース収集
+                        </button>
+                        <button 
+                          type="button"
+                          onclick="viewNewsStatus()" 
+                          class="px-4 py-2 bg-white border border-green-600 text-green-700 hover:bg-green-50 rounded-lg transition-colors text-sm font-medium"
+                        >
+                          <i class="fas fa-info-circle mr-2"></i>収集状況
+                        </button>
+                      </div>
+                      <p class="text-xs text-green-700 mt-2">
+                        <i class="fas fa-clock mr-1"></i>定期実行: 毎日 9:00と18:00 (JST)
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 
                 <div class="flex justify-end">
@@ -4741,6 +4773,56 @@ async function saveApiSettings(event) {
   } catch (error) {
     console.error('Failed to save API settings:', error);
     showToast('API設定の保存に失敗しました', 'error');
+  }
+}
+
+// Run news crawler
+async function runNewsCrawler() {
+  const confirmed = confirm('ニュース収集を開始しますか？\n\n世界中のクライミングニュースを収集し、Gemini AIで翻訳します。\n処理には数分かかる場合があります。');
+  
+  if (!confirmed) return;
+  
+  try {
+    showToast('📰 ニュース収集を開始しました...', 'info');
+    
+    const response = await axios.post('/api/admin/news/crawl-now');
+    const result = response.data;
+    
+    showToast(
+      `✅ ニュース収集完了！\n収集: ${result.crawled}件 / 新規: ${result.inserted}件`,
+      'success'
+    );
+    
+    // Reload news section if exists
+    if (typeof loadNews === 'function') {
+      await loadNews();
+    }
+  } catch (error) {
+    console.error('News crawler error:', error);
+    const errorMsg = error.response?.data?.error || 'ニュース収集に失敗しました';
+    showToast(`❌ ${errorMsg}`, 'error');
+  }
+}
+
+// View news collection status
+async function viewNewsStatus() {
+  try {
+    const newsResponse = await axios.get('/api/news?limit=1000');
+    const totalNews = newsResponse.data.length || 0;
+    
+    // Count by language
+    const langCount = { ja: 0, en: 0, zh: 0, ko: 0 };
+    newsResponse.data.forEach(article => {
+      if (article.title_ja) langCount.ja++;
+      if (article.title_en) langCount.en++;
+      if (article.title_zh) langCount.zh++;
+      if (article.title_ko) langCount.ko++;
+    });
+    
+    alert(`📊 ニュース収集状況\n\n保存記事数: ${totalNews}件\n翻訳状況:\n  🇯🇵 日本語: ${langCount.ja}件\n  🇺🇸 英語: ${langCount.en}件\n  🇨🇳 中国語: ${langCount.zh}件\n  🇰🇷 韓国語: ${langCount.ko}件\n\n定期実行: 毎日 9:00と18:00 (JST)`);
+  } catch (error) {
+    console.error('Failed to load news status:', error);
+    showToast('ニュース収集状況の取得に失敗しました', 'error');
   }
 }
 
