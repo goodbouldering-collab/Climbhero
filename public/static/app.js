@@ -822,10 +822,10 @@ function renderHomePage() {
       ` : ''}
       
       <!-- How to Use ClimbHero Section (Collapsible) -->
-      <section class="bg-white border-b border-gray-200 py-6">
+      <section class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
-            <summary class="bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-purple-100 hover:to-blue-100 transition-colors">
+          <details class="overflow-hidden group">
+            <summary class="bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-purple-100 hover:to-blue-100 transition-colors">
               <h2 class="text-lg font-bold text-gray-800 flex items-center">
                 <i class="fas fa-info-circle mr-2 text-purple-600"></i>
                 ${i18n.t('feature.title')}
@@ -895,10 +895,10 @@ function renderHomePage() {
       
       <!-- Climber Testimonials Section -->
       ${state.testimonials && state.testimonials.length > 0 ? `
-      <section class="bg-white border-b border-gray-200 py-6">
+      <section class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden group">
-            <summary class="bg-gradient-to-r from-teal-50 to-green-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-teal-100 hover:to-green-100 transition-colors">
+          <details class="overflow-hidden group">
+            <summary class="bg-gradient-to-r from-teal-50 to-green-50 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-teal-100 hover:to-green-100 transition-colors">
               <h2 class="text-lg font-bold text-gray-800 flex items-center">
                 <i class="fas fa-mountain mr-2 text-teal-600"></i>
                 ${i18n.t('testimonials.title')}
