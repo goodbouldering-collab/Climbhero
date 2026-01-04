@@ -634,89 +634,6 @@ function renderHomePage() {
       </div>
     </header>
 
-    <!-- Auto-Play Video Carousel (Ranking Digest) - Directly under header title -->
-    <section class="py-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
-      <div class="w-full px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <i class="fas fa-play text-white"></i>
-            </div>
-            <div>
-              <h2 class="text-xl md:text-2xl font-bold text-white">${i18n.t('section.autoplay')}</h2>
-              <p class="text-xs md:text-sm text-gray-400">${i18n.t('section.autoplay_subtitle')}</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="px-3 py-1.5 md:px-4 md:py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-sm">
-              <i id="autoplay-icon" class="fas fa-pause mr-1 md:mr-2"></i>
-              <span id="autoplay-text" class="hidden md:inline">${i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지'}</span>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Video Carousel Container with Flip Animation -->
-        <div class="relative">
-          <!-- Previous Button (Left) -->
-          <button 
-            onclick="skipToPreviousVideo()" 
-            class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
-            id="prev-video-btn">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          
-          <!-- Next Button (Right) -->
-          <button 
-            onclick="skipToNextVideo()" 
-            class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
-            id="next-video-btn">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          
-          <!-- Video Player with Flip Effect -->
-          <div class="relative bg-black rounded-xl overflow-hidden shadow-2xl" id="video-carousel-wrapper">
-            <div id="autoplay-video-container" class="w-full aspect-video transition-all duration-500 ease-out" style="perspective: 1000px;">
-              <!-- Video will be loaded here -->
-              <div class="w-full h-full flex items-center justify-center text-white">
-                <div class="text-center">
-                  <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
-                  <p class="text-sm">${i18n.getCurrentLanguage() === 'ja' ? '動画を読み込み中...' : i18n.getCurrentLanguage() === 'en' ? 'Loading video...' : i18n.getCurrentLanguage() === 'zh' ? '正在加载视频...' : '동영상 로딩 중...'}</p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Video Info Overlay (Compact) -->
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 md:p-4">
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                  <h3 id="current-video-title" class="text-sm md:text-lg font-bold text-white mb-1 truncate">動画タイトル</h3>
-                  <div class="flex items-center gap-2 md:gap-3 text-xs text-gray-300">
-                    <span id="current-video-views"><i class="fas fa-eye mr-1"></i>0</span>
-                    <span id="current-video-likes"><i class="fas fa-heart mr-1"></i>0</span>
-                    <span id="current-video-platform" class="px-1.5 py-0.5 bg-white/20 rounded text-xs">YouTube</span>
-                  </div>
-                </div>
-                <!-- Progress Counter -->
-                <div class="text-white text-xs bg-black/50 px-2 py-1 rounded">
-                  <span id="autoplay-queue-count">1/20</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Progress Indicator (Top) -->
-            <div class="absolute top-0 left-0 right-0 h-1 bg-white/20">
-              <div id="autoplay-progress" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
-            </div>
-          </div>
-          
-          <!-- Dots Indicator -->
-          <div class="flex items-center justify-center gap-1.5 mt-3" id="carousel-dots">
-            <!-- Dots will be inserted here -->
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Main Content -->
     <main class="bg-gray-50">
       
@@ -734,6 +651,88 @@ function renderHomePage() {
           <p class="hero-subtitle">
             ${i18n.t('hero.subtitle')}
           </p>
+          
+          <!-- Auto-Play Video Carousel (Ranking Digest) - Above Upload Button -->
+          <div class="mt-8 mb-6 max-w-4xl mx-auto">
+            <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 shadow-2xl">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-play text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-base md:text-lg font-bold text-white">${i18n.t('section.autoplay')}</h3>
+                    <p class="text-xs text-gray-300">${i18n.t('section.autoplay_subtitle')}</p>
+                  </div>
+                </div>
+                <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="px-2 py-1 md:px-3 md:py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-xs md:text-sm">
+                  <i id="autoplay-icon" class="fas fa-pause mr-1"></i>
+                  <span id="autoplay-text" class="hidden md:inline">${i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지'}</span>
+                </button>
+              </div>
+              
+              <!-- Video Carousel Container with Flip Animation -->
+              <div class="relative">
+                <!-- Previous Button (Left) -->
+                <button 
+                  onclick="skipToPreviousVideo()" 
+                  class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
+                  id="prev-video-btn">
+                  <i class="fas fa-chevron-left text-sm"></i>
+                </button>
+                
+                <!-- Next Button (Right) -->
+                <button 
+                  onclick="skipToNextVideo()" 
+                  class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
+                  id="next-video-btn">
+                  <i class="fas fa-chevron-right text-sm"></i>
+                </button>
+                
+                <!-- Video Player with Flip Effect -->
+                <div class="relative bg-black rounded-lg overflow-hidden shadow-xl" id="video-carousel-wrapper">
+                  <div id="autoplay-video-container" class="w-full aspect-video transition-all duration-500 ease-out" style="perspective: 1000px;">
+                    <!-- Video will be loaded here -->
+                    <div class="w-full h-full flex items-center justify-center text-white">
+                      <div class="text-center">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                        <p class="text-xs">${i18n.getCurrentLanguage() === 'ja' ? '動画を読み込み中...' : i18n.getCurrentLanguage() === 'en' ? 'Loading video...' : i18n.getCurrentLanguage() === 'zh' ? '正在加载视频...' : '동영상 로딩 중...'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Video Info Overlay (Compact) -->
+                  <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 md:p-3">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex-1 min-w-0">
+                        <h4 id="current-video-title" class="text-xs md:text-sm font-bold text-white mb-0.5 truncate">動画タイトル</h4>
+                        <div class="flex items-center gap-1.5 md:gap-2 text-xs text-gray-300">
+                          <span id="current-video-views"><i class="fas fa-eye mr-0.5"></i>0</span>
+                          <span id="current-video-likes"><i class="fas fa-heart mr-0.5"></i>0</span>
+                          <span id="current-video-platform" class="px-1 py-0.5 bg-white/20 rounded text-xs">YouTube</span>
+                        </div>
+                      </div>
+                      <!-- Progress Counter -->
+                      <div class="text-white text-xs bg-black/50 px-1.5 py-0.5 rounded">
+                        <span id="autoplay-queue-count">1/20</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Progress Indicator (Top) -->
+                  <div class="absolute top-0 left-0 right-0 h-1 bg-white/20">
+                    <div id="autoplay-progress" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
+                  </div>
+                </div>
+                
+                <!-- Dots Indicator -->
+                <div class="flex items-center justify-center gap-1 mt-2" id="carousel-dots">
+                  <!-- Dots will be inserted here -->
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <div class="hero-cta-buttons">
             <button onclick="handleUploadClick()" class="hero-cta-btn hero-cta-primary">
               <i class="fas fa-upload"></i>
