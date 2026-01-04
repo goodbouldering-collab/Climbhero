@@ -45,9 +45,10 @@ const state = {
     category: '',
     search: ''
   },
-  // Translation cache for all languages
-  translationCache: {},
+  // Translation cache for all languages (with localStorage persistence)
+  translationCache: JSON.parse(localStorage.getItem('climbhero_translation_cache') || '{}'),
   isPreloadingTranslations: false,
+  translationCacheExpiry: 1000 * 60 * 30, // 30 minutes cache expiry
   // Auto-play video section
   autoPlay: {
     isPlaying: true,
@@ -77,7 +78,11 @@ async function preloadAllTranslations() {
   console.log('🔄 Preloading translations for:', otherLangs);
   
   for (const lang of otherLangs) {
-    if (!state.translationCache[lang]) {
+    // Check if cache exists and is not expired
+    const cached = state.translationCache[lang];
+    const isExpired = cached && cached.timestamp && (Date.now() - cached.timestamp > state.translationCacheExpiry);
+    
+    if (!cached || isExpired) {
       try {
         const [blogRes, newsRes, announcementsRes] = await Promise.all([
           axios.get(`/api/blog?lang=${lang}`),
@@ -88,13 +93,23 @@ async function preloadAllTranslations() {
         state.translationCache[lang] = {
           blog: blogRes.data || [],
           news: newsRes.data.articles || [],
-          announcements: announcementsRes.data || []
+          announcements: announcementsRes.data || [],
+          timestamp: Date.now()
         };
         
-        console.log(`✅ Cached ${lang} translations`);
+        // Persist to localStorage
+        try {
+          localStorage.setItem('climbhero_translation_cache', JSON.stringify(state.translationCache));
+        } catch (e) {
+          console.warn('Failed to save translation cache to localStorage:', e);
+        }
+        
+        console.log(`✅ Cached ${lang} translations (${isExpired ? 'refreshed' : 'new'})`);
       } catch (error) {
         console.warn(`Failed to preload ${lang}:`, error);
       }
+    } else {
+      console.log(`✅ Using cached ${lang} translations from localStorage`);
     }
   }
   
@@ -9436,6 +9451,15 @@ function loadVideoIframe(container, video) {
     
     // Log successful iframe creation
     console.log(`✅ Vimeo iframe created for: ${videoId}`);
+  } else if (video.media_source === 'instagram' || video.media_source === 'tiktok') {
+    // Instagram Reels and TikTok cannot autoplay due to platform restrictions
+    // Skip to next video that supports autoplay
+    console.log(`⏭️ Skipping ${video.media_source} video (autoplay not supported): ${video.title}`);
+    setTimeout(() => skipToNextVideo(), 500);
+  } else {
+    // Unknown platform - skip to next
+    console.log(`⏭️ Skipping unknown platform: ${video.media_source}`);
+    setTimeout(() => skipToNextVideo(), 500);
   }
 }
 
