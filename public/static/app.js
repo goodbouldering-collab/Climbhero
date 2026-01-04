@@ -7488,29 +7488,70 @@ async function submitVideo(event) {
   }
 }
 
+// Helper function to extract video ID from URL
+function extractVideoId(url, mediaSource) {
+  try {
+    if (mediaSource === 'youtube') {
+      // YouTube regular or Shorts
+      if (url.includes('youtube.com/watch')) {
+        const urlObj = new URL(url);
+        return urlObj.searchParams.get('v');
+      } else if (url.includes('youtube.com/shorts/') || url.includes('youtu.be/')) {
+        return url.split('/').pop().split('?')[0];
+      }
+    } else if (mediaSource === 'vimeo') {
+      return url.split('vimeo.com/')[1]?.split('?')[0];
+    } else if (mediaSource === 'instagram') {
+      return url.split('/reel/')[1]?.split('/')[0];
+    } else if (mediaSource === 'tiktok') {
+      return url.split('/video/')[1]?.split('?')[0];
+    }
+  } catch (error) {
+    console.error('Error extracting video ID:', error);
+  }
+  return null;
+}
+
 // Open video modal
 function openVideoModal(video) {
   const modal = document.getElementById('video-modal');
   const modalContent = modal.querySelector('.modal-video-content');
   
   let embedHtml = '';
+  const mediaSource = video.media_source || video.platform;
+  const videoId = video.video_id_external || extractVideoId(video.url, mediaSource);
   
-  if (video.platform === 'youtube') {
-    embedHtml = `<iframe width="100%" height="500" src="https://www.youtube.com/embed/${video.video_id_external}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-  } else if (video.platform === 'youtube_shorts') {
-    // YouTube Shorts embed (vertical format)
-    embedHtml = `<iframe width="100%" height="600" src="https://www.youtube.com/embed/${video.video_id_external}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-  } else if (video.platform === 'vimeo') {
-    embedHtml = `<iframe width="100%" height="500" src="https://player.vimeo.com/video/${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-  } else if (video.platform === 'instagram') {
-    // Instagram embed using iframe format (for reels)
-    embedHtml = `<iframe width="100%" height="600" src="https://www.instagram.com/reel/${video.video_id_external}/embed" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-  } else if (video.platform === 'tiktok') {
-    // TikTok embed using iframe format
-    embedHtml = `<iframe width="100%" height="600" src="https://www.tiktok.com/embed/v2/${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-  } else if (video.platform === 'x') {
-    // X (Twitter) embed using iframe format
-    embedHtml = `<iframe width="100%" height="600" src="https://platform.twitter.com/embed/Tweet.html?id=${video.video_id_external}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  if (mediaSource === 'youtube') {
+    if (videoId) {
+      const height = video.url.includes('/shorts/') ? '600' : '500';
+      embedHtml = `<iframe width="100%" height="${height}" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+      embedHtml = `<p>動画IDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+    }
+  } else if (mediaSource === 'vimeo') {
+    if (videoId) {
+      embedHtml = `<iframe width="100%" height="500" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+      embedHtml = `<p>動画IDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+    }
+  } else if (mediaSource === 'instagram') {
+    if (videoId) {
+      embedHtml = `<iframe width="100%" height="600" src="https://www.instagram.com/reel/${videoId}/embed" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+      embedHtml = `<p>リールIDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+    }
+  } else if (mediaSource === 'tiktok') {
+    if (videoId) {
+      embedHtml = `<iframe width="100%" height="600" src="https://www.tiktok.com/embed/v2/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+      embedHtml = `<p>動画IDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+    }
+  } else if (mediaSource === 'x') {
+    if (videoId) {
+      embedHtml = `<iframe width="100%" height="600" src="https://platform.twitter.com/embed/Tweet.html?id=${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+      embedHtml = `<p>ツイートIDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+    }
   } else {
     embedHtml = `<p>このプラットフォームの埋め込みは対応していません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
   }

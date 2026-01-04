@@ -558,6 +558,45 @@ app.get('/api/videos/:id', async (c) => {
   }
 })
 
+// Helper function to extract video ID and generate thumbnail URL
+function generateThumbnailUrl(url: string, mediaSource: string): string {
+  try {
+    // YouTube (regular videos)
+    if (url.includes('youtube.com/watch')) {
+      const videoId = new URL(url).searchParams.get('v')
+      if (videoId) return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+    }
+    
+    // YouTube Shorts
+    if (url.includes('youtube.com/shorts/')) {
+      const videoId = url.split('/shorts/')[1]?.split('?')[0]
+      if (videoId) return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+    }
+    
+    // Vimeo
+    if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1]?.split('?')[0]
+      if (videoId) return `https://i.vimeocdn.com/video/${videoId}-1920x1080.jpg`
+    }
+    
+    // Instagram
+    if (url.includes('instagram.com/reel/')) {
+      const reelId = url.split('/reel/')[1]?.split('/')[0]
+      if (reelId) return `https://scontent-nrt1-1.cdninstagram.com/v/t51.29350-15/${reelId}_n.jpg`
+    }
+    
+    // TikTok
+    if (url.includes('tiktok.com/')) {
+      return `https://p16-sign.tiktokcdn-us.com/tos-useast5-p-0068-tx/default-thumbnail.jpeg`
+    }
+    
+    // Fallback to Unsplash climbing image
+    return 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800'
+  } catch (error) {
+    return 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800'
+  }
+}
+
 // Create video
 app.post('/api/videos', async (c) => {
   const { env } = c
@@ -569,16 +608,36 @@ app.post('/api/videos', async (c) => {
   }
 
   const body = await c.req.json()
-  const { title, description, url, thumbnail_url, duration, channel_name, category } = body
+  let { title, description, url, thumbnail_url, duration, channel_name, category, media_source } = body
 
   if (!title || !url) {
     return c.json({ error: 'Title and URL are required' }, 400)
   }
 
+  // Auto-detect media source if not provided
+  if (!media_source) {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      media_source = 'youtube'
+    } else if (url.includes('vimeo.com')) {
+      media_source = 'vimeo'
+    } else if (url.includes('instagram.com')) {
+      media_source = 'instagram'
+    } else if (url.includes('tiktok.com')) {
+      media_source = 'tiktok'
+    } else if (url.includes('twitter.com') || url.includes('x.com')) {
+      media_source = 'x'
+    }
+  }
+
+  // Auto-generate thumbnail if not provided
+  if (!thumbnail_url && media_source) {
+    thumbnail_url = generateThumbnailUrl(url, media_source)
+  }
+
   try {
     const result = await env.DB.prepare(
-      'INSERT INTO videos (title, description, url, thumbnail_url, duration, channel_name, category) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(title, description || '', url, thumbnail_url || '', duration || '', channel_name || '', category || 'bouldering').run()
+      'INSERT INTO videos (title, description, url, thumbnail_url, duration, channel_name, category, media_source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(title, description || '', url, thumbnail_url || '', duration || '', channel_name || '', category || 'bouldering', media_source || 'youtube').run()
 
     const videoId = result.meta.last_row_id
 
