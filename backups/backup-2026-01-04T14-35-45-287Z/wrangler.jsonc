@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "project-02ceb497",
+  "compatibility_date": "2025-10-26",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webapp-production",
+      "database_id": "2faec3c4-115c-434f-9144-af1380440b7c",
+      "preview_database_id": "local-dev"
+    }
+  ]
+  // ============================================
+  // NEWS CRAWLER SCHEDULE (1日2回)
+  // ============================================
+  // Cron Triggers for Cloudflare Workers:
+  // - 朝 9:00 JST (0:00 UTC): "0 0 * * *"
+  // - 夕 18:00 JST (9:00 UTC): "0 9 * * *"
+  // 
+  // 設定方法:
+  // 1. Cloudflare Dashboard > Workers & Pages
+  // 2. project-02ceb497 を選択
+  // 3. Settings > Triggers > Cron Triggers
+  // 4. 以下を追加:
+  //    - 0 0 * * * (毎日 9:00 JST)
+  //    - 0 9 * * * (毎日 18:00 JST)
+  //
+  // 手動実行: POST /api/admin/news/crawl-now
+  // ============================================
+}
