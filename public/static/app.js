@@ -637,52 +637,7 @@ function renderHomePage() {
     <!-- Main Content -->
     <main class="bg-gray-50">
       
-      <!-- Hero Section with Slideshow -->
-      <section class="hero-section relative overflow-hidden">
-        <div class="hero-slideshow">
-          ${state.heroSlides.map((slide, index) => `
-            <div class="hero-slide ${index === state.heroSlideIndex ? 'active' : ''}" style="background-image: url('${slide}')"></div>
-          `).join('')}
-        </div>
-        <div class="hero-content">
-          <h1 class="hero-title">
-            ${i18n.t('hero.title')}
-          </h1>
-          <p class="hero-subtitle">
-            ${i18n.t('hero.subtitle')}
-          </p>
-          <div class="hero-cta-buttons">
-            <button onclick="handleUploadClick()" class="hero-cta-btn hero-cta-primary">
-              <i class="fas fa-upload"></i>
-              ${i18n.t('hero.upload')}
-              ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? `<span class="ml-2 text-xs bg-black/30 px-3 py-1 rounded-full">${i18n.t('hero.premium_badge')}</span>` : ''}
-            </button>
-            ${!state.currentUser ? `
-              <button onclick="showPricingModal()" class="hero-cta-btn hero-cta-secondary">
-                <i class="fas fa-star"></i>
-                ${i18n.t('pricing.trial')}
-              </button>
-            ` : ''}
-          </div>
-          
-          <!-- Announcements inside Hero (2 lines max, clickable) -->
-          ${state.announcements && state.announcements.length > 0 ? `
-            <div class="mt-6 space-y-2">
-              ${state.announcements.slice(0, 2).map(a => `
-                <div 
-                  onclick="showAnnouncementsModal()" 
-                  class="text-white text-sm bg-black/20 backdrop-blur-sm px-4 py-2 rounded cursor-pointer hover:bg-black/30 transition-all">
-                  <div class="line-clamp-2">
-                    <span class="font-bold">● ${a.title}:</span> ${a.content}
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
-        </div>
-      </section>
-      
-      <!-- Auto-Play Video Carousel (Ranking Digest) - Seamlessly connected to Hero -->
+      <!-- Auto-Play Video Carousel (Ranking Digest) - TOP PRIORITY -->
       <section class="py-8 bg-gradient-to-br from-gray-900 via-black to-gray-900">
         <div class="w-full px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between mb-4">
@@ -762,6 +717,51 @@ function renderHomePage() {
               <!-- Dots will be inserted here -->
             </div>
           </div>
+        </div>
+      </section>
+      
+      <!-- Hero Section with Slideshow -->
+      <section class="hero-section relative overflow-hidden">
+        <div class="hero-slideshow">
+          ${state.heroSlides.map((slide, index) => `
+            <div class="hero-slide ${index === state.heroSlideIndex ? 'active' : ''}" style="background-image: url('${slide}')"></div>
+          `).join('')}
+        </div>
+        <div class="hero-content">
+          <h1 class="hero-title">
+            ${i18n.t('hero.title')}
+          </h1>
+          <p class="hero-subtitle">
+            ${i18n.t('hero.subtitle')}
+          </p>
+          <div class="hero-cta-buttons">
+            <button onclick="handleUploadClick()" class="hero-cta-btn hero-cta-primary">
+              <i class="fas fa-upload"></i>
+              ${i18n.t('hero.upload')}
+              ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? `<span class="ml-2 text-xs bg-black/30 px-3 py-1 rounded-full">${i18n.t('hero.premium_badge')}</span>` : ''}
+            </button>
+            ${!state.currentUser ? `
+              <button onclick="showPricingModal()" class="hero-cta-btn hero-cta-secondary">
+                <i class="fas fa-star"></i>
+                ${i18n.t('pricing.trial')}
+              </button>
+            ` : ''}
+          </div>
+          
+          <!-- Announcements inside Hero (2 lines max, clickable) -->
+          ${state.announcements && state.announcements.length > 0 ? `
+            <div class="mt-6 space-y-2">
+              ${state.announcements.slice(0, 2).map(a => `
+                <div 
+                  onclick="showAnnouncementsModal()" 
+                  class="text-white text-sm bg-black/20 backdrop-blur-sm px-4 py-2 rounded cursor-pointer hover:bg-black/30 transition-all">
+                  <div class="line-clamp-2">
+                    <span class="font-bold">● ${a.title}:</span> ${a.content}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       </section>
       
