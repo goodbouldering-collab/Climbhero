@@ -835,157 +835,234 @@ function renderHomePage() {
       </section>
       ` : ''}
       
-      <!-- How to Use ClimbHero Section (Collapsible) -->
-      <section class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="overflow-hidden group">
-            <summary class="bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-purple-100 hover:to-blue-100 transition-colors">
-              <h2 class="text-lg font-bold text-gray-800 flex items-center">
-                <i class="fas fa-info-circle mr-2 text-purple-600"></i>
+      <!-- How to Use ClimbHero Section (Modern Interactive UI) -->
+      <section class="relative py-16 bg-gradient-to-br from-slate-50 via-purple-50 to-blue-50 overflow-hidden">
+        <!-- Animated Background Elements -->
+        <div class="absolute inset-0 opacity-30">
+          <div class="absolute top-10 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+          <div class="absolute top-20 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div class="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <!-- Section Header with Modern Design -->
+          <div class="text-center mb-12">
+            <div class="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg mb-4">
+              <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+                <i class="fas fa-info-circle text-white text-lg"></i>
+              </div>
+              <h2 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 ${i18n.t('feature.title')}
-                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
               </h2>
-            </summary>
+            </div>
             
-            <div class="p-4">
-            <!-- Mission Statement -->
-            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 rounded-lg p-4 mb-6">
-              <p class="text-sm text-gray-700 leading-relaxed">
+            <!-- Mission Statement with Glassmorphism -->
+            <div class="max-w-3xl mx-auto bg-white/60 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-xl">
+              <p class="text-base text-gray-700 leading-relaxed">
                 ${i18n.t('feature.mission')}
               </p>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          </div>
+          
+          <!-- Feature Cards with 3D Hover Effect -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <!-- Step 1: Discover -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-video text-3xl text-purple-600"></i>
+            <div class="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-purple-100">
+              <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative">
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
+                  <i class="fas fa-video text-2xl text-white"></i>
+                </div>
+                <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step1.title')}</h3>
+                <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step1.desc')}</p>
               </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step1.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step1.desc')}</p>
             </div>
             
             <!-- Step 2: Share -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-share-alt text-3xl text-blue-600"></i>
+            <div class="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-blue-100">
+              <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
+                  <i class="fas fa-share-alt text-2xl text-white"></i>
+                </div>
+                <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step2.title')}</h3>
+                <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step2.desc')}</p>
               </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step2.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step2.desc')}</p>
             </div>
             
             <!-- Step 3: Data Growth -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-chart-line text-3xl text-green-600"></i>
+            <div class="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-green-100">
+              <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative">
+                <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
+                  <i class="fas fa-chart-line text-2xl text-white"></i>
+                </div>
+                <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step3.title')}</h3>
+                <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step3.desc')}</p>
               </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step3.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step3.desc')}</p>
             </div>
             
             <!-- Step 4: Authentic Value -->
-            <div class="text-center">
-              <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-mountain text-3xl text-yellow-600"></i>
+            <div class="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-yellow-100">
+              <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div class="relative">
+                <div class="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
+                  <i class="fas fa-mountain text-2xl text-white"></i>
+                </div>
+                <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step4.title')}</h3>
+                <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step4.desc')}</p>
               </div>
-              <h3 class="font-bold text-gray-900 mb-2">${i18n.t('feature.step4.title')}</h3>
-              <p class="text-sm text-gray-600">${i18n.t('feature.step4.desc')}</p>
             </div>
-            </div>
-            
-            <div class="text-center">
-              <p class="text-sm text-green-600 font-medium mb-3">
-                <i class="fas fa-gift mr-2"></i>${i18n.t('feature.free_trial')}
-              </p>
-              <button onclick="showPricingModal()" class="bg-gradient-to-r from-purple-600 to-purple-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:from-purple-700 hover:to-purple-900 transition shadow-lg">
-                <i class="fas fa-crown mr-2"></i>
-                ${i18n.t('feature.upgrade')}
+          </div>
+          
+          <!-- CTA Section with Modern Design -->
+          <div class="text-center">
+            <div class="inline-flex flex-col items-center gap-4 bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl">
+              <div class="flex items-center gap-2 text-green-600 font-medium">
+                <i class="fas fa-gift text-xl"></i>
+                <span>${i18n.t('feature.free_trial')}</span>
+              </div>
+              <button onclick="showPricingModal()" class="group relative bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-2xl transform hover:scale-105">
+                <span class="relative z-10 flex items-center gap-2">
+                  <i class="fas fa-crown"></i>
+                  ${i18n.t('feature.upgrade')}
+                </span>
+                <div class="absolute inset-0 bg-gradient-to-r from-purple-700 to-blue-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </button>
             </div>
-            </div>
-          </details>
+          </div>
         </div>
+        
+        <style>
+          @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+          }
+          .animate-blob {
+            animation: blob 7s infinite;
+          }
+          .animation-delay-2000 {
+            animation-delay: 2s;
+          }
+          .animation-delay-4000 {
+            animation-delay: 4s;
+          }
+        </style>
       </section>
       
-      <!-- Climber Testimonials Section -->
+      <!-- Climber Testimonials Section (Modern Interactive Carousel) -->
       ${state.testimonials && state.testimonials.length > 0 ? `
-      <section class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="overflow-hidden group">
-            <summary class="bg-gradient-to-r from-teal-50 to-green-50 px-4 py-3 flex items-center justify-between cursor-pointer hover:from-teal-100 hover:to-green-100 transition-colors">
-              <h2 class="text-lg font-bold text-gray-800 flex items-center">
-                <i class="fas fa-mountain mr-2 text-teal-600"></i>
-                ${i18n.t('testimonials.title')}
-                <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
-              </h2>
-              <span class="text-sm text-gray-500">${state.testimonials.length}件のメッセージ</span>
-            </summary>
-            
-            <div class="p-4">
-              <div class="text-center mb-4">
-                <p class="text-gray-600 text-sm">
-                  ${i18n.t('testimonials.subtitle')}
-                </p>
+      <section class="relative py-16 bg-gradient-to-br from-teal-50 via-emerald-50 to-green-50 overflow-hidden">
+        <!-- Animated Mountain Background -->
+        <div class="absolute inset-0 opacity-20">
+          <svg class="absolute bottom-0 w-full" viewBox="0 0 1440 320">
+            <path fill="currentColor" class="text-teal-300" d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,165.3C672,139,768,117,864,128C960,139,1056,181,1152,186.7C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+          </svg>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <!-- Section Header -->
+          <div class="text-center mb-12">
+            <div class="inline-flex items-center gap-3 bg-white/90 backdrop-blur-sm px-6 py-3 rounded-full shadow-lg mb-4">
+              <div class="w-10 h-10 bg-gradient-to-br from-teal-500 to-green-600 rounded-full flex items-center justify-center">
+                <i class="fas fa-mountain text-white text-lg"></i>
               </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              ${state.testimonials.map(testimonial => {
-                const lang = i18n.getCurrentLanguage()
-                const climberName = testimonial[`climber_name_${lang}`] || testimonial.climber_name_en
-                const title = testimonial[`title_${lang}`] || testimonial.title_en
-                const comment = testimonial[`comment_${lang}`] || testimonial.comment_en
+              <h2 class="text-2xl font-bold bg-gradient-to-r from-teal-600 to-green-600 bg-clip-text text-transparent">
+                ${i18n.t('testimonials.title')}
+              </h2>
+              <span class="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold">
+                ${state.testimonials.length}件
+              </span>
+            </div>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+              ${i18n.t('testimonials.subtitle')}
+            </p>
+          </div>
+          
+          <!-- Testimonials Grid with Staggered Animation -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          ${state.testimonials.map((testimonial, index) => {
+            const lang = i18n.getCurrentLanguage()
+            const climberName = testimonial[\`climber_name_\${lang}\`] || testimonial.climber_name_en
+            const title = testimonial[\`title_\${lang}\`] || testimonial.title_en
+            const comment = testimonial[\`comment_\${lang}\`] || testimonial.comment_en
+            
+            return `
+              <div class="group relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 transform" style="animation: fadeInUp 0.6s ease-out ${index * 0.1}s backwards;">
+                <!-- Gradient Overlay on Hover -->
+                <div class="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
-                return `
-                  <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-100">
-                    <div class="p-4">
-                      <div class="flex items-center mb-3">
-                        <img 
-                          src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop'}" 
-                          alt="${climberName}"
-                          class="w-12 h-12 rounded-full object-cover border-2 border-purple-200"
-                        />
-                        <div class="ml-3 flex-1">
-                          <h3 class="font-bold text-base text-gray-900">${climberName}</h3>
-                          <p class="text-xs text-purple-600 font-medium">${title}</p>
-                        </div>
-                      </div>
-                      
-                      <div class="mb-3">
-                        <p class="text-gray-700 text-xs leading-relaxed italic line-clamp-3">
-                          "${comment}"
-                        </p>
-                      </div>
-                      
-                      ${testimonial.instagram_url || testimonial.youtube_url || testimonial.website_url ? `
-                        <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
-                          ${testimonial.instagram_url ? `
-                            <a href="${testimonial.instagram_url}" target="_blank" rel="noopener noreferrer" 
-                               class="text-gray-400 hover:text-pink-600 transition-colors">
-                              <i class="fab fa-instagram text-base"></i>
-                            </a>
-                          ` : ''}
-                          ${testimonial.youtube_url ? `
-                            <a href="${testimonial.youtube_url}" target="_blank" rel="noopener noreferrer"
-                               class="text-gray-400 hover:text-red-600 transition-colors">
-                              <i class="fab fa-youtube text-base"></i>
-                            </a>
-                          ` : ''}
-                          ${testimonial.website_url ? `
-                            <a href="${testimonial.website_url}" target="_blank" rel="noopener noreferrer"
-                               class="text-gray-400 hover:text-purple-600 transition-colors">
-                              <i class="fas fa-globe text-base"></i>
-                            </a>
-                          ` : ''}
-                        </div>
-                      ` : ''}
+                <div class="relative p-5">
+                  <!-- Avatar Section -->
+                  <div class="flex items-center mb-4">
+                    <div class="relative">
+                      <img 
+                        src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop'}" 
+                        alt="${climberName}"
+                        class="w-14 h-14 rounded-full object-cover border-3 border-white shadow-lg group-hover:scale-110 transition-transform duration-300"
+                      />
+                      <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div class="ml-3 flex-1">
+                      <h3 class="font-bold text-base text-gray-900 group-hover:text-teal-600 transition-colors">${climberName}</h3>
+                      <p class="text-xs text-teal-600 font-medium">${title}</p>
                     </div>
                   </div>
-                `
-              }).join('')}
+                  
+                  <!-- Comment Section -->
+                  <div class="mb-4 relative">
+                    <div class="absolute -left-2 -top-2 text-4xl text-teal-200 opacity-50">"</div>
+                    <p class="text-gray-700 text-sm leading-relaxed pl-4 line-clamp-4 group-hover:line-clamp-none transition-all">
+                      ${comment}
+                    </p>
+                  </div>
+                  
+                  <!-- Social Links -->
+                  ${testimonial.instagram_url || testimonial.youtube_url || testimonial.website_url ? `
+                    <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                      ${testimonial.instagram_url ? `
+                        <a href="${testimonial.instagram_url}" target="_blank" rel="noopener noreferrer" 
+                           class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:scale-110 transition-transform shadow-md">
+                          <i class="fab fa-instagram text-sm"></i>
+                        </a>
+                      ` : ''}
+                      ${testimonial.youtube_url ? `
+                        <a href="${testimonial.youtube_url}" target="_blank" rel="noopener noreferrer"
+                           class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white hover:scale-110 transition-transform shadow-md">
+                          <i class="fab fa-youtube text-sm"></i>
+                        </a>
+                      ` : ''}
+                      ${testimonial.website_url ? `
+                        <a href="${testimonial.website_url}" target="_blank" rel="noopener noreferrer"
+                           class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:scale-110 transition-transform shadow-md">
+                          <i class="fas fa-globe text-sm"></i>
+                        </a>
+                      ` : ''}
+                    </div>
+                  ` : ''}
+                </div>
+                
+                <!-- Decorative Corner -->
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-teal-400/20 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
-            </div>
-          </details>
+            `
+          }).join('')}
+          </div>
         </div>
+        
+        <style>
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        </style>
       </section>
       ` : ''}
       
