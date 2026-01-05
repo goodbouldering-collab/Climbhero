@@ -838,7 +838,7 @@ function renderHomePage() {
       <!-- How to Use ClimbHero Section (Interactive Accordion) -->
       <section class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="group" open>
+          <details class="group">
             <summary class="cursor-pointer py-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg px-4">
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-open:scale-110 transition-transform">
