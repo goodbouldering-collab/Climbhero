@@ -984,9 +984,9 @@ function renderHomePage() {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           ${state.testimonials.map((testimonial, index) => {
             const lang = i18n.getCurrentLanguage()
-            const climberName = testimonial[\`climber_name_\${lang}\`] || testimonial.climber_name_en
-            const title = testimonial[\`title_\${lang}\`] || testimonial.title_en
-            const comment = testimonial[\`comment_\${lang}\`] || testimonial.comment_en
+            const climberName = testimonial[`climber_name_${lang}`] || testimonial.climber_name_en
+            const title = testimonial[`title_${lang}`] || testimonial.title_en
+            const comment = testimonial[`comment_${lang}`] || testimonial.comment_en
             
             return `
               <div class="group relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 transform" style="animation: fadeInUp 0.6s ease-out ${index * 0.1}s backwards;">
