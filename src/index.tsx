@@ -6914,5 +6914,121 @@ app.get('/api/admin/inquiries/stats/summary', async (c) => {
   }
 })
 
+// ============ Thumbnail Extraction API ============
+
+// Extract thumbnail from video URL
+app.post('/api/videos/extract-thumbnail', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { url } = body
+
+    if (!url) {
+      return c.json({ error: 'URL is required' }, 400)
+    }
+
+    const thumbnailUrl = await extractThumbnailFromUrl(url)
+    
+    return c.json({
+      success: true,
+      url,
+      thumbnail_url: thumbnailUrl,
+      platform: detectPlatform(url)
+    })
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// Helper: Detect platform from URL
+function detectPlatform(url: string): string {
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    return url.includes('/shorts/') ? 'youtube_shorts' : 'youtube'
+  } else if (url.includes('instagram.com')) {
+    return 'instagram'
+  } else if (url.includes('tiktok.com')) {
+    return 'tiktok'
+  } else if (url.includes('vimeo.com')) {
+    return 'vimeo'
+  }
+  return 'unknown'
+}
+
+// Helper: Extract YouTube ID from URL
+function extractYouTubeId(url: string): string | null {
+  // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/[?&]v=([^&]+)/)
+  if (watchMatch) return watchMatch[1]
+  
+  // Short URL: https://youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/)
+  if (shortMatch) return shortMatch[1]
+  
+  // Shorts URL: https://www.youtube.com/shorts/VIDEO_ID
+  const shortsMatch = url.match(/\/shorts\/([^?&]+)/)
+  if (shortsMatch) return shortsMatch[1]
+  
+  // Embed URL: https://www.youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/\/embed\/([^?&]+)/)
+  if (embedMatch) return embedMatch[1]
+  
+  return null
+}
+
+// Helper: Extract Vimeo ID from URL
+function extractVimeoId(url: string): string | null {
+  const match = url.match(/vimeo\.com\/(\d+)/)
+  return match ? match[1] : null
+}
+
+// Helper: Extract thumbnail from URL
+async function extractThumbnailFromUrl(url: string): Promise<string> {
+  const platform = detectPlatform(url)
+  
+  switch (platform) {
+    case 'youtube':
+    case 'youtube_shorts': {
+      const videoId = extractYouTubeId(url)
+      if (!videoId) {
+        throw new Error('Could not extract YouTube video ID')
+      }
+      // Try maxresdefault first (1280x720), fallback to hqdefault (480x360)
+      return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+    }
+    
+    case 'vimeo': {
+      const videoId = extractVimeoId(url)
+      if (!videoId) {
+        throw new Error('Could not extract Vimeo video ID')
+      }
+      // Use Vimeo oEmbed API to get thumbnail
+      try {
+        const oembedUrl = `https://vimeo.com/api/oembed.json?url=https://vimeo.com/${videoId}`
+        const response = await fetch(oembedUrl)
+        const data = await response.json() as any
+        return data.thumbnail_url || `https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=600&fit=crop&q=80`
+      } catch {
+        return `https://images.unsplash.com/photo-1522163182402-834f871fd851?w=800&h=600&fit=crop&q=80`
+      }
+    }
+    
+    case 'instagram': {
+      // Instagram doesn't allow direct thumbnail access without authentication
+      // Use high-quality climbing image as fallback
+      return 'https://images.unsplash.com/photo-1522163723043-478ef79a5bb4?w=800&h=600&fit=crop&q=80'
+    }
+    
+    case 'tiktok': {
+      // TikTok doesn't allow direct thumbnail access without authentication
+      // Use high-quality climbing image as fallback
+      return 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=600&fit=crop&q=80'
+    }
+    
+    default: {
+      // Generic fallback for unknown platforms
+      return 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&h=600&fit=crop&q=80'
+    }
+  }
+}
+
 // Export Hono app
 export default app
