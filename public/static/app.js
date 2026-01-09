@@ -936,7 +936,7 @@ function renderHomePage() {
                   <h2 class="text-xl font-bold bg-gradient-to-r from-teal-600 to-green-600 bg-clip-text text-transparent">
                     ${i18n.t('testimonials.title')}
                   </h2>
-                  <p class="text-sm text-gray-500">世界中のクライマーからのメッセージ（${state.testimonials.length}件）</p>
+                  <p class="text-sm text-gray-500">世界のクライマーからメッセージ（${state.testimonials.length}件）</p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
@@ -9304,7 +9304,7 @@ function initAutoPlayPlaylist() {
       
       return true;
     })
-    .slice(0, 20);
+    .slice(0, 10);  // Top 10 only
   
   if (playlist.length === 0) {
     console.warn('❌ No playable videos available for auto-play');
