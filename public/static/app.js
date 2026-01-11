@@ -1174,13 +1174,15 @@ function renderHomePage() {
       </section>
 
       <!-- Favorites Section (Only for logged-in users) -->
-      ${state.currentUser && state.favorites && state.favorites.length > 0 ? `
+      ${(() => {
+        const videoFavorites = (state.allFavorites || []).filter(f => f.type === 'video');
+        return state.currentUser && videoFavorites.length > 0 ? `
       <section class="py-6 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="section-header mb-4">
             <div class="section-title">
               <i class="fas fa-heart"></i>
-              <span>${i18n.getCurrentLanguage() === 'ja' ? 'お気に入り' : 'Favorites'}</span>
+              <span>${i18n.getCurrentLanguage() === 'ja' ? 'お気に入り動画' : 'Favorite Videos'}</span>
             </div>
           </div>
           
@@ -1190,7 +1192,7 @@ function renderHomePage() {
               <i class="fas fa-chevron-left"></i>
             </button>
             <div class="horizontal-scroll" id="favorites-scroll">
-              ${state.favorites.map(video => renderVideoCard(video)).join('')}
+              ${videoFavorites.map(fav => renderVideoCard(fav.item)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('favorites-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
@@ -1198,7 +1200,8 @@ function renderHomePage() {
           </div>
         </div>
       </section>
-      ` : ''}
+      ` : '';
+      })()}
 
       <!-- Climbing News Section -->
       ${state.newsArticles && state.newsArticles.length > 0 ? `
