@@ -1397,6 +1397,138 @@ function renderHomePage() {
       </div>
     </section>
 
+    <!-- FAQ Section -->
+    <section class="py-12 bg-white">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10">
+          <h2 class="text-3xl font-bold text-gray-900 mb-3">
+            <i class="fas fa-question-circle text-purple-600 mr-2"></i>
+            よくある質問
+          </h2>
+          <p class="text-gray-600">ClimbHeroについてのよくある質問にお答えします</p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- FAQ 1 -->
+          <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <button onclick="this.parentElement.classList.toggle('active')" class="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+              <span class="font-semibold text-gray-900">
+                <i class="fas fa-video text-purple-600 mr-2"></i>
+                ClimbHeroではどんな動画が見られますか？
+              </span>
+              <i class="fas fa-chevron-down text-gray-400 transform transition-transform"></i>
+            </button>
+            <div class="px-6 py-4 bg-white hidden">
+              <p class="text-gray-700 leading-relaxed">
+                世界トップクライマーの動画を厳選して掲載しています。Alex Honnold、Adam Ondra、小山田大、楢崎智亜、野中生萌などのクライミング動画や、IFSC World Cup 2024-2025の最新映像をご覧いただけます。全ての動画URLは検証済みで、確実に再生できます。
+              </p>
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <button onclick="this.parentElement.classList.toggle('active')" class="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+              <span class="font-semibold text-gray-900">
+                <i class="fas fa-heart text-purple-600 mr-2"></i>
+                お気に入り機能の使い方を教えてください
+              </span>
+              <i class="fas fa-chevron-down text-gray-400 transform transition-transform"></i>
+            </button>
+            <div class="px-6 py-4 bg-white hidden">
+              <p class="text-gray-700 leading-relaxed">
+                動画カードの<i class="fas fa-star text-yellow-500 mx-1"></i>ボタンをクリックするだけで、お気に入りに追加できます。お気に入りに登録した動画は、マイページからいつでもアクセスできます。ログインが必要な機能です。
+              </p>
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <button onclick="this.parentElement.classList.toggle('active')" class="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+              <span class="font-semibold text-gray-900">
+                <i class="fas fa-crown text-purple-600 mr-2"></i>
+                プレミアムプランと無料プランの違いは？
+              </span>
+              <i class="fas fa-chevron-down text-gray-400 transform transition-transform"></i>
+            </button>
+            <div class="px-6 py-4 bg-white hidden">
+              <p class="text-gray-700 leading-relaxed mb-3">
+                <strong class="text-purple-700">無料プラン：</strong>動画閲覧、1日1いいね<br>
+                <strong class="text-purple-700">プレミアムプラン（月額¥990、年間¥490/月）：</strong>無制限動画投稿、無制限いいね、お気に入り管理、広告非表示、優先サポート
+              </p>
+              <p class="text-gray-700">
+                年間プランなら50%OFFで月額換算¥490です。いつでも解約可能で、Stripe安全決済に対応しています。
+              </p>
+            </div>
+          </div>
+
+          <!-- FAQ 4 -->
+          <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <button onclick="this.parentElement.classList.toggle('active')" class="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+              <span class="font-semibold text-gray-900">
+                <i class="fas fa-play-circle text-purple-600 mr-2"></i>
+                ランキングダイジェストの自動再生とは？
+              </span>
+              <i class="fas fa-chevron-down text-gray-400 transform transition-transform"></i>
+            </button>
+            <div class="px-6 py-4 bg-white hidden">
+              <p class="text-gray-700 leading-relaxed">
+                トップページに表示される、人気動画トップ10を自動で連続再生する機能です。世界最高峰のクライミング動画を次々とお楽しみいただけます。動画が再生できない場合は自動的にスキップされます。
+              </p>
+            </div>
+          </div>
+
+          <!-- FAQ 5 -->
+          <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <button onclick="this.parentElement.classList.toggle('active')" class="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+              <span class="font-semibold text-gray-900">
+                <i class="fas fa-shoe-prints text-purple-600 mr-2"></i>
+                クライミングシューズの試履きはできますか？
+              </span>
+              <i class="fas fa-chevron-down text-gray-400 transform transition-transform"></i>
+            </button>
+            <div class="px-6 py-4 bg-white hidden">
+              <p class="text-gray-700 leading-relaxed">
+                はい、グッぼるショップで120モデル以上のクライミングシューズを試履きできます。La Sportiva、SCARPA、Evolv、Five Tenなど主要ブランドを常時在庫しており、試履き後にジムで実際に登って試すことも可能です。クラッシュパッド60枚超も在庫があります。
+              </p>
+            </div>
+          </div>
+
+          <!-- FAQ 6 -->
+          <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <button onclick="this.parentElement.classList.toggle('active')" class="w-full px-6 py-4 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-colors">
+              <span class="font-semibold text-gray-900">
+                <i class="fas fa-mobile-alt text-purple-600 mr-2"></i>
+                スマートフォンでも利用できますか？
+              </span>
+              <i class="fas fa-chevron-down text-gray-400 transform transition-transform"></i>
+            </button>
+            <div class="px-6 py-4 bg-white hidden">
+              <p class="text-gray-700 leading-relaxed">
+                はい、ClimbHeroは完全レスポンシブデザインで、スマートフォン、タブレット、PCのあらゆるデバイスで快適にご利用いただけます。動画の視聴、お気に入り登録、投稿など、全ての機能がモバイルでも使えます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-10 text-center">
+          <p class="text-gray-600 mb-4">その他のご質問がございましたら、お気軽にお問い合わせください</p>
+          <button onclick="showContactForm()" class="btn btn-primary">
+            <i class="fas fa-envelope mr-2"></i>
+            お問い合わせ
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <style>
+      .active .fa-chevron-down {
+        transform: rotate(180deg);
+      }
+      .active > div {
+        display: block !important;
+      }
+    </style>
+
     <!-- Footer -->
     ${renderFooter()}
 
