@@ -764,6 +764,122 @@ function renderHomePage() {
         </div>
       </section>
       
+      <!-- Mission Section - What is ClimbHero -->
+      <section class="py-16 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
+        <!-- Animated Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+          <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+          <div class="absolute top-0 right-0 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+          <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
+              <i class="fas fa-mountain text-3xl text-white"></i>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
+              ClimbHeroとは
+            </h2>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              世界中のクライマーをつなぐ、クライミング動画プラットフォーム
+            </p>
+          </div>
+          
+          <div class="grid md:grid-cols-3 gap-8 mb-12">
+            <!-- Feature 1 -->
+            <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
+                <i class="fas fa-video text-2xl text-white"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3">厳選された動画</h3>
+              <p class="text-gray-300 leading-relaxed">
+                YouTube、Instagram、Vimeoから世界トップクライマーの動画を厳選。全てのURLを検証済みで、確実に視聴できます。
+              </p>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
+                <i class="fas fa-users text-2xl text-white"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3">コミュニティ</h3>
+              <p class="text-gray-300 leading-relaxed">
+                世界中のクライマーと繋がり、お気に入り動画を共有。いいねやコメントで交流を深め、新しいインスピレーションを得られます。
+              </p>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
+                <i class="fas fa-chart-line text-2xl text-white"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-3">成長を記録</h3>
+              <p class="text-gray-300 leading-relaxed">
+                視聴履歴、お気に入り、いいねした動画を自動記録。あなたのクライミングジャーニーを可視化し、上達をサポートします。
+              </p>
+            </div>
+          </div>
+          
+          <!-- Stats Section -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 bg-black/30 backdrop-blur-md rounded-2xl p-8">
+            <div class="text-center transform hover:scale-110 transition-transform">
+              <div class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">20+</div>
+              <div class="text-sm text-gray-400">厳選動画</div>
+            </div>
+            <div class="text-center transform hover:scale-110 transition-transform">
+              <div class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">3</div>
+              <div class="text-sm text-gray-400">プラットフォーム</div>
+            </div>
+            <div class="text-center transform hover:scale-110 transition-transform">
+              <div class="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-2">100%</div>
+              <div class="text-sm text-gray-400">URL検証済み</div>
+            </div>
+            <div class="text-center transform hover:scale-110 transition-transform">
+              <div class="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">24/7</div>
+              <div class="text-sm text-gray-400">いつでもアクセス</div>
+            </div>
+          </div>
+          
+          <div class="text-center mt-12">
+            <p class="text-lg text-gray-300 mb-6">
+              30年のクライミング経験を持つオーナーが運営。グッぼるボルダリングCafe & Shopと連携し、<br class="hidden md:inline">
+              シューズ120モデル、クラッシュパッド60枚超の在庫で実店舗もサポート。
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-4">
+              ${!state.currentUser ? `
+                <button onclick="showAuthModal('register')" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-2xl transform hover:scale-105 transition-all">
+                  <i class="fas fa-rocket mr-2"></i>
+                  無料で始める
+                </button>
+              ` : ''}
+              <a href="https://goodbouldering.com" target="_blank" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-xl border-2 border-white/30 transform hover:scale-105 transition-all">
+                <i class="fas fa-store mr-2"></i>
+                グッぼるショップ
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <style>
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(20px, -50px) scale(1.1); }
+          50% { transform: translate(-20px, 20px) scale(0.9); }
+          75% { transform: translate(50px, 50px) scale(1.05); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      </style>
+      
       <!-- ★ MY FAVORITES SECTION - TOP PRIORITY FOR LOGGED IN USERS ★ -->
       ${state.currentUser && state.allFavorites && state.allFavorites.length > 0 ? `
       <section class="py-6 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 border-b-2 border-purple-200 shadow-sm">
