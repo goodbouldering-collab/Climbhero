@@ -2,6 +2,8 @@
 const state = {
   currentUser: null,
   videos: [],
+  filteredVideos: [], // 新規追加: フィルター後の動画リスト
+  currentPlatform: 'all', // 新規追加: プラットフォームフィルター
   favorites: [],
   allFavorites: [],
   favoriteCounts: { total: 0, videos: 0, blogs: 0, news: 0 },
@@ -146,6 +148,7 @@ window.addEventListener('languageChanged', async (e) => {
         axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`)
       ]).then(([videosRes, trendingRes, topLikedRes]) => {
         state.videos = videosRes.data.videos || [];
+        state.filteredVideos = state.videos; // 初期化
         state.trendingVideos = trendingRes.data.videos || [];
         state.topLikedVideos = topLikedRes.data.videos || [];
         console.log(`✅ Videos updated in background`);
@@ -172,6 +175,7 @@ window.addEventListener('languageChanged', async (e) => {
       state.blogPosts = blogRes.data || [];
       state.announcements = announcementsRes.data || [];
       state.videos = videosRes.data.videos || [];
+      state.filteredVideos = state.videos; // 初期化
       state.trendingVideos = trendingRes.data.videos || [];
       state.topLikedVideos = topLikedRes.data.videos || [];
       state.newsArticles = newsRes.data.articles || [];
@@ -341,6 +345,7 @@ async function loadInitialData() {
     ]);
     
     state.videos = videosRes.data.videos || [];
+    state.filteredVideos = state.videos; // 初期化
     state.topLikedVideos = topLikedRes.data.videos || [];
     state.currentRankingPeriod = 'all';
     state.announcements = announcementsRes.data || [];
@@ -764,7 +769,7 @@ function renderHomePage() {
         </div>
       </section>
       
-      <!-- Mission Section - What is ClimbHero -->
+      <!-- Mission Section - What is ClimbHero (Accordion) -->
       <section class="py-16 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
         <!-- Animated Background Pattern -->
         <div class="absolute inset-0 opacity-10">
@@ -774,89 +779,167 @@ function renderHomePage() {
         </div>
         
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div class="text-center mb-12">
+          <!-- Header with Toggle -->
+          <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
               <i class="fas fa-mountain text-3xl text-white"></i>
             </div>
-            <h2 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-              ClimbHeroとは
-            </h2>
-            <p class="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            <button onclick="toggleMissionAccordion()" class="group w-full max-w-2xl mx-auto">
+              <div class="flex items-center justify-center gap-4">
+                <h2 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
+                  ClimbHeroとは
+                </h2>
+                <i id="mission-accordion-icon" class="fas fa-chevron-down text-2xl text-purple-300 transform transition-transform duration-300"></i>
+              </div>
+            </button>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed mt-4">
               世界中のクライマーをつなぐ、クライミング動画プラットフォーム
             </p>
           </div>
           
-          <div class="grid md:grid-cols-3 gap-8 mb-12">
-            <!-- Feature 1 -->
-            <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-              <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
-                <i class="fas fa-video text-2xl text-white"></i>
+          <!-- Accordion Content -->
+          <div id="mission-accordion-content" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+            <div class="pt-8">
+              <div class="grid md:grid-cols-3 gap-8 mb-12">
+                <!-- Feature 1: 厳選された動画 -->
+                <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
+                    <i class="fas fa-video text-2xl text-white"></i>
+                  </div>
+                  <h3 class="text-xl font-bold mb-3">📹 厳選された動画</h3>
+                  <p class="text-gray-300 leading-relaxed">
+                    YouTube、Instagram、Vimeoから世界トップクライマーの動画を厳選。全てのURLを検証済みで、確実に視聴できます。
+                  </p>
+                  <ul class="mt-4 space-y-2 text-sm text-gray-400">
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>Alex Honnold、Adam Ondra</li>
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>IFSC World Cup最新映像</li>
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>全URL検証済み</li>
+                  </ul>
+                </div>
+                
+                <!-- Feature 2: コミュニティ -->
+                <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
+                    <i class="fas fa-users text-2xl text-white"></i>
+                  </div>
+                  <h3 class="text-xl font-bold mb-3">🌍 コミュニティ</h3>
+                  <p class="text-gray-300 leading-relaxed">
+                    世界中のクライマーと繋がり、お気に入り動画を共有。いいねやコメントで交流を深め、新しいインスピレーションを得られます。
+                  </p>
+                  <ul class="mt-4 space-y-2 text-sm text-gray-400">
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>お気に入り共有</li>
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>いいね機能</li>
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>グローバルネットワーク</li>
+                  </ul>
+                </div>
+                
+                <!-- Feature 3: 成長を記録 -->
+                <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                  <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
+                    <i class="fas fa-chart-line text-2xl text-white"></i>
+                  </div>
+                  <h3 class="text-xl font-bold mb-3">📈 成長を記録</h3>
+                  <p class="text-gray-300 leading-relaxed">
+                    視聴履歴、お気に入り、いいねした動画を自動記録。あなたのクライミングジャーニーを可視化し、上達をサポートします。
+                  </p>
+                  <ul class="mt-4 space-y-2 text-sm text-gray-400">
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>視聴履歴自動保存</li>
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>パーソナライズ推奨</li>
+                    <li><i class="fas fa-check text-green-400 mr-2"></i>進捗可視化</li>
+                  </ul>
+                </div>
               </div>
-              <h3 class="text-xl font-bold mb-3">厳選された動画</h3>
-              <p class="text-gray-300 leading-relaxed">
-                YouTube、Instagram、Vimeoから世界トップクライマーの動画を厳選。全てのURLを検証済みで、確実に視聴できます。
-              </p>
-            </div>
-            
-            <!-- Feature 2 -->
-            <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-              <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
-                <i class="fas fa-users text-2xl text-white"></i>
+              
+              <!-- Additional Features Grid (新規) -->
+              <div class="grid md:grid-cols-2 gap-6 mb-12">
+                <!-- 実店舗連携 -->
+                <div class="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-2xl p-6 border border-orange-500/30">
+                  <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-store text-xl text-white"></i>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-bold mb-2">🏔️ 実店舗との連携</h3>
+                      <p class="text-gray-300 text-sm mb-3">
+                        グッぼるボルダリングCafe & Shopと完全連携。オンラインで見た動画の技術を、実店舗で実践できます。
+                      </p>
+                      <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">シューズ120モデル</span>
+                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">クラッシュパッド60枚</span>
+                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">ジム試登可能</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- プレミアム特典 -->
+                <div class="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 backdrop-blur-md rounded-2xl p-6 border border-yellow-500/30">
+                  <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <i class="fas fa-crown text-xl text-white"></i>
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-bold mb-2">💎 プレミアム特典</h3>
+                      <p class="text-gray-300 text-sm mb-3">
+                        月額¥990で無制限動画投稿、広告非表示、優先サポート。年間プランなら50%OFF。
+                      </p>
+                      <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-yellow-500/30 rounded-full text-xs">無制限投稿</span>
+                        <span class="px-3 py-1 bg-yellow-500/30 rounded-full text-xs">広告なし</span>
+                        <span class="px-3 py-1 bg-yellow-500/30 rounded-full text-xs">優先サポート</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 class="text-xl font-bold mb-3">コミュニティ</h3>
-              <p class="text-gray-300 leading-relaxed">
-                世界中のクライマーと繋がり、お気に入り動画を共有。いいねやコメントで交流を深め、新しいインスピレーションを得られます。
-              </p>
-            </div>
-            
-            <!-- Feature 3 -->
-            <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-              <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
-                <i class="fas fa-chart-line text-2xl text-white"></i>
+              
+              <!-- Stats Section -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-6 bg-black/30 backdrop-blur-md rounded-2xl p-8 mb-8">
+                <div class="text-center transform hover:scale-110 transition-transform">
+                  <div class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">20+</div>
+                  <div class="text-sm text-gray-400">厳選動画</div>
+                </div>
+                <div class="text-center transform hover:scale-110 transition-transform">
+                  <div class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">3</div>
+                  <div class="text-sm text-gray-400">プラットフォーム</div>
+                </div>
+                <div class="text-center transform hover:scale-110 transition-transform">
+                  <div class="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-2">100%</div>
+                  <div class="text-sm text-gray-400">URL検証済み</div>
+                </div>
+                <div class="text-center transform hover:scale-110 transition-transform">
+                  <div class="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">24/7</div>
+                  <div class="text-sm text-gray-400">いつでもアクセス</div>
+                </div>
               </div>
-              <h3 class="text-xl font-bold mb-3">成長を記録</h3>
-              <p class="text-gray-300 leading-relaxed">
-                視聴履歴、お気に入り、いいねした動画を自動記録。あなたのクライミングジャーニーを可視化し、上達をサポートします。
-              </p>
-            </div>
-          </div>
-          
-          <!-- Stats Section -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 bg-black/30 backdrop-blur-md rounded-2xl p-8">
-            <div class="text-center transform hover:scale-110 transition-transform">
-              <div class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">20+</div>
-              <div class="text-sm text-gray-400">厳選動画</div>
-            </div>
-            <div class="text-center transform hover:scale-110 transition-transform">
-              <div class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">3</div>
-              <div class="text-sm text-gray-400">プラットフォーム</div>
-            </div>
-            <div class="text-center transform hover:scale-110 transition-transform">
-              <div class="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-2">100%</div>
-              <div class="text-sm text-gray-400">URL検証済み</div>
-            </div>
-            <div class="text-center transform hover:scale-110 transition-transform">
-              <div class="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">24/7</div>
-              <div class="text-sm text-gray-400">いつでもアクセス</div>
-            </div>
-          </div>
-          
-          <div class="text-center mt-12">
-            <p class="text-lg text-gray-300 mb-6">
-              30年のクライミング経験を持つオーナーが運営。グッぼるボルダリングCafe & Shopと連携し、<br class="hidden md:inline">
-              シューズ120モデル、クラッシュパッド60枚超の在庫で実店舗もサポート。
-            </p>
-            <div class="flex flex-wrap items-center justify-center gap-4">
-              ${!state.currentUser ? `
-                <button onclick="showAuthModal('register')" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-2xl transform hover:scale-105 transition-all">
-                  <i class="fas fa-rocket mr-2"></i>
-                  無料で始める
-                </button>
-              ` : ''}
-              <a href="https://goodbouldering.com" target="_blank" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-xl border-2 border-white/30 transform hover:scale-105 transition-all">
-                <i class="fas fa-store mr-2"></i>
-                グッぼるショップ
-              </a>
+              
+              <!-- Authority Section (新規) -->
+              <div class="bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 backdrop-blur-md rounded-2xl p-8 mb-8 border border-purple-500/30">
+                <div class="flex items-center justify-center gap-3 mb-4">
+                  <i class="fas fa-certificate text-3xl text-yellow-400"></i>
+                  <h3 class="text-2xl font-bold">30年のクライミング経験</h3>
+                </div>
+                <p class="text-center text-gray-300 leading-relaxed max-w-3xl mx-auto">
+                  由井辰美（オーナー）が30年以上のクライミング経験を持ち、V17課題設計、肩甲骨・小円筋主導のフォーム解析など、
+                  科学的アプローチでクライミング技術を分析。世界中の岩を登ったスタッフとともに、
+                  専門的かつ信頼性の高いコンテンツを提供します。
+                </p>
+              </div>
+              
+              <div class="text-center">
+                <div class="flex flex-wrap items-center justify-center gap-4">
+                  ${!state.currentUser ? `
+                    <button onclick="showAuthModal('register')" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-2xl transform hover:scale-105 transition-all">
+                      <i class="fas fa-rocket mr-2"></i>
+                      無料で始める
+                    </button>
+                  ` : ''}
+                  <a href="https://goodbouldering.com" target="_blank" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-xl border-2 border-white/30 transform hover:scale-105 transition-all">
+                    <i class="fas fa-store mr-2"></i>
+                    グッぼるショップ
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1241,6 +1324,22 @@ function renderHomePage() {
           </div>
           
           <div id="videos-section-content">
+            <!-- Platform Filter Buttons -->
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button onclick="filterVideosByPlatform('all')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                <i class="fas fa-th mr-2"></i>全て (${state.videos.length})
+              </button>
+              <button onclick="filterVideosByPlatform('youtube')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'youtube' ? 'bg-red-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                <i class="fab fa-youtube mr-2"></i>YouTube (${state.videos.filter(v => v.media_source === 'youtube').length})
+              </button>
+              <button onclick="filterVideosByPlatform('instagram')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'instagram' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                <i class="fab fa-instagram mr-2"></i>Instagram (${state.videos.filter(v => v.media_source === 'instagram').length})
+              </button>
+              <button onclick="filterVideosByPlatform('vimeo')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'vimeo' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                <i class="fab fa-vimeo-v mr-2"></i>Vimeo (${state.videos.filter(v => v.media_source === 'vimeo').length})
+              </button>
+            </div>
+            
             ${renderFilterButtons('filterVideosByCategory', state.currentVideoCategory, [
               { value: 'all', label: i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All', icon: 'fas fa-th' },
               { value: 'bouldering', label: i18n.t('section.bouldering'), icon: 'fas fa-grip-lines' },
@@ -1255,7 +1354,7 @@ function renderHomePage() {
                 <i class="fas fa-chevron-left"></i>
               </button>
               <div class="horizontal-scroll" id="videos-scroll">
-                ${state.videos.map(video => renderVideoCard(video)).join('')}
+                ${state.filteredVideos.map(video => renderVideoCard(video)).join('')}
               </div>
               <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('videos-carousel', 1)">
                 <i class="fas fa-chevron-right"></i>
@@ -9912,9 +10011,44 @@ function formatNumber(num) {
 // Auto-play will be initialized by renderApp after data loads
 // No need for separate DOMContentLoaded listener
 
+// Toggle Mission Accordion
+function toggleMissionAccordion() {
+  const content = document.getElementById('mission-accordion-content');
+  const icon = document.getElementById('mission-accordion-icon');
+  
+  if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+    // Close
+    content.style.maxHeight = '0px';
+    content.style.opacity = '0';
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    // Open
+    content.style.maxHeight = '2500px';
+    content.style.opacity = '1';
+    icon.style.transform = 'rotate(180deg)';
+  }
+}
+
+// Filter videos by platform
+function filterVideosByPlatform(platform) {
+  console.log(`🔍 Filtering videos by platform: ${platform}`);
+  state.currentPlatform = platform;
+  
+  if (platform === 'all') {
+    state.filteredVideos = state.videos;
+  } else {
+    state.filteredVideos = state.videos.filter(v => v.media_source === platform);
+  }
+  
+  console.log(`✅ Filtered videos count: ${state.filteredVideos.length}`);
+  renderApp();
+}
+
 // Export functions to window
 window.initAutoPlayPlaylist = initAutoPlayPlaylist;
 window.toggleAutoPlay = toggleAutoPlay;
 window.skipToNextVideo = skipToNextVideo;
 window.skipToPreviousVideo = skipToPreviousVideo;
 window.loadAutoPlayVideo = loadAutoPlayVideo;
+window.toggleMissionAccordion = toggleMissionAccordion;
+window.filterVideosByPlatform = filterVideosByPlatform;
