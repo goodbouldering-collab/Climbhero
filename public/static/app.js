@@ -850,80 +850,26 @@ function renderHomePage() {
                 </div>
               </div>
               
-              <!-- Additional Features Grid (新規) -->
-              <div class="grid md:grid-cols-2 gap-6 mb-12">
-                <!-- 実店舗連携 -->
+              <!-- オンライン販売カードのみ -->
+              <div class="max-w-2xl mx-auto mb-12">
                 <div class="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-2xl p-6 border border-orange-500/30">
                   <div class="flex items-start gap-4">
                     <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <i class="fas fa-store text-xl text-white"></i>
+                      <i class="fas fa-shopping-cart text-xl text-white"></i>
                     </div>
                     <div>
-                      <h3 class="text-lg font-bold mb-2">🏔️ 実店舗との連携</h3>
+                      <h3 class="text-lg font-bold mb-2">🛒 オンライン販売</h3>
                       <p class="text-gray-300 text-sm mb-3">
-                        グッぼるボルダリングCafe & Shopと完全連携。オンラインで見た動画の技術を、実店舗で実践できます。
+                        グッぼるショップでクライミングギアをオンライン購入。クライミングシューズやクラッシュパッドなど、豊富な品揃え。
                       </p>
                       <div class="flex flex-wrap gap-2">
                         <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">シューズ120モデル</span>
                         <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">クラッシュパッド60枚</span>
-                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">ジム試登可能</span>
+                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">オンライン購入</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                
-                <!-- プレミアム特典 -->
-                <div class="bg-gradient-to-br from-yellow-500/20 to-amber-500/20 backdrop-blur-md rounded-2xl p-6 border border-yellow-500/30">
-                  <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <i class="fas fa-crown text-xl text-white"></i>
-                    </div>
-                    <div>
-                      <h3 class="text-lg font-bold mb-2">💎 プレミアム特典</h3>
-                      <p class="text-gray-300 text-sm mb-3">
-                        月額¥990で無制限動画投稿、広告非表示、優先サポート。年間プランなら50%OFF。
-                      </p>
-                      <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-yellow-500/30 rounded-full text-xs">無制限投稿</span>
-                        <span class="px-3 py-1 bg-yellow-500/30 rounded-full text-xs">広告なし</span>
-                        <span class="px-3 py-1 bg-yellow-500/30 rounded-full text-xs">優先サポート</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Stats Section -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-6 bg-black/30 backdrop-blur-md rounded-2xl p-8 mb-8">
-                <div class="text-center transform hover:scale-110 transition-transform">
-                  <div class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">20+</div>
-                  <div class="text-sm text-gray-400">厳選動画</div>
-                </div>
-                <div class="text-center transform hover:scale-110 transition-transform">
-                  <div class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">3</div>
-                  <div class="text-sm text-gray-400">プラットフォーム</div>
-                </div>
-                <div class="text-center transform hover:scale-110 transition-transform">
-                  <div class="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent mb-2">100%</div>
-                  <div class="text-sm text-gray-400">URL検証済み</div>
-                </div>
-                <div class="text-center transform hover:scale-110 transition-transform">
-                  <div class="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">24/7</div>
-                  <div class="text-sm text-gray-400">いつでもアクセス</div>
-                </div>
-              </div>
-              
-              <!-- Authority Section (新規) -->
-              <div class="bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 backdrop-blur-md rounded-2xl p-8 mb-8 border border-purple-500/30">
-                <div class="flex items-center justify-center gap-3 mb-4">
-                  <i class="fas fa-certificate text-3xl text-yellow-400"></i>
-                  <h3 class="text-2xl font-bold">30年のクライミング経験</h3>
-                </div>
-                <p class="text-center text-gray-300 leading-relaxed max-w-3xl mx-auto">
-                  由井辰美（オーナー）が30年以上のクライミング経験を持ち、V17課題設計、肩甲骨・小円筋主導のフォーム解析など、
-                  科学的アプローチでクライミング技術を分析。世界中の岩を登ったスタッフとともに、
-                  専門的かつ信頼性の高いコンテンツを提供します。
-                </p>
               </div>
               
               <div class="text-center">
@@ -935,7 +881,7 @@ function renderHomePage() {
                     </button>
                   ` : ''}
                   <a href="https://goodbouldering.com" target="_blank" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-xl border-2 border-white/30 transform hover:scale-105 transition-all">
-                    <i class="fas fa-store mr-2"></i>
+                    <i class="fas fa-shopping-cart mr-2"></i>
                     グッぼるショップ
                   </a>
                 </div>
@@ -10022,8 +9968,8 @@ function toggleMissionAccordion() {
     content.style.opacity = '0';
     icon.style.transform = 'rotate(0deg)';
   } else {
-    // Open
-    content.style.maxHeight = '2500px';
+    // Open (reduced from 2500px to 1500px)
+    content.style.maxHeight = '1500px';
     content.style.opacity = '1';
     icon.style.transform = 'rotate(180deg)';
   }
