@@ -841,93 +841,6 @@ function renderHomePage() {
       </section>
       ` : ''}
       
-      <!-- How to Use ClimbHero Section (Interactive Accordion) -->
-      <section class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="group">
-            <summary class="cursor-pointer py-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg px-4">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-open:scale-110 transition-transform">
-                  <i class="fas fa-info-circle text-white text-xl"></i>
-                </div>
-                <div>
-                  <h2 class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                    ${i18n.t('feature.title')}
-                  </h2>
-                  <p class="text-sm text-gray-500">ClimbHeroの使い方を見る</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="text-sm text-gray-500 hidden sm:inline">クリックして展開</span>
-                <i class="fas fa-chevron-down text-xl text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
-              </div>
-            </summary>
-            
-            <div class="px-4 pb-8 pt-4 animate-accordion-down">
-              <!-- Mission Statement -->
-              <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 rounded-lg p-6 mb-8">
-                <p class="text-base text-gray-700 leading-relaxed">
-                  ${i18n.t('feature.mission')}
-                </p>
-              </div>
-              
-              <!-- Feature Cards Grid -->
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Step 1: Discover -->
-                <div class="group relative bg-gradient-to-br from-purple-50 to-white rounded-xl p-6 border-2 border-purple-100 hover:border-purple-400 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
-                    <i class="fas fa-video text-2xl text-white"></i>
-                  </div>
-                  <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step1.title')}</h3>
-                  <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step1.desc')}</p>
-                </div>
-                
-                <!-- Step 2: Share -->
-                <div class="group relative bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border-2 border-blue-100 hover:border-blue-400 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
-                    <i class="fas fa-share-alt text-2xl text-white"></i>
-                  </div>
-                  <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step2.title')}</h3>
-                  <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step2.desc')}</p>
-                </div>
-                
-                <!-- Step 3: Data Growth -->
-                <div class="group relative bg-gradient-to-br from-green-50 to-white rounded-xl p-6 border-2 border-green-100 hover:border-green-400 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
-                    <i class="fas fa-chart-line text-2xl text-white"></i>
-                  </div>
-                  <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step3.title')}</h3>
-                  <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step3.desc')}</p>
-                </div>
-                
-                <!-- Step 4: Authentic Value -->
-                <div class="group relative bg-gradient-to-br from-yellow-50 to-white rounded-xl p-6 border-2 border-yellow-100 hover:border-yellow-400 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <div class="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-lg">
-                    <i class="fas fa-mountain text-2xl text-white"></i>
-                  </div>
-                  <h3 class="font-bold text-gray-900 mb-2 text-center">${i18n.t('feature.step4.title')}</h3>
-                  <p class="text-sm text-gray-600 text-center leading-relaxed">${i18n.t('feature.step4.desc')}</p>
-                </div>
-              </div>
-              
-              <!-- CTA Section -->
-              <div class="text-center bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6">
-                <div class="flex items-center justify-center gap-2 text-green-600 font-medium mb-4">
-                  <i class="fas fa-gift text-xl"></i>
-                  <span>${i18n.t('feature.free_trial')}</span>
-                </div>
-                <button onclick="showPricingModal()" class="group relative bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-2xl transform hover:scale-105">
-                  <span class="flex items-center gap-2">
-                    <i class="fas fa-crown"></i>
-                    ${i18n.t('feature.upgrade')}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </details>
-        </div>
-      </section>
-      
       <!-- ClimbHero Features & How to Use Section -->
       <section class="py-12 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
         <!-- Animated Background Pattern -->
@@ -943,13 +856,13 @@ function renderHomePage() {
             <button onclick="toggleMissionAccordion()" class="group w-full max-w-2xl mx-auto">
               <div class="flex items-center justify-center gap-3">
                 <h3 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
-                  ClimbHeroとは・使い方
+                  ClimbHeroとは
                 </h3>
                 <i id="mission-accordion-icon" class="fas fa-chevron-down text-xl text-purple-300 transform transition-transform duration-300"></i>
               </div>
             </button>
             <p class="text-base text-gray-300 max-w-3xl mx-auto leading-relaxed mt-3">
-              世界中のクライマーをつなぐ、クライミング動画プラットフォーム
+              世界中のクライマーをつなぐ、クライミング動画プラットフォーム - 使い方と機能をご紹介
             </p>
           </div>
           
@@ -1003,6 +916,58 @@ function renderHomePage() {
                     <li><i class="fas fa-check text-green-400 mr-2"></i>パーソナライズ推奨</li>
                     <li><i class="fas fa-check text-green-400 mr-2"></i>進捗可視化</li>
                   </ul>
+                </div>
+              </div>
+              
+              <!-- 使い方 - 4つのステップ -->
+              <div class="mt-8 mb-8">
+                <h4 class="text-xl font-bold text-center mb-6 bg-gradient-to-r from-purple-200 via-pink-200 to-purple-200 bg-clip-text text-transparent">
+                  使い方 - 4つのステップ
+                </h4>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+                  <!-- Step 1: 動画を発見 -->
+                  <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                    <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:rotate-12 transition-transform shadow-lg">
+                      <i class="fas fa-search text-2xl text-white"></i>
+                    </div>
+                    <h5 class="font-bold text-center mb-2 text-base">1. 動画を発見</h5>
+                    <p class="text-gray-300 text-xs text-center leading-relaxed">
+                      カテゴリーやプラットフォーム別に厳選された動画を探索。トップクライマーの技術を学びましょう。
+                    </p>
+                  </div>
+                  
+                  <!-- Step 2: お気に入り登録 -->
+                  <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:rotate-12 transition-transform shadow-lg">
+                      <i class="fas fa-star text-2xl text-white"></i>
+                    </div>
+                    <h5 class="font-bold text-center mb-2 text-base">2. お気に入り登録</h5>
+                    <p class="text-gray-300 text-xs text-center leading-relaxed">
+                      気になる動画をお気に入りに保存。後で簡単にアクセスできます。
+                    </p>
+                  </div>
+                  
+                  <!-- Step 3: コミュニティと交流 -->
+                  <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                    <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:rotate-12 transition-transform shadow-lg">
+                      <i class="fas fa-users text-2xl text-white"></i>
+                    </div>
+                    <h5 class="font-bold text-center mb-2 text-base">3. コミュニティと交流</h5>
+                    <p class="text-gray-300 text-xs text-center leading-relaxed">
+                      世界中のクライマーと繋がり、いいねやコメントで交流を深めましょう。
+                    </p>
+                  </div>
+                  
+                  <!-- Step 4: 成長を記録 -->
+                  <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:rotate-12 transition-transform shadow-lg">
+                      <i class="fas fa-chart-line text-2xl text-white"></i>
+                    </div>
+                    <h5 class="font-bold text-center mb-2 text-base">4. 成長を記録</h5>
+                    <p class="text-gray-300 text-xs text-center leading-relaxed">
+                      視聴履歴と進捗を自動記録。あなたのクライミングジャーニーを可視化します。
+                    </p>
+                  </div>
                 </div>
               </div>
               
