@@ -1030,32 +1030,40 @@ function renderHomePage() {
         }
       </style>
       
-      <!-- Climber Testimonials Section (Interactive Accordion) -->
+      <!-- Climber Testimonials Section (Matching ClimbHero Design) -->
       ${state.testimonials && state.testimonials.length > 0 ? `
-      <section class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <details class="group">
-            <summary class="cursor-pointer py-6 flex items-center justify-between hover:bg-gray-50 transition-colors rounded-lg px-4">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-teal-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-open:scale-110 transition-transform">
+      <section class="py-12 bg-gradient-to-br from-teal-900 via-green-900 to-teal-900 text-white relative overflow-hidden">
+        <!-- Animated Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+          <div class="absolute top-0 left-0 w-96 h-96 bg-teal-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+          <div class="absolute top-0 right-0 w-96 h-96 bg-green-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+          <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+        </div>
+        
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <!-- Header with Toggle -->
+          <div class="text-center mb-6">
+            <button onclick="toggleTestimonialsAccordion()" class="group w-full max-w-2xl mx-auto">
+              <div class="flex items-center justify-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <i class="fas fa-mountain text-white text-xl"></i>
                 </div>
-                <div>
-                  <h2 class="text-xl font-bold bg-gradient-to-r from-teal-600 to-green-600 bg-clip-text text-transparent">
-                    ${i18n.t('testimonials.title')}
-                  </h2>
-                  <p class="text-sm text-gray-500">世界のクライマーからメッセージ（${state.testimonials.length}件）</p>
-                </div>
+                <h3 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-300 via-green-300 to-teal-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
+                  ${i18n.t('testimonials.title')}
+                </h3>
+                <i id="testimonials-accordion-icon" class="fas fa-chevron-down text-xl text-teal-300 transform transition-transform duration-300"></i>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="text-sm text-gray-500 hidden sm:inline">クリックして展開</span>
-                <i class="fas fa-chevron-down text-xl text-gray-400 group-open:rotate-180 transition-transform duration-300"></i>
-              </div>
-            </summary>
-            
-            <div class="px-4 pb-8 pt-4 animate-accordion-down">
-              <div class="text-center mb-6">
-                <p class="text-gray-600 text-sm">
+            </button>
+            <p class="text-base text-gray-300 max-w-3xl mx-auto leading-relaxed mt-3">
+              世界中のクライマーからメッセージ（${state.testimonials.length}件）
+            </p>
+          </div>
+          
+          <!-- Accordion Content -->
+          <div id="testimonials-accordion-content" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+            <div class="pt-6">
+              <div class="text-center mb-8">
+                <p class="text-gray-300 text-sm">
                   ${i18n.t('testimonials.subtitle')}
                 </p>
               </div>
@@ -1069,62 +1077,60 @@ function renderHomePage() {
                 const comment = testimonial[`comment_${lang}`] || testimonial.comment_en
                 
                 return `
-                  <div class="group relative bg-gradient-to-br from-teal-50 to-white rounded-xl overflow-hidden border-2 border-teal-100 hover:border-teal-400 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="relative p-5">
-                      <!-- Avatar Section -->
-                      <div class="flex items-center mb-4">
-                        <div class="relative">
-                          <img 
-                            src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop'}" 
-                            alt="${climberName}"
-                            class="w-14 h-14 rounded-full object-cover border-3 border-white shadow-lg group-hover:scale-110 transition-transform duration-300"
-                          />
-                          <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
-                        </div>
-                        <div class="ml-3 flex-1">
-                          <h3 class="font-bold text-base text-gray-900 group-hover:text-teal-600 transition-colors">${climberName}</h3>
-                          <p class="text-xs text-teal-600 font-medium">${title}</p>
-                        </div>
+                  <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                    <!-- Avatar Section -->
+                    <div class="flex items-center mb-4">
+                      <div class="relative">
+                        <img 
+                          src="${testimonial.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop'}" 
+                          alt="${climberName}"
+                          class="w-14 h-14 rounded-full object-cover border-3 border-white/30 shadow-lg group-hover:scale-110 transition-transform duration-300"
+                        />
+                        <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white"></div>
                       </div>
-                      
-                      <!-- Comment Section -->
-                      <div class="mb-4 relative">
-                        <div class="absolute -left-2 -top-2 text-4xl text-teal-200 opacity-50">"</div>
-                        <p class="text-gray-700 text-sm leading-relaxed pl-4 line-clamp-4">
-                          ${comment}
-                        </p>
+                      <div class="ml-3 flex-1">
+                        <h4 class="font-bold text-base text-white group-hover:text-teal-300 transition-colors">${climberName}</h4>
+                        <p class="text-xs text-teal-300 font-medium">${title}</p>
                       </div>
-                      
-                      <!-- Social Links -->
-                      ${testimonial.instagram_url || testimonial.youtube_url || testimonial.website_url ? `
-                        <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-                          ${testimonial.instagram_url ? `
-                            <a href="${testimonial.instagram_url}" target="_blank" rel="noopener noreferrer" 
-                               class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:scale-110 transition-transform shadow-md">
-                              <i class="fab fa-instagram text-sm"></i>
-                            </a>
-                          ` : ''}
-                          ${testimonial.youtube_url ? `
-                            <a href="${testimonial.youtube_url}" target="_blank" rel="noopener noreferrer"
-                               class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white hover:scale-110 transition-transform shadow-md">
-                              <i class="fab fa-youtube text-sm"></i>
-                            </a>
-                          ` : ''}
-                          ${testimonial.website_url ? `
-                            <a href="${testimonial.website_url}" target="_blank" rel="noopener noreferrer"
-                               class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:scale-110 transition-transform shadow-md">
-                              <i class="fas fa-globe text-sm"></i>
-                            </a>
-                          ` : ''}
-                        </div>
-                      ` : ''}
                     </div>
+                    
+                    <!-- Comment Section -->
+                    <div class="mb-4 relative">
+                      <div class="absolute -left-2 -top-2 text-4xl text-teal-300 opacity-30">"</div>
+                      <p class="text-gray-200 text-sm leading-relaxed pl-4 line-clamp-4">
+                        ${comment}
+                      </p>
+                    </div>
+                    
+                    <!-- Social Links -->
+                    ${testimonial.instagram_url || testimonial.youtube_url || testimonial.website_url ? `
+                      <div class="flex items-center gap-3 pt-4 border-t border-white/20">
+                        ${testimonial.instagram_url ? `
+                          <a href="${testimonial.instagram_url}" target="_blank" rel="noopener noreferrer" 
+                             class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white hover:scale-110 transition-transform shadow-md">
+                            <i class="fab fa-instagram text-sm"></i>
+                          </a>
+                        ` : ''}
+                        ${testimonial.youtube_url ? `
+                          <a href="${testimonial.youtube_url}" target="_blank" rel="noopener noreferrer"
+                             class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white hover:scale-110 transition-transform shadow-md">
+                            <i class="fab fa-youtube text-sm"></i>
+                          </a>
+                        ` : ''}
+                        ${testimonial.website_url ? `
+                          <a href="${testimonial.website_url}" target="_blank" rel="noopener noreferrer"
+                             class="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:scale-110 transition-transform shadow-md">
+                            <i class="fas fa-globe text-sm"></i>
+                          </a>
+                        ` : ''}
+                      </div>
+                    ` : ''}
                   </div>
                 `
               }).join('')}
               </div>
             </div>
-          </details>
+          </div>
         </div>
       </section>
       ` : ''}
@@ -9933,6 +9939,24 @@ function toggleMissionAccordion() {
   } else {
     // Open (reduced from 2500px to 1500px)
     content.style.maxHeight = '1500px';
+    content.style.opacity = '1';
+    icon.style.transform = 'rotate(180deg)';
+  }
+}
+
+// Toggle Testimonials Accordion
+function toggleTestimonialsAccordion() {
+  const content = document.getElementById('testimonials-accordion-content');
+  const icon = document.getElementById('testimonials-accordion-icon');
+  
+  if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+    // Close
+    content.style.maxHeight = '0px';
+    content.style.opacity = '0';
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    // Open
+    content.style.maxHeight = '2000px';
     content.style.opacity = '1';
     icon.style.transform = 'rotate(180deg)';
   }
