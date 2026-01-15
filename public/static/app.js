@@ -769,145 +769,6 @@ function renderHomePage() {
         </div>
       </section>
       
-      <!-- Mission Section - What is ClimbHero (Accordion) -->
-      <section class="py-16 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
-        <!-- Animated Background Pattern -->
-        <div class="absolute inset-0 opacity-10">
-          <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-          <div class="absolute top-0 right-0 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-          <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-        </div>
-        
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <!-- Header with Toggle -->
-          <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-6 shadow-2xl transform hover:scale-110 transition-transform duration-300">
-              <i class="fas fa-mountain text-3xl text-white"></i>
-            </div>
-            <button onclick="toggleMissionAccordion()" class="group w-full max-w-2xl mx-auto">
-              <div class="flex items-center justify-center gap-4">
-                <h2 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
-                  ClimbHeroとは
-                </h2>
-                <i id="mission-accordion-icon" class="fas fa-chevron-down text-2xl text-purple-300 transform transition-transform duration-300"></i>
-              </div>
-            </button>
-            <p class="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed mt-4">
-              世界中のクライマーをつなぐ、クライミング動画プラットフォーム
-            </p>
-          </div>
-          
-          <!-- Accordion Content -->
-          <div id="mission-accordion-content" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
-            <div class="pt-8">
-              <div class="grid md:grid-cols-3 gap-8 mb-12">
-                <!-- Feature 1: 厳選された動画 -->
-                <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                  <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
-                    <i class="fas fa-video text-2xl text-white"></i>
-                  </div>
-                  <h3 class="text-xl font-bold mb-3">📹 厳選された動画</h3>
-                  <p class="text-gray-300 leading-relaxed">
-                    YouTube、Instagram、Vimeoから世界トップクライマーの動画を厳選。全てのURLを検証済みで、確実に視聴できます。
-                  </p>
-                  <ul class="mt-4 space-y-2 text-sm text-gray-400">
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>Alex Honnold、Adam Ondra</li>
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>IFSC World Cup最新映像</li>
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>全URL検証済み</li>
-                  </ul>
-                </div>
-                
-                <!-- Feature 2: コミュニティ -->
-                <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                  <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
-                    <i class="fas fa-users text-2xl text-white"></i>
-                  </div>
-                  <h3 class="text-xl font-bold mb-3">🌍 コミュニティ</h3>
-                  <p class="text-gray-300 leading-relaxed">
-                    世界中のクライマーと繋がり、お気に入り動画を共有。いいねやコメントで交流を深め、新しいインスピレーションを得られます。
-                  </p>
-                  <ul class="mt-4 space-y-2 text-sm text-gray-400">
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>お気に入り共有</li>
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>いいね機能</li>
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>グローバルネットワーク</li>
-                  </ul>
-                </div>
-                
-                <!-- Feature 3: 成長を記録 -->
-                <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                  <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:rotate-12 transition-transform">
-                    <i class="fas fa-chart-line text-2xl text-white"></i>
-                  </div>
-                  <h3 class="text-xl font-bold mb-3">📈 成長を記録</h3>
-                  <p class="text-gray-300 leading-relaxed">
-                    視聴履歴、お気に入り、いいねした動画を自動記録。あなたのクライミングジャーニーを可視化し、上達をサポートします。
-                  </p>
-                  <ul class="mt-4 space-y-2 text-sm text-gray-400">
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>視聴履歴自動保存</li>
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>パーソナライズ推奨</li>
-                    <li><i class="fas fa-check text-green-400 mr-2"></i>進捗可視化</li>
-                  </ul>
-                </div>
-              </div>
-              
-              <!-- オンライン販売カードのみ -->
-              <div class="max-w-2xl mx-auto mb-12">
-                <div class="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-2xl p-6 border border-orange-500/30">
-                  <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <i class="fas fa-shopping-cart text-xl text-white"></i>
-                    </div>
-                    <div>
-                      <h3 class="text-lg font-bold mb-2">🛒 オンライン販売</h3>
-                      <p class="text-gray-300 text-sm mb-3">
-                        グッぼるショップでクライミングギアをオンライン購入。クライミングシューズやクラッシュパッドなど、豊富な品揃え。
-                      </p>
-                      <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">シューズ120モデル</span>
-                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">クラッシュパッド60枚</span>
-                        <span class="px-3 py-1 bg-orange-500/30 rounded-full text-xs">オンライン購入</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="text-center">
-                <div class="flex flex-wrap items-center justify-center gap-4">
-                  ${!state.currentUser ? `
-                    <button onclick="showAuthModal('register')" class="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-2xl transform hover:scale-105 transition-all">
-                      <i class="fas fa-rocket mr-2"></i>
-                      無料で始める
-                    </button>
-                  ` : ''}
-                  <a href="https://goodbouldering.com" target="_blank" class="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-xl border-2 border-white/30 transform hover:scale-105 transition-all">
-                    <i class="fas fa-shopping-cart mr-2"></i>
-                    グッぼるショップ
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      <style>
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(20px, -50px) scale(1.1); }
-          50% { transform: translate(-20px, 20px) scale(0.9); }
-          75% { transform: translate(50px, 50px) scale(1.05); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      </style>
       
       <!-- ★ MY FAVORITES SECTION - TOP PRIORITY FOR LOGGED IN USERS ★ -->
       ${state.currentUser && state.allFavorites && state.allFavorites.length > 0 ? `
@@ -1557,6 +1418,143 @@ function renderHomePage() {
         </div>
       </div>
     </section>
+
+    <!-- How to Use ClimbHero Section -->
+    <section class="py-12 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
+      <!-- Animated Background Pattern -->
+      <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      </div>
+      
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <!-- Header with Toggle -->
+        <div class="text-center mb-6">
+          <button onclick="toggleMissionAccordion()" class="group w-full max-w-2xl mx-auto">
+            <div class="flex items-center justify-center gap-3">
+              <h3 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
+                ClimbHeroの使い方
+              </h3>
+              <i id="mission-accordion-icon" class="fas fa-chevron-down text-xl text-purple-300 transform transition-transform duration-300"></i>
+            </div>
+          </button>
+          <p class="text-base text-gray-300 max-w-3xl mx-auto leading-relaxed mt-3">
+            世界中のクライマーをつなぐ、クライミング動画プラットフォーム
+          </p>
+        </div>
+        
+        <!-- Accordion Content -->
+        <div id="mission-accordion-content" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+          <div class="pt-6">
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
+              <!-- Feature 1: 厳選された動画 -->
+              <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform">
+                  <i class="fas fa-video text-xl text-white"></i>
+                </div>
+                <h4 class="text-lg font-bold mb-2">📹 厳選された動画</h4>
+                <p class="text-gray-300 text-sm leading-relaxed">
+                  YouTube、Instagram、Vimeoから世界トップクライマーの動画を厳選。全てのURLを検証済みで、確実に視聴できます。
+                </p>
+                <ul class="mt-3 space-y-1 text-xs text-gray-400">
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>Alex Honnold、Adam Ondra</li>
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>IFSC World Cup最新映像</li>
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>全URL検証済み</li>
+                </ul>
+              </div>
+              
+              <!-- Feature 2: コミュニティ -->
+              <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-600 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform">
+                  <i class="fas fa-users text-xl text-white"></i>
+                </div>
+                <h4 class="text-lg font-bold mb-2">🌍 コミュニティ</h4>
+                <p class="text-gray-300 text-sm leading-relaxed">
+                  世界中のクライマーと繋がり、お気に入り動画を共有。いいねやコメントで交流を深め、新しいインスピレーションを得られます。
+                </p>
+                <ul class="mt-3 space-y-1 text-xs text-gray-400">
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>お気に入り共有</li>
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>いいね機能</li>
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>グローバルネットワーク</li>
+                </ul>
+              </div>
+              
+              <!-- Feature 3: 成長を記録 -->
+              <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform">
+                  <i class="fas fa-chart-line text-xl text-white"></i>
+                </div>
+                <h4 class="text-lg font-bold mb-2">📈 成長を記録</h4>
+                <p class="text-gray-300 text-sm leading-relaxed">
+                  視聴履歴、お気に入り、いいねした動画を自動記録。あなたのクライミングジャーニーを可視化し、上達をサポートします。
+                </p>
+                <ul class="mt-3 space-y-1 text-xs text-gray-400">
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>視聴履歴自動保存</li>
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>パーソナライズ推奨</li>
+                  <li><i class="fas fa-check text-green-400 mr-2"></i>進捗可視化</li>
+                </ul>
+              </div>
+            </div>
+            
+            <!-- オンライン販売カードのみ -->
+            <div class="max-w-2xl mx-auto mb-6">
+              <div class="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-2xl p-5 border border-orange-500/30">
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-shopping-cart text-lg text-white"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-base font-bold mb-2">🛒 オンライン販売</h4>
+                    <p class="text-gray-300 text-sm mb-2">
+                      グッぼるショップでクライミングギアをオンライン購入。クライミングシューズやクラッシュパッドなど、豊富な品揃え。
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <span class="px-2 py-1 bg-orange-500/30 rounded-full text-xs">シューズ120モデル</span>
+                      <span class="px-2 py-1 bg-orange-500/30 rounded-full text-xs">クラッシュパッド60枚</span>
+                      <span class="px-2 py-1 bg-orange-500/30 rounded-full text-xs">オンライン購入</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="text-center">
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                ${!state.currentUser ? `
+                  <button onclick="showAuthModal('register')" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-2xl transform hover:scale-105 transition-all text-sm">
+                    <i class="fas fa-rocket mr-2"></i>
+                    無料で始める
+                  </button>
+                ` : ''}
+                <a href="https://goodbouldering.com" target="_blank" class="px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-xl border-2 border-white/30 transform hover:scale-105 transition-all text-sm">
+                  <i class="fas fa-shopping-cart mr-2"></i>
+                  グッぼるショップ
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <style>
+      @keyframes blob {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        25% { transform: translate(20px, -50px) scale(1.1); }
+        50% { transform: translate(-20px, 20px) scale(0.9); }
+        75% { transform: translate(50px, 50px) scale(1.05); }
+      }
+      .animate-blob {
+        animation: blob 7s infinite;
+      }
+      .animation-delay-2000 {
+        animation-delay: 2s;
+      }
+      .animation-delay-4000 {
+        animation-delay: 4s;
+      }
+    </style>
 
     <!-- FAQ Section -->
     <section class="py-12 bg-white">
