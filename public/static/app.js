@@ -842,7 +842,7 @@ function renderHomePage() {
       ` : ''}
       
       <!-- ClimbHero Features & How to Use Section -->
-      <section class="py-12 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
+      <section class="py-8 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white relative overflow-hidden">
         <!-- Animated Background Pattern -->
         <div class="absolute inset-0 opacity-10">
           <div class="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
@@ -851,24 +851,24 @@ function renderHomePage() {
         </div>
         
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <!-- Header with Toggle -->
-          <div class="text-center mb-6">
+          <!-- Header with Toggle (Compact) -->
+          <div class="text-center mb-4">
             <button onclick="toggleMissionAccordion()" class="group w-full max-w-2xl mx-auto">
-              <div class="flex items-center justify-center gap-3">
-                <h3 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
+              <div class="flex items-center justify-center gap-2">
+                <h3 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
                   ClimbHeroとは
                 </h3>
-                <i id="mission-accordion-icon" class="fas fa-chevron-down text-xl text-purple-300 transform transition-transform duration-300"></i>
+                <i id="mission-accordion-icon" class="fas fa-chevron-down text-lg text-purple-300 transform transition-transform duration-300"></i>
               </div>
             </button>
-            <p class="text-base text-gray-300 max-w-3xl mx-auto leading-relaxed mt-3">
+            <p class="text-sm text-gray-300 max-w-3xl mx-auto leading-relaxed mt-2">
               世界中のクライマーをつなぐ、クライミング動画プラットフォーム - 使い方と機能をご紹介
             </p>
           </div>
           
           <!-- Accordion Content -->
           <div id="mission-accordion-content" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
-            <div class="pt-6">
+            <div class="pt-4">
               <div class="grid md:grid-cols-3 gap-6 mb-8">
                 <!-- Feature 1: 厳選された動画 -->
                 <div class="group bg-white/10 backdrop-blur-md rounded-2xl p-5 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
@@ -1032,7 +1032,7 @@ function renderHomePage() {
       
       <!-- Climber Testimonials Section (Matching ClimbHero Design) -->
       ${state.testimonials && state.testimonials.length > 0 ? `
-      <section class="py-12 bg-gradient-to-br from-teal-900 via-green-900 to-teal-900 text-white relative overflow-hidden">
+      <section class="py-8 bg-gradient-to-br from-teal-900 via-green-900 to-teal-900 text-white relative overflow-hidden">
         <!-- Animated Background Pattern -->
         <div class="absolute inset-0 opacity-10">
           <div class="absolute top-0 left-0 w-96 h-96 bg-teal-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
@@ -1041,28 +1041,28 @@ function renderHomePage() {
         </div>
         
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <!-- Header with Toggle -->
-          <div class="text-center mb-6">
+          <!-- Header with Toggle (Compact) -->
+          <div class="text-center mb-4">
             <button onclick="toggleTestimonialsAccordion()" class="group w-full max-w-2xl mx-auto">
-              <div class="flex items-center justify-center gap-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <i class="fas fa-mountain text-white text-xl"></i>
+              <div class="flex items-center justify-center gap-2">
+                <div class="w-10 h-10 bg-gradient-to-br from-teal-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <i class="fas fa-mountain text-white text-lg"></i>
                 </div>
-                <h3 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-300 via-green-300 to-teal-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
+                <h3 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-300 via-green-300 to-teal-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
                   ${i18n.t('testimonials.title')}
                 </h3>
-                <i id="testimonials-accordion-icon" class="fas fa-chevron-down text-xl text-teal-300 transform transition-transform duration-300"></i>
+                <i id="testimonials-accordion-icon" class="fas fa-chevron-down text-lg text-teal-300 transform transition-transform duration-300"></i>
               </div>
             </button>
-            <p class="text-base text-gray-300 max-w-3xl mx-auto leading-relaxed mt-3">
+            <p class="text-sm text-gray-300 max-w-3xl mx-auto leading-relaxed mt-2">
               世界中のクライマーからメッセージ（${state.testimonials.length}件）
             </p>
           </div>
           
           <!-- Accordion Content -->
           <div id="testimonials-accordion-content" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
-            <div class="pt-6">
-              <div class="text-center mb-8">
+            <div class="pt-4">
+              <div class="text-center mb-6">
                 <p class="text-gray-300 text-sm">
                   ${i18n.t('testimonials.subtitle')}
                 </p>
@@ -1239,29 +1239,48 @@ function renderHomePage() {
           </div>
           
           <div id="videos-section-content">
-            <!-- Platform Filter Buttons -->
-            <div class="flex flex-wrap gap-2 mb-4">
-              <button onclick="filterVideosByPlatform('all')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                <i class="fas fa-th mr-2"></i>全て (${state.videos.length})
-              </button>
-              <button onclick="filterVideosByPlatform('youtube')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'youtube' ? 'bg-red-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                <i class="fab fa-youtube mr-2"></i>YouTube (${state.videos.filter(v => v.media_source === 'youtube').length})
-              </button>
-              <button onclick="filterVideosByPlatform('instagram')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'instagram' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                <i class="fab fa-instagram mr-2"></i>Instagram (${state.videos.filter(v => v.media_source === 'instagram').length})
-              </button>
-              <button onclick="filterVideosByPlatform('vimeo')" class="px-4 py-2 rounded-lg font-medium transition-all ${state.currentPlatform === 'vimeo' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                <i class="fab fa-vimeo-v mr-2"></i>Vimeo (${state.videos.filter(v => v.media_source === 'vimeo').length})
-              </button>
+            <!-- Platform Filter Buttons (Horizontal Scroll) -->
+            <div class="relative mb-4">
+              <div class="overflow-x-auto scrollbar-hide">
+                <div class="flex gap-2 pb-2 min-w-max">
+                  <button onclick="filterVideosByPlatform('all')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-th mr-2"></i>全て (${state.videos.length})
+                  </button>
+                  <button onclick="filterVideosByPlatform('youtube')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'youtube' ? 'bg-red-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fab fa-youtube mr-2"></i>YouTube (${state.videos.filter(v => v.media_source === 'youtube').length})
+                  </button>
+                  <button onclick="filterVideosByPlatform('instagram')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'instagram' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fab fa-instagram mr-2"></i>Instagram (${state.videos.filter(v => v.media_source === 'instagram').length})
+                  </button>
+                  <button onclick="filterVideosByPlatform('vimeo')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'vimeo' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fab fa-vimeo-v mr-2"></i>Vimeo (${state.videos.filter(v => v.media_source === 'vimeo').length})
+                  </button>
+                </div>
+              </div>
             </div>
             
-            ${renderFilterButtons('filterVideosByCategory', state.currentVideoCategory, [
-              { value: 'all', label: i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All', icon: 'fas fa-th' },
-              { value: 'bouldering', label: i18n.t('section.bouldering'), icon: 'fas fa-grip-lines' },
-              { value: 'lead', label: i18n.t('section.lead'), icon: 'fas fa-link' },
-              { value: 'alpine', label: i18n.t('section.alpine'), icon: 'fas fa-mountain' },
-              { value: 'other', label: i18n.t('section.other'), icon: 'fas fa-ellipsis-h' }
-            ])}
+            <!-- Category Filter Buttons (Horizontal Scroll) -->
+            <div class="relative mb-4">
+              <div class="overflow-x-auto scrollbar-hide">
+                <div class="flex gap-2 pb-2 min-w-max">
+                  <button onclick="filterVideosByCategory('all')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-th mr-2"></i>${i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All'}
+                  </button>
+                  <button onclick="filterVideosByCategory('bouldering')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'bouldering' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-grip-lines mr-2"></i>${i18n.t('section.bouldering')}
+                  </button>
+                  <button onclick="filterVideosByCategory('lead')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'lead' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-link mr-2"></i>${i18n.t('section.lead')}
+                  </button>
+                  <button onclick="filterVideosByCategory('alpine')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'alpine' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-mountain mr-2"></i>${i18n.t('section.alpine')}
+                  </button>
+                  <button onclick="filterVideosByCategory('other')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'other' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-ellipsis-h mr-2"></i>${i18n.t('section.other')}
+                  </button>
+                </div>
+              </div>
+            </div>
             
             <!-- Horizontal Carousel -->
             <div class="carousel-container" id="videos-carousel">
@@ -1656,6 +1675,15 @@ function renderHomePage() {
       }
       .active > div {
         display: block !important;
+      }
+      
+      /* Hide scrollbar for horizontal scroll */
+      .scrollbar-hide {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;  /* Chrome, Safari and Opera */
       }
     </style>
 
