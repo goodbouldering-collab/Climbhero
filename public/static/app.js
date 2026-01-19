@@ -1877,23 +1877,26 @@ function renderVideoCard(video) {
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
           <img loading="lazy" decoding="async" src="${thumbnailUrl}" alt="${video.title}" 
                onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
-          <div class="duration-badge">${video.duration}</div>
-          <span class="absolute top-2 left-2 media-source-badge">
+          <!-- Media Source Badge (Top Left) -->
+          <span class="absolute top-2 left-2 px-2 py-1 bg-black/80 backdrop-blur-sm text-white text-xs rounded-md font-medium shadow-lg">
             <i class="${mediaIcon}"></i> ${mediaName}
           </span>
+          <!-- Duration Badge (Bottom Right) -->
+          <div class="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm text-white text-xs rounded-md font-semibold shadow-lg">
+            ${video.duration}
+          </div>
         </div>
         <div class="video-info-compact">
-          <div class="video-title-compact line-clamp-2" onclick="showVideoDetail(${video.id})">${video.title}</div>
-          <div class="video-meta-compact">
+          <div class="video-title-compact line-clamp-2 mb-2" onclick="showVideoDetail(${video.id})">${video.title}</div>
+          <div class="video-meta-compact mb-2">
             <span><i class="fas fa-eye"></i> ${video.views.toLocaleString()}</span>
             <span class="like-count"><i class="fas fa-heart"></i> <span id="like-count-${video.id}">${video.likes}</span></span>
-            <span><i class="fas fa-play-circle"></i> ${video.duration}</span>
           </div>
-          <div class="flex items-center justify-between mt-2">
-            <span class="text-xs text-gray-500 truncate flex-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-500 truncate flex-1 mr-2">
               <i class="fas fa-user-circle"></i> ${video.channel_name}
             </span>
-            <div class="flex gap-1">
+            <div class="flex gap-1 flex-shrink-0">
               <button 
                 class="like-btn ${isLiked ? 'liked' : ''}" 
                 data-video-id="${video.id}"
@@ -1939,23 +1942,26 @@ function renderVideoCardWide(video) {
         <div class="video-thumbnail" onclick="showVideoDetail(${video.id})">
           <img loading="lazy" decoding="async" src="${thumbnailUrl}" alt="${video.title}" 
                onerror="this.onerror=null; if(this.src.includes('youtube.com')) { this.src=this.src.replace('hqdefault', 'sddefault'); } else { this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&h=400&fit=crop&q=80'; }">
-          <div class="duration-badge">${video.duration}</div>
-          <span class="absolute top-2 left-2 media-source-badge">
+          <!-- Media Source Badge (Top Left) -->
+          <span class="absolute top-2 left-2 px-2 py-1 bg-black/80 backdrop-blur-sm text-white text-xs rounded-md font-medium shadow-lg">
             <i class="${mediaIcon}"></i> ${mediaName}
           </span>
+          <!-- Duration Badge (Bottom Right) -->
+          <div class="absolute bottom-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-sm text-white text-xs rounded-md font-semibold shadow-lg">
+            ${video.duration}
+          </div>
         </div>
         <div class="video-info-compact">
-          <div class="video-title-compact line-clamp-2" onclick="showVideoDetail(${video.id})">${video.title}</div>
-          <div class="video-meta-compact">
+          <div class="video-title-compact line-clamp-2 mb-2" onclick="showVideoDetail(${video.id})">${video.title}</div>
+          <div class="video-meta-compact mb-2">
             <span><i class="fas fa-eye"></i> ${video.views.toLocaleString()}</span>
             <span class="like-count"><i class="fas fa-heart"></i> <span id="like-count-${video.id}">${video.likes}</span></span>
-            <span><i class="fas fa-play-circle"></i> ${video.duration}</span>
           </div>
-          <div class="flex items-center justify-between mt-2">
-            <span class="text-xs text-gray-500 truncate flex-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-500 truncate flex-1 mr-2">
               <i class="fas fa-user-circle"></i> ${video.channel_name}
             </span>
-            <div class="flex gap-1">
+            <div class="flex gap-1 flex-shrink-0">
               <button 
                 class="like-btn ${isLiked ? 'liked' : ''}" 
                 data-video-id="${video.id}"
