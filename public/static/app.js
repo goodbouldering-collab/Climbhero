@@ -1434,106 +1434,6 @@ function renderHomePage() {
       </section>
       ` : ''}
 
-      <!-- Pricing Section -->
-      <section class="py-6 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-4">
-            <h3 class="text-2xl font-bold text-gray-900 mb-1">料金プラン</h3>
-            <p class="text-sm text-gray-600">あなたに合ったプランを選択してください</p>
-          </div>
-          
-          <div class="grid md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-            <!-- Free Plan -->
-            <div class="card p-4 bg-white border-2 border-gray-200 relative">
-              <h4 class="text-lg font-bold mb-1 text-gray-800">フリー</h4>
-              <div class="text-2xl font-bold text-gray-900 mb-0.5">¥0</div>
-              <p class="text-xs text-gray-500 mb-3">永久無料</p>
-              <ul class="space-y-2 mb-4 text-xs">
-                <li class="flex items-center gap-1.5 text-gray-700">
-                  <i class="fas fa-check text-green-500 text-xs"></i> 動画閲覧無制限
-                </li>
-                <li class="flex items-center gap-1.5 text-gray-700">
-                  <i class="fas fa-check text-green-500 text-xs"></i> 1日1いいね
-                </li>
-                <li class="flex items-center gap-1.5 text-gray-400">
-                  <i class="fas fa-times text-xs"></i> <span class="line-through">動画投稿</span>
-                </li>
-                <li class="flex items-center gap-1.5 text-gray-400">
-                  <i class="fas fa-times text-xs"></i> <span class="line-through">お気に入り管理</span>
-                </li>
-              </ul>
-              <p class="text-center text-xs text-gray-500 mt-2 py-2">
-                現在のプラン
-              </p>
-            </div>
-            
-            <!-- Monthly Plan -->
-            <div class="card p-4 bg-white border-2 border-purple-300 relative">
-              <h4 class="text-lg font-bold mb-1 text-purple-700">プレミアム月額</h4>
-              <div class="text-2xl font-bold text-gray-900 mb-0.5">¥980</div>
-              <p class="text-xs text-gray-500 mb-3">/月</p>
-              <ul class="space-y-2 mb-4 text-xs">
-                <li class="flex items-center gap-1.5 text-gray-700">
-                  <i class="fas fa-check text-purple-500 text-xs"></i> <strong>無制限いいね</strong>
-                </li>
-                <li class="flex items-center gap-1.5 text-gray-700">
-                  <i class="fas fa-check text-purple-500 text-xs"></i> <strong>動画投稿OK</strong>
-                </li>
-                <li class="flex items-center gap-1.5 text-gray-700">
-                  <i class="fas fa-check text-purple-500 text-xs"></i> お気に入り管理
-                </li>
-                <li class="flex items-center gap-1.5 text-gray-700">
-                  <i class="fas fa-check text-purple-500 text-xs"></i> 広告非表示
-                </li>
-              </ul>
-              <a href="#" onclick="startCheckout('monthly'); return false;" class="block text-center text-xs text-purple-600 hover:text-purple-700 underline mt-2 py-2">
-                月額で始める →
-              </a>
-            </div>
-            
-            <!-- Annual Plan (BEST VALUE) -->
-            <div class="card p-4 bg-gradient-to-br from-purple-600 to-pink-600 text-white relative overflow-hidden border-2 border-yellow-400">
-              <div class="absolute top-0 right-0 bg-yellow-400 text-purple-900 text-xs font-bold px-2 py-0.5 rounded-bl-lg">
-                🔥 50% OFF
-              </div>
-              <h4 class="text-lg font-bold mb-1">プレミアム年間</h4>
-              <div class="flex items-baseline gap-1.5 mb-0.5">
-                <span class="text-2xl font-bold">¥5,880</span>
-                <span class="text-xs line-through opacity-70">¥11,760</span>
-              </div>
-              <p class="text-xs opacity-90 mb-3">/年（月額換算 ¥490）</p>
-              <ul class="space-y-2 mb-4 text-xs">
-                <li class="flex items-center gap-1.5">
-                  <i class="fas fa-star text-yellow-300 text-xs"></i> <strong>月額の半額でお得！</strong>
-                </li>
-                <li class="flex items-center gap-1.5">
-                  <i class="fas fa-check text-green-300 text-xs"></i> 無制限いいね
-                </li>
-                <li class="flex items-center gap-1.5">
-                  <i class="fas fa-check text-green-300 text-xs"></i> 動画投稿OK
-                </li>
-                <li class="flex items-center gap-1.5">
-                  <i class="fas fa-check text-green-300 text-xs"></i> お気に入り管理
-                </li>
-                <li class="flex items-center gap-1.5">
-                  <i class="fas fa-check text-green-300 text-xs"></i> 広告非表示
-                </li>
-              </ul>
-              <button onclick="startCheckout('annual')" class="btn w-full bg-yellow-400 hover:bg-yellow-300 text-purple-900 text-sm font-bold shadow-lg py-2.5">
-                今すぐ始める
-              </button>
-              <p class="text-xs text-center mt-1.5 opacity-80">
-                いつでも解約可能
-              </p>
-            </div>
-          </div>
-          
-          <p class="text-center text-xs text-gray-500 mt-3">
-            <i class="fas fa-lock mr-1"></i>Stripe安全決済
-          </p>
-        </div>
-      </section>
-
     </main>
 
     <!-- Ad Banners Section -->
@@ -1686,6 +1586,131 @@ function renderHomePage() {
         display: none;  /* Chrome, Safari and Opera */
       }
     </style>
+
+    <!-- Pricing Section (Unified Design) -->
+    <section class="py-8 bg-gradient-to-br from-yellow-900 via-orange-900 to-yellow-900 text-white relative overflow-hidden">
+      <!-- Animated Background Pattern -->
+      <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-0 left-0 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-red-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      </div>
+      
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <!-- Header with Toggle (Compact) -->
+        <div class="text-center mb-4">
+          <button onclick="togglePricingAccordion()" class="group w-full max-w-2xl mx-auto">
+            <div class="flex items-center justify-center gap-2">
+              <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <i class="fas fa-gem text-white text-lg"></i>
+              </div>
+              <h3 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
+                料金プラン
+              </h3>
+              <i id="pricing-accordion-icon" class="fas fa-chevron-down text-lg text-yellow-300 transform transition-transform duration-300"></i>
+            </div>
+          </button>
+          <p class="text-sm text-gray-300 max-w-3xl mx-auto leading-relaxed mt-2">
+            あなたに合ったプランを選択してください
+          </p>
+        </div>
+        
+        <!-- Accordion Content -->
+        <div id="pricing-accordion-content" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+          <div class="pt-4">
+            <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              <!-- Free Plan -->
+              <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl border-2 border-white/20">
+                <h4 class="text-xl font-bold mb-2 text-white">フリー</h4>
+                <div class="text-3xl font-bold text-white mb-1">¥0</div>
+                <p class="text-sm text-gray-300 mb-4">永久無料</p>
+                <ul class="space-y-3 mb-6 text-sm">
+                  <li class="flex items-center gap-2 text-gray-200">
+                    <i class="fas fa-check text-green-400"></i> 動画閲覧無制限
+                  </li>
+                  <li class="flex items-center gap-2 text-gray-200">
+                    <i class="fas fa-check text-green-400"></i> 1日1いいね
+                  </li>
+                  <li class="flex items-center gap-2 text-gray-400">
+                    <i class="fas fa-times"></i> <span class="line-through">動画投稿</span>
+                  </li>
+                  <li class="flex items-center gap-2 text-gray-400">
+                    <i class="fas fa-times"></i> <span class="line-through">お気に入り管理</span>
+                  </li>
+                </ul>
+                <p class="text-center text-sm text-gray-300 mt-4 py-2 border-t border-white/20">
+                  現在のプラン
+                </p>
+              </div>
+              
+              <!-- Monthly Plan -->
+              <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl border-2 border-purple-400">
+                <h4 class="text-xl font-bold mb-2 text-purple-300">プレミアム月額</h4>
+                <div class="text-3xl font-bold text-white mb-1">¥980</div>
+                <p class="text-sm text-gray-300 mb-4">/月</p>
+                <ul class="space-y-3 mb-6 text-sm">
+                  <li class="flex items-center gap-2 text-gray-200">
+                    <i class="fas fa-check text-purple-400"></i> <strong>無制限いいね</strong>
+                  </li>
+                  <li class="flex items-center gap-2 text-gray-200">
+                    <i class="fas fa-check text-purple-400"></i> <strong>動画投稿OK</strong>
+                  </li>
+                  <li class="flex items-center gap-2 text-gray-200">
+                    <i class="fas fa-check text-purple-400"></i> お気に入り管理
+                  </li>
+                  <li class="flex items-center gap-2 text-gray-200">
+                    <i class="fas fa-check text-purple-400"></i> 広告非表示
+                  </li>
+                </ul>
+                <a href="#" onclick="startCheckout('monthly'); return false;" class="block text-center text-sm text-purple-300 hover:text-purple-200 underline mt-4 py-2 border-t border-white/20 font-semibold">
+                  月額で始める →
+                </a>
+              </div>
+              
+              <!-- Annual Plan (BEST VALUE) -->
+              <div class="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-6 hover:scale-105 transition-all duration-300 hover:shadow-2xl border-2 border-yellow-400 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-yellow-400 text-purple-900 text-xs font-bold px-3 py-1 rounded-bl-xl">
+                  🔥 50% OFF
+                </div>
+                <h4 class="text-xl font-bold mb-2 text-white">プレミアム年間</h4>
+                <div class="flex items-baseline gap-2 mb-1">
+                  <span class="text-3xl font-bold text-white">¥5,880</span>
+                  <span class="text-sm line-through opacity-70 text-gray-200">¥11,760</span>
+                </div>
+                <p class="text-sm text-gray-200 mb-4">/年（月額換算 ¥490）</p>
+                <ul class="space-y-3 mb-6 text-sm">
+                  <li class="flex items-center gap-2 text-white">
+                    <i class="fas fa-star text-yellow-300"></i> <strong>月額の半額でお得！</strong>
+                  </li>
+                  <li class="flex items-center gap-2 text-white">
+                    <i class="fas fa-check text-green-300"></i> 無制限いいね
+                  </li>
+                  <li class="flex items-center gap-2 text-white">
+                    <i class="fas fa-check text-green-300"></i> 動画投稿OK
+                  </li>
+                  <li class="flex items-center gap-2 text-white">
+                    <i class="fas fa-check text-green-300"></i> お気に入り管理
+                  </li>
+                  <li class="flex items-center gap-2 text-white">
+                    <i class="fas fa-check text-green-300"></i> 広告非表示
+                  </li>
+                </ul>
+                <button onclick="startCheckout('annual')" class="w-full bg-yellow-400 hover:bg-yellow-300 text-purple-900 text-sm font-bold rounded-xl shadow-lg py-3 transform hover:scale-105 transition-all">
+                  今すぐ始める
+                </button>
+                <p class="text-sm text-center mt-3 text-gray-200">
+                  いつでも解約可能
+                </p>
+              </div>
+            </div>
+            
+            <p class="text-center text-sm text-gray-300 mt-6">
+              <i class="fas fa-lock mr-1"></i>Stripe安全決済
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- Footer -->
     ${renderFooter()}
@@ -9991,6 +10016,24 @@ function toggleTestimonialsAccordion() {
   } else {
     // Open
     content.style.maxHeight = '2000px';
+    content.style.opacity = '1';
+    icon.style.transform = 'rotate(180deg)';
+  }
+}
+
+// Toggle Pricing Accordion
+function togglePricingAccordion() {
+  const content = document.getElementById('pricing-accordion-content');
+  const icon = document.getElementById('pricing-accordion-icon');
+  
+  if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+    // Close
+    content.style.maxHeight = '0px';
+    content.style.opacity = '0';
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    // Open
+    content.style.maxHeight = '1500px';
     content.style.opacity = '1';
     icon.style.transform = 'rotate(180deg)';
   }
