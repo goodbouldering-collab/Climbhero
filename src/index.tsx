@@ -4498,6 +4498,104 @@ app.delete('/api/admin/testimonials/:id', async (c) => {
 })
 
 // AI-powered URL analysis endpoint
+// AI-powered video analysis endpoint (new)
+app.post('/api/videos/analyze', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, 'session_token')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  
+  if (!currentUser) {
+    return c.json({ error: 'Authentication required' }, 401)
+  }
+  
+  try {
+    const body = await c.req.json()
+    const { url } = body
+    
+    if (!url) {
+      return c.json({ error: 'URL is required' }, 400)
+    }
+    
+    // Get Gemini API key from admin user settings (user_id = 1)
+    const adminSettings = await env.DB.prepare(
+      'SELECT gemini_api_key FROM user_settings WHERE user_id = 1'
+    ).first()
+    
+    const gemini_api_key = adminSettings?.gemini_api_key
+    
+    if (!gemini_api_key) {
+      return c.json({ error: 'Gemini API key not configured. Please ask admin to set it in Admin page.' }, 400)
+    }
+    
+    // Detect platform from URL
+    let media_source = 'other'
+    let external_video_id = ''
+    
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      media_source = 'youtube'
+      const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)
+      external_video_id = match ? match[1] : ''
+    } else if (url.includes('instagram.com')) {
+      media_source = 'instagram'
+      const match = url.match(/instagram\.com\/(?:p|reel)\/([^\/]+)/)
+      external_video_id = match ? match[1] : ''
+    } else if (url.includes('vimeo.com')) {
+      media_source = 'vimeo'
+      const match = url.match(/vimeo\.com\/(\d+)/)
+      external_video_id = match ? match[1] : ''
+    }
+    
+    // Call Gemini AI to extract rich metadata
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${gemini_api_key}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `You are an AI assistant specialized in analyzing climbing videos. Based on the video URL provided, extract or intelligently infer the following metadata:\n\n- title: Video title (creative and descriptive)\n- description: Brief description (2-3 sentences)\n- channel_name: Channel or creator name\n- duration: Estimated video length (e.g., "3:45", "12:30")\n- category: One of: bouldering, lead, alpine, other\n- tags: Comma-separated relevant keywords\n\nVideo URL: ${url}\n\nReturn ONLY valid JSON with these exact field names.`
+          }]
+        }],
+        generationConfig: {
+          response_mime_type: 'application/json'
+        }
+      })
+    })
+    
+    if (!geminiResponse.ok) {
+      throw new Error('Gemini API request failed')
+    }
+    
+    const geminiData = await geminiResponse.json()
+    const responseText = geminiData.candidates[0].content.parts[0].text
+    const metadata = JSON.parse(responseText)
+    
+    // Generate thumbnail URL based on platform
+    let thumbnail_url = ''
+    if (media_source === 'youtube' && external_video_id) {
+      thumbnail_url = `https://img.youtube.com/vi/${external_video_id}/maxresdefault.jpg`
+    } else if (media_source === 'vimeo' && external_video_id) {
+      thumbnail_url = `https://vumbnail.com/${external_video_id}.jpg`
+    }
+    
+    return c.json({
+      title: metadata.title || 'Untitled Climbing Video',
+      description: metadata.description || '',
+      channel_name: metadata.channel_name || 'Unknown Channel',
+      duration: metadata.duration || '0:00',
+      thumbnail_url: thumbnail_url,
+      media_source: media_source,
+      external_video_id: external_video_id,
+      category: metadata.category || 'other',
+      tags: metadata.tags || ''
+    })
+  } catch (error: any) {
+    console.error('Video analysis error:', error)
+    return c.json({ error: 'Failed to analyze video. Please check the URL and try again.' }, 500)
+  }
+})
+
 app.post('/api/videos/analyze-url', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')

@@ -3617,51 +3617,97 @@ function showUploadModal() {
         </button>
       </div>
       
+      <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <i class="fas fa-magic text-blue-600 text-lg mt-0.5"></i>
+          <div>
+            <p class="text-sm font-semibold text-blue-900 mb-1">AI自動解析</p>
+            <p class="text-xs text-blue-700">
+              動画URLを入力するだけで、タイトル、説明、サムネイル、チャンネル名などを自動的に取得します。
+            </p>
+          </div>
+        </div>
+      </div>
+      
       <form onsubmit="handleUpload(event)" class="space-y-4">
         <div>
-          <label>タイトル</label>
-          <input type="text" name="title" required class="w-full">
+          <label class="block text-sm font-semibold mb-2">
+            <i class="fas fa-link text-purple-600 mr-1"></i>
+            動画URL <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="url" 
+            name="url" 
+            id="video-url-input"
+            required 
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all" 
+            placeholder="https://youtube.com/watch?v=... または https://www.instagram.com/reel/... または https://vimeo.com/..."
+            onchange="handleVideoUrlChange(event)">
+          <p class="text-xs text-gray-500 mt-1">
+            <i class="fas fa-info-circle mr-1"></i>
+            YouTube、Instagram、Vimeoの動画URLに対応しています
+          </p>
         </div>
         
-        <div>
-          <label>説明</label>
-          <textarea name="description" rows="3" class="w-full"></textarea>
-        </div>
-        
-        <div>
-          <label>動画URL (YouTube)</label>
-          <input type="url" name="url" required class="w-full" placeholder="https://youtube.com/watch?v=...">
-        </div>
-        
-        <div>
-          <label>サムネイルURL</label>
-          <input type="url" name="thumbnail_url" class="w-full">
-        </div>
-        
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label>長さ</label>
-            <input type="text" name="duration" placeholder="10:30" class="w-full">
-          </div>
-          
-          <div>
-            <label>${i18n.t('upload.category')}</label>
-            <select name="category" required class="w-full">
-              <option value="bouldering">${i18n.t('section.bouldering')}</option>
-              <option value="lead">${i18n.t('section.lead')}</option>
-              <option value="alpine">${i18n.t('section.alpine')}</option>
-              <option value="other">${i18n.t('section.other')}</option>
-            </select>
+        <div id="video-analysis-status" class="hidden">
+          <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+            <i class="fas fa-spinner fa-spin text-purple-600"></i>
+            <span class="text-sm text-gray-700">動画情報を解析中...</span>
           </div>
         </div>
         
-        <div>
-          <label>チャンネル名</label>
-          <input type="text" name="channel_name" class="w-full">
+        <div id="video-preview" class="hidden">
+          <div class="p-4 bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg">
+            <p class="text-xs font-semibold text-purple-900 mb-3 flex items-center gap-2">
+              <i class="fas fa-check-circle text-green-500"></i>
+              解析完了 - 以下の情報が自動入力されました
+            </p>
+            <div class="space-y-2 text-sm">
+              <div class="flex gap-2">
+                <span class="text-gray-600 min-w-[80px]">タイトル:</span>
+                <span id="preview-title" class="text-gray-900 font-medium flex-1"></span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-gray-600 min-w-[80px]">チャンネル:</span>
+                <span id="preview-channel" class="text-gray-900"></span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-gray-600 min-w-[80px]">長さ:</span>
+                <span id="preview-duration" class="text-gray-900"></span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-gray-600 min-w-[80px]">プラットフォーム:</span>
+                <span id="preview-platform" class="text-gray-900"></span>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <button type="submit" class="btn btn-primary w-full">
-          <i class="fas fa-upload"></i>
+        <div>
+          <label class="block text-sm font-semibold mb-2">
+            <i class="fas fa-folder text-purple-600 mr-1"></i>
+            カテゴリー <span class="text-red-500">*</span>
+          </label>
+          <select name="category" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all">
+            <option value="">選択してください</option>
+            <option value="bouldering">${i18n.t('section.bouldering')}</option>
+            <option value="lead">${i18n.t('section.lead')}</option>
+            <option value="alpine">${i18n.t('section.alpine')}</option>
+            <option value="other">${i18n.t('section.other')}</option>
+          </select>
+        </div>
+        
+        <!-- Hidden fields for AI-extracted data -->
+        <input type="hidden" name="title" id="hidden-title">
+        <input type="hidden" name="description" id="hidden-description">
+        <input type="hidden" name="thumbnail_url" id="hidden-thumbnail">
+        <input type="hidden" name="channel_name" id="hidden-channel">
+        <input type="hidden" name="duration" id="hidden-duration">
+        <input type="hidden" name="media_source" id="hidden-media-source">
+        <input type="hidden" name="external_video_id" id="hidden-external-id">
+        
+        <button type="submit" id="submit-btn" class="btn btn-primary w-full py-3 text-base" disabled>
+          <i class="fas fa-upload mr-2"></i>
           投稿する
         </button>
       </form>
@@ -3670,10 +3716,66 @@ function showUploadModal() {
   modal.classList.add('active');
 }
 
+// Handle video URL change and analyze with AI
+async function handleVideoUrlChange(event) {
+  const url = event.target.value.trim();
+  if (!url) return;
+  
+  const statusDiv = document.getElementById('video-analysis-status');
+  const previewDiv = document.getElementById('video-preview');
+  const submitBtn = document.getElementById('submit-btn');
+  
+  // Show loading status
+  statusDiv.classList.remove('hidden');
+  previewDiv.classList.add('hidden');
+  submitBtn.disabled = true;
+  
+  try {
+    // Call AI analysis API
+    const response = await axios.post('/api/videos/analyze', { url });
+    const data = response.data;
+    
+    // Fill hidden fields
+    document.getElementById('hidden-title').value = data.title || '';
+    document.getElementById('hidden-description').value = data.description || '';
+    document.getElementById('hidden-thumbnail').value = data.thumbnail_url || '';
+    document.getElementById('hidden-channel').value = data.channel_name || '';
+    document.getElementById('hidden-duration').value = data.duration || '';
+    document.getElementById('hidden-media-source').value = data.media_source || '';
+    document.getElementById('hidden-external-id').value = data.external_video_id || '';
+    
+    // Show preview
+    document.getElementById('preview-title').textContent = data.title || '取得できませんでした';
+    document.getElementById('preview-channel').textContent = data.channel_name || '取得できませんでした';
+    document.getElementById('preview-duration').textContent = data.duration || '取得できませんでした';
+    document.getElementById('preview-platform').textContent = data.media_source === 'youtube' ? 'YouTube' : data.media_source === 'instagram' ? 'Instagram' : data.media_source === 'vimeo' ? 'Vimeo' : '不明';
+    
+    statusDiv.classList.add('hidden');
+    previewDiv.classList.remove('hidden');
+    submitBtn.disabled = false;
+    
+  } catch (error) {
+    console.error('Video analysis failed:', error);
+    statusDiv.innerHTML = `
+      <div class="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <i class="fas fa-exclamation-triangle text-red-600"></i>
+        <span class="text-sm text-red-700">動画情報の取得に失敗しました。URLを確認してください。</span>
+      </div>
+    `;
+    submitBtn.disabled = true;
+  }
+}
+
 async function handleUpload(event) {
   event.preventDefault();
   const formData = new FormData(event.target);
   const data = Object.fromEntries(formData);
+  
+  // Validate required AI-extracted fields
+  if (!data.title || !data.media_source) {
+    showToast('動画情報の取得が完了していません', 'error');
+    return;
+  }
   
   try {
     await axios.post('/api/videos', data);
