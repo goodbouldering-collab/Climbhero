@@ -9,9 +9,7 @@ CREATE TABLE IF NOT EXISTS comments (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Add password and session fields to users
-ALTER TABLE users ADD COLUMN password_hash TEXT;
-ALTER TABLE users ADD COLUMN session_token TEXT;
+-- Add last_login field to users (password_hash and session_token already in 0001)
 ALTER TABLE users ADD COLUMN last_login DATETIME;
 
 -- Add rankings tracking

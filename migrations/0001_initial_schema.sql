@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT UNIQUE NOT NULL,
   username TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
+  session_token TEXT,
   membership_type TEXT DEFAULT 'free' CHECK(membership_type IN ('free', 'premium')),
   daily_upload_count INTEGER DEFAULT 0,
   daily_upload_reset_date DATE,

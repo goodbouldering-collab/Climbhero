@@ -7981,36 +7981,36 @@ function openVideoModal(video) {
   if (mediaSource === 'youtube') {
     if (videoId) {
       const height = video.url.includes('/shorts/') ? '600' : '500';
-      embedHtml = `<iframe width="100%" height="${height}" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      embedHtml = `<iframe id="video-iframe" width="100%" height="${height}" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen onerror="handleVideoLoadError(${video.id})"></iframe>`;
     } else {
-      embedHtml = `<p>動画IDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+      embedHtml = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center"><p class="text-red-700 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>動画IDを取得できません</p><a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></div>`;
     }
   } else if (mediaSource === 'vimeo') {
     if (videoId) {
-      embedHtml = `<iframe width="100%" height="500" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      embedHtml = `<iframe id="video-iframe" width="100%" height="500" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen onerror="handleVideoLoadError(${video.id})"></iframe>`;
     } else {
-      embedHtml = `<p>動画IDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+      embedHtml = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center"><p class="text-red-700 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>動画IDを取得できません</p><a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></div>`;
     }
   } else if (mediaSource === 'instagram') {
     if (videoId) {
-      embedHtml = `<iframe width="100%" height="600" src="https://www.instagram.com/reel/${videoId}/embed" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      embedHtml = `<iframe id="video-iframe" width="100%" height="600" src="https://www.instagram.com/reel/${videoId}/embed" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen onerror="handleVideoLoadError(${video.id})"></iframe>`;
     } else {
-      embedHtml = `<p>リールIDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+      embedHtml = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center"><p class="text-red-700 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>リールIDを取得できません</p><a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></div>`;
     }
   } else if (mediaSource === 'tiktok') {
     if (videoId) {
-      embedHtml = `<iframe width="100%" height="600" src="https://www.tiktok.com/embed/v2/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      embedHtml = `<iframe id="video-iframe" width="100%" height="600" src="https://www.tiktok.com/embed/v2/${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen onerror="handleVideoLoadError(${video.id})"></iframe>`;
     } else {
-      embedHtml = `<p>動画IDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+      embedHtml = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center"><p class="text-red-700 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>動画IDを取得できません</p><a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></div>`;
     }
   } else if (mediaSource === 'x') {
     if (videoId) {
-      embedHtml = `<iframe width="100%" height="600" src="https://platform.twitter.com/embed/Tweet.html?id=${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      embedHtml = `<iframe id="video-iframe" width="100%" height="600" src="https://platform.twitter.com/embed/Tweet.html?id=${videoId}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen onerror="handleVideoLoadError(${video.id})"></iframe>`;
     } else {
-      embedHtml = `<p>ツイートIDを取得できません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+      embedHtml = `<div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center"><p class="text-red-700 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>ツイートIDを取得できません</p><a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></div>`;
     }
   } else {
-    embedHtml = `<p>このプラットフォームの埋め込みは対応していません。<a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></p>`;
+    embedHtml = `<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center"><p class="text-yellow-700 mb-2"><i class="fas fa-info-circle mr-2"></i>このプラットフォームの埋め込みは対応していません</p><a href="${video.url}" target="_blank" class="text-blue-600 hover:underline">元のURLで開く</a></div>`;
   }
   
   modalContent.innerHTML = `
@@ -8020,7 +8020,7 @@ function openVideoModal(video) {
         <button onclick="closeModal('video-modal')" class="text-white hover:text-gray-200 text-2xl">×</button>
       </div>
     </div>
-    <div class="video-embed mb-4">
+    <div class="video-embed mb-4" id="video-embed-container">
       ${embedHtml}
     </div>
     <div class="space-y-2 text-sm">
@@ -8057,7 +8057,55 @@ function openVideoModal(video) {
     </div>
   `;
   
+  // Check iframe load status after 3 seconds
+  setTimeout(() => {
+    const iframe = document.getElementById('video-iframe');
+    if (iframe) {
+      iframe.addEventListener('error', () => {
+        handleVideoLoadError(video.id);
+      });
+      
+      // Try to detect if iframe failed to load (no way to directly detect cross-origin iframe errors)
+      // Instead, we'll add a fallback message
+      const container = document.getElementById('video-embed-container');
+      if (container && !container.querySelector('.video-error-message')) {
+        // Add subtle hint that video might not load
+        const hint = document.createElement('div');
+        hint.className = 'video-load-hint text-xs text-gray-500 mt-2 text-center';
+        hint.innerHTML = '<i class="fas fa-info-circle mr-1"></i>動画が読み込まれない場合は、<a href="' + video.url + '" target="_blank" class="text-blue-600 hover:underline">元のURL</a>から視聴できます';
+        container.appendChild(hint);
+      }
+    }
+  }, 3000);
+  
   modal.classList.add('active');
+}
+
+// Handle video load error and skip to next playable video
+function handleVideoLoadError(videoId) {
+  console.warn('Video load error for ID:', videoId);
+  showToast('この動画は再生できません。次の動画を表示します。', 'error');
+  
+  // Mark video as unplayable in state
+  if (state.videos) {
+    const videoIndex = state.videos.findIndex(v => v.id === videoId);
+    if (videoIndex !== -1) {
+      state.videos[videoIndex].playable = false;
+    }
+  }
+  
+  // Close current modal and try next video
+  closeModal('video-modal');
+  
+  // Find next playable video
+  setTimeout(() => {
+    const playableVideos = (state.videos || []).filter(v => v.playable !== false && v.id !== videoId);
+    if (playableVideos.length > 0) {
+      openVideoModal(playableVideos[0]);
+    } else {
+      showToast('再生可能な動画が見つかりませんでした', 'info');
+    }
+  }, 500);
 }
 
 // Close modal
@@ -8100,6 +8148,7 @@ window.trackAdClick = trackAdClick;
 window.filterAnnouncements = filterAnnouncements;
 window.filterBlogsByGenre = filterBlogsByGenre;
 window.filterVideosByCategory = filterVideosByCategory;
+window.handleVideoLoadError = handleVideoLoadError;
 
 // ============ Render New Pages ============
 
