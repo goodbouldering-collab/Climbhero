@@ -4,6 +4,7 @@ const state = {
   videos: [],
   filteredVideos: [], // 新規追加: フィルター後の動画リスト
   currentPlatform: 'all', // 新規追加: プラットフォームフィルター
+  videoSortBy: 'newest', // 新規追加: ソート順 (newest/popular/likes)
   favorites: [],
   allFavorites: [],
   favoriteCounts: { total: 0, videos: 0, blogs: 0, news: 0 },
@@ -1240,43 +1241,58 @@ function renderHomePage() {
           
           <div id="videos-section-content">
             <!-- Platform Filter Buttons (Horizontal Scroll) -->
-            <div class="relative mb-4">
+            <div class="relative mb-2">
               <div class="overflow-x-auto scrollbar-hide">
-                <div class="flex gap-2 pb-2 min-w-max">
-                  <button onclick="filterVideosByPlatform('all')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fas fa-th mr-2"></i>全て (${state.videos.length})
+                <div class="flex gap-2 pb-1 min-w-max">
+                  <button onclick="filterVideosByPlatform('all')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-th mr-1"></i>全て (${state.videos.length})
                   </button>
-                  <button onclick="filterVideosByPlatform('youtube')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'youtube' ? 'bg-red-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fab fa-youtube mr-2"></i>YouTube (${state.videos.filter(v => v.media_source === 'youtube').length})
+                  <button onclick="filterVideosByPlatform('youtube')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'youtube' ? 'bg-red-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fab fa-youtube mr-1"></i>YouTube (${state.videos.filter(v => v.media_source === 'youtube').length})
                   </button>
-                  <button onclick="filterVideosByPlatform('instagram')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'instagram' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fab fa-instagram mr-2"></i>Instagram (${state.videos.filter(v => v.media_source === 'instagram').length})
+                  <button onclick="filterVideosByPlatform('instagram')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'instagram' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fab fa-instagram mr-1"></i>Instagram (${state.videos.filter(v => v.media_source === 'instagram').length})
                   </button>
-                  <button onclick="filterVideosByPlatform('vimeo')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'vimeo' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fab fa-vimeo-v mr-2"></i>Vimeo (${state.videos.filter(v => v.media_source === 'vimeo').length})
+                  <button onclick="filterVideosByPlatform('vimeo')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentPlatform === 'vimeo' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fab fa-vimeo-v mr-1"></i>Vimeo (${state.videos.filter(v => v.media_source === 'vimeo').length})
                   </button>
                 </div>
               </div>
             </div>
             
-            <!-- Category Filter Buttons (Horizontal Scroll) -->
-            <div class="relative mb-4">
+            <!-- Category and Sort Filter Buttons (Horizontal Scroll) -->
+            <div class="relative mb-3">
               <div class="overflow-x-auto scrollbar-hide">
-                <div class="flex gap-2 pb-2 min-w-max">
-                  <button onclick="filterVideosByCategory('all')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fas fa-th mr-2"></i>${i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All'}
+                <div class="flex gap-2 pb-1 min-w-max">
+                  <!-- Category Filters -->
+                  <button onclick="filterVideosByCategory('all')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'all' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-th mr-1"></i>${i18n.getCurrentLanguage() === 'ja' ? '全て' : 'All'}
                   </button>
-                  <button onclick="filterVideosByCategory('bouldering')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'bouldering' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fas fa-grip-lines mr-2"></i>${i18n.t('section.bouldering')}
+                  <button onclick="filterVideosByCategory('bouldering')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'bouldering' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-grip-lines mr-1"></i>${i18n.t('section.bouldering')}
                   </button>
-                  <button onclick="filterVideosByCategory('lead')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'lead' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fas fa-link mr-2"></i>${i18n.t('section.lead')}
+                  <button onclick="filterVideosByCategory('lead')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'lead' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-link mr-1"></i>${i18n.t('section.lead')}
                   </button>
-                  <button onclick="filterVideosByCategory('alpine')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'alpine' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fas fa-mountain mr-2"></i>${i18n.t('section.alpine')}
+                  <button onclick="filterVideosByCategory('alpine')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'alpine' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-mountain mr-1"></i>${i18n.t('section.alpine')}
                   </button>
-                  <button onclick="filterVideosByCategory('other')" class="px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'other' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
-                    <i class="fas fa-ellipsis-h mr-2"></i>${i18n.t('section.other')}
+                  <button onclick="filterVideosByCategory('other')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.currentVideoCategory === 'other' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-ellipsis-h mr-1"></i>${i18n.t('section.other')}
+                  </button>
+                  
+                  <!-- Divider -->
+                  <div class="border-l border-gray-300 mx-1"></div>
+                  
+                  <!-- Sort Options -->
+                  <button onclick="sortVideosBy('newest')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.videoSortBy === 'newest' ? 'bg-green-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-clock mr-1"></i>新着順
+                  </button>
+                  <button onclick="sortVideosBy('popular')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.videoSortBy === 'popular' ? 'bg-green-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-fire mr-1"></i>人気順
+                  </button>
+                  <button onclick="sortVideosBy('likes')" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${state.videoSortBy === 'likes' ? 'bg-green-600 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                    <i class="fas fa-heart mr-1"></i>いいね順
                   </button>
                 </div>
               </div>
@@ -3790,19 +3806,27 @@ async function handleUpload(event) {
 
 // ============ Filter Videos ============
 async function filterVideosByCategory(category) {
+  console.log(`🔍 Filtering videos by category: ${category}`);
   state.currentVideoCategory = category;
   
-  try {
-    const lang = state.currentLanguage || 'ja';
-    const url = category === 'all' ? `/api/videos?limit=20&lang=${lang}` : `/api/videos?category=${category}&limit=20&lang=${lang}`;
-    const response = await axios.get(url);
-    state.videos = response.data.videos || [];
-    
-    // Re-render only the videos section
-    renderVideosSection();
-  } catch (error) {
-    showToast('動画の読み込みに失敗しました', 'error');
+  // Apply both platform and category filters
+  let filtered = state.videos;
+  
+  // First filter by platform
+  if (state.currentPlatform && state.currentPlatform !== 'all') {
+    filtered = filtered.filter(v => v.media_source === state.currentPlatform);
   }
+  
+  // Then filter by category
+  if (category !== 'all') {
+    filtered = filtered.filter(v => v.category === category);
+  }
+  
+  state.filteredVideos = filtered;
+  console.log(`✅ Filtered videos count: ${state.filteredVideos.length} (platform: ${state.currentPlatform || 'all'}, category: ${category})`);
+  
+  // Re-render only the videos carousel section
+  renderVideosCarousel();
 }
 
 function renderVideosSection() {
@@ -10195,14 +10219,63 @@ function filterVideosByPlatform(platform) {
   console.log(`🔍 Filtering videos by platform: ${platform}`);
   state.currentPlatform = platform;
   
-  if (platform === 'all') {
-    state.filteredVideos = state.videos;
-  } else {
-    state.filteredVideos = state.videos.filter(v => v.media_source === platform);
+  // Apply both platform and category filters
+  let filtered = state.videos;
+  
+  // First filter by platform
+  if (platform !== 'all') {
+    filtered = filtered.filter(v => v.media_source === platform);
   }
   
-  console.log(`✅ Filtered videos count: ${state.filteredVideos.length}`);
-  renderApp();
+  // Then filter by category
+  if (state.currentVideoCategory && state.currentVideoCategory !== 'all') {
+    filtered = filtered.filter(v => v.category === state.currentVideoCategory);
+  }
+  
+  state.filteredVideos = filtered;
+  console.log(`✅ Filtered videos count: ${state.filteredVideos.length} (platform: ${platform}, category: ${state.currentVideoCategory || 'all'})`);
+  
+  // Re-render only the videos carousel section
+  renderVideosCarousel();
+}
+
+// Render just the videos carousel without full page reload
+function renderVideosCarousel() {
+  const carouselContainer = document.getElementById('videos-scroll');
+  if (!carouselContainer) {
+    console.warn('videos-scroll container not found');
+    return;
+  }
+  
+  carouselContainer.innerHTML = state.filteredVideos.map(video => renderVideoCard(video)).join('');
+}
+
+// Sort videos
+function sortVideosBy(sortType) {
+  console.log(`📊 Sorting videos by: ${sortType}`);
+  state.videoSortBy = sortType;
+  
+  let sorted = [...state.filteredVideos];
+  
+  switch(sortType) {
+    case 'newest':
+      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      break;
+    case 'popular':
+      sorted.sort((a, b) => (b.views || 0) - (a.views || 0));
+      break;
+    case 'likes':
+      sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      break;
+    default:
+      // Keep original order
+      break;
+  }
+  
+  state.filteredVideos = sorted;
+  console.log(`✅ Sorted videos count: ${state.filteredVideos.length}`);
+  
+  renderVideosCarousel();
 }
 
 // Export functions to window
@@ -10213,3 +10286,5 @@ window.skipToPreviousVideo = skipToPreviousVideo;
 window.loadAutoPlayVideo = loadAutoPlayVideo;
 window.toggleMissionAccordion = toggleMissionAccordion;
 window.filterVideosByPlatform = filterVideosByPlatform;
+window.renderVideosCarousel = renderVideosCarousel;
+window.sortVideosBy = sortVideosBy;
