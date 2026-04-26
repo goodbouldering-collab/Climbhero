@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Read(//c/Users/goodb/Documents/Claude/**)"
+    ]
+  }
+}
