@@ -5,9 +5,28 @@ import { serveStatic } from 'hono/cloudflare-workers'
 
 type Bindings = {
   DB: D1Database;
+  SESSIONS: KVNamespace;          // KV namespace for session records
+  UPLOADS?: R2Bucket;             // R2 bucket for user uploads (avatars, thumbnails)
+  AI?: any;                        // Workers AI binding (optional)
+  JWT_SECRET: string;
   GEMINI_API_KEY?: string;
+  YOUTUBE_API_KEY?: string;
+  VIMEO_ACCESS_TOKEN?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_PRICE_ID?: string;        // recurring price for Premium plan
+  STRIPE_TRIAL_DAYS?: string;
+  R2_PUBLIC_BASE?: string;         // e.g. https://uploads.climbhero.com
+  CF_ACCESS_TEAM?: string;         // <team>.cloudflareaccess.com
+  CF_ACCESS_AUD?: string;          // Application AUD tag from Access settings
+  TURNSTILE_SECRET?: string;
+  TURNSTILE_SITE_KEY?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  X_CLIENT_ID?: string;
+  X_CLIENT_SECRET?: string;
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -20,18 +39,110 @@ app.use('/api/*', cors())
 
 // ============ Helper Functions ============
 
-// Simple password hashing (in production, use bcrypt or similar)
-function hashPassword(password: string): string {
-  return Buffer.from(password).toString('base64')
+// =====================================================================
+// Auth (PBKDF2 + JWT + KV sessions)
+// =====================================================================
+import {
+  hashPassword as authHashPassword,
+  verifyPassword as authVerifyPassword,
+  isLegacyHash,
+  issueJWT,
+  verifyJWT,
+  createSession,
+  getSession as kvGetSession,
+  revokeSession,
+  generateToken,
+  verifyTurnstile,
+} from './auth'
+
+const SESSION_COOKIE = 'session_token'
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30  // 30 days
+
+// hashPassword now returns a Promise<string> (PBKDF2 format)
+async function hashPassword(password: string): Promise<string> {
+  return await authHashPassword(password)
 }
 
 function generateSessionToken(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36)
+  return generateToken(24)
 }
 
-async function getUserFromSession(db: D1Database, sessionToken: string) {
+/**
+ * Resolve the current user from the session cookie.
+ * Strategy:
+ *   1. Try to verify the cookie value as a JWT (new flow)
+ *      → check KV for revocation, return user from D1
+ *   2. Fallback: treat cookie value as legacy session_token stored in users.session_token
+ *      → return user from D1
+ * This keeps every existing call site working unchanged.
+ */
+async function getUserFromSession(
+  db: D1Database,
+  sessionToken: string,
+  env?: { JWT_SECRET?: string; SESSIONS?: KVNamespace }
+): Promise<any | null> {
   if (!sessionToken) return null
-  return await db.prepare('SELECT * FROM users WHERE session_token = ?').bind(sessionToken).first()
+
+  // New flow: JWT
+  if (env?.JWT_SECRET && sessionToken.includes('.')) {
+    const payload = await verifyJWT(sessionToken, env.JWT_SECRET)
+    if (payload?.sub) {
+      // Optional revocation check
+      if (payload.jti && env.SESSIONS) {
+        const sess = await kvGetSession(env.SESSIONS, payload.jti)
+        if (sess?.revoked) return null
+      }
+      const user = await db
+        .prepare('SELECT * FROM users WHERE id = ?')
+        .bind(payload.sub)
+        .first()
+      if (user) return user
+    }
+  }
+
+  // Legacy fallback: session_token column
+  return await db
+    .prepare('SELECT * FROM users WHERE session_token = ?')
+    .bind(sessionToken)
+    .first()
+}
+
+/**
+ * Issue a session: create JWT, record in KV, set cookie.
+ */
+async function issueSession(
+  c: any,
+  env: Bindings,
+  user: { id: number; email: string; is_admin?: number; membership_type?: string }
+): Promise<string> {
+  const jti = crypto.randomUUID()
+  const jwt = await issueJWT(user, env.JWT_SECRET, jti)
+
+  if (env.SESSIONS) {
+    await createSession(env.SESSIONS, jti, {
+      user_id: user.id,
+      created_at: Date.now(),
+      ip: c.req.header('CF-Connecting-IP') || undefined,
+      ua: c.req.header('User-Agent')?.slice(0, 200) || undefined,
+    })
+  }
+
+  // Maintain users.session_token for legacy tools (e.g. admin scripts)
+  try {
+    await env.DB
+      .prepare('UPDATE users SET session_token = ?, last_login = CURRENT_TIMESTAMP WHERE id = ?')
+      .bind(jwt, user.id)
+      .run()
+  } catch {}
+
+  setCookie(c, SESSION_COOKIE, jwt, {
+    httpOnly: true,
+    secure: true,
+    maxAge: COOKIE_MAX_AGE,
+    sameSite: 'Lax',
+    path: '/',
+  })
+  return jwt
 }
 
 // ============ Authentication API ============
@@ -40,42 +151,46 @@ async function getUserFromSession(db: D1Database, sessionToken: string) {
 app.post('/api/auth/register', async (c) => {
   const { env } = c
   const body = await c.req.json()
-  const { email, username, password } = body
+  const { email, username, password, turnstile_token } = body
 
   if (!email || !username || !password) {
     return c.json({ error: 'All fields are required' }, 400)
   }
+  if (password.length < 8) {
+    return c.json({ error: 'Password must be at least 8 characters' }, 400)
+  }
+
+  // Turnstile verification (only enforced if secret is configured)
+  if (env.TURNSTILE_SECRET) {
+    const ok = await verifyTurnstile(
+      turnstile_token,
+      env.TURNSTILE_SECRET,
+      c.req.header('CF-Connecting-IP') || undefined
+    )
+    if (!ok) return c.json({ error: 'CAPTCHA verification failed' }, 400)
+  }
 
   try {
-    // Check if user exists
-    const existing = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first()
+    const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
     if (existing) {
       return c.json({ error: 'Email already registered' }, 400)
     }
 
-    const passwordHash = hashPassword(password)
-    const sessionToken = generateSessionToken()
+    const passwordHash = await hashPassword(password)
 
     const result = await env.DB.prepare(
-      'INSERT INTO users (email, username, password_hash, session_token, membership_type) VALUES (?, ?, ?, ?, ?)'
-    ).bind(email, username, passwordHash, sessionToken, 'free').run()
+      'INSERT INTO users (email, username, password_hash, membership_type) VALUES (?, ?, ?, ?)'
+    ).bind(email, username, passwordHash, 'free').run()
 
-    setCookie(c, 'session_token', sessionToken, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: 'Lax'
+    const userId = result.meta?.last_row_id as number
+    await issueSession(c, env, {
+      id: userId, email, membership_type: 'free',
     })
 
     return c.json({
       success: true,
-      user: {
-        id: result.meta.last_row_id,
-        email,
-        username,
-        membership_type: 'free'
-      }
-    }, 201)
+      user: { id: userId, email, username, membership_type: 'free', is_admin: false },
+    })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
@@ -85,53 +200,54 @@ app.post('/api/auth/register', async (c) => {
 app.post('/api/auth/login', async (c) => {
   const { env } = c
   const body = await c.req.json()
-  const { email, password } = body
+  const { email, password, turnstile_token } = body
 
   if (!email || !password) {
     return c.json({ error: 'Email and password are required' }, 400)
   }
 
+  // Turnstile (only enforced if secret is configured)
+  if (env.TURNSTILE_SECRET) {
+    const ok = await verifyTurnstile(
+      turnstile_token,
+      env.TURNSTILE_SECRET,
+      c.req.header('CF-Connecting-IP') || undefined
+    )
+    if (!ok) return c.json({ error: 'CAPTCHA verification failed' }, 400)
+  }
+
   try {
-    // Check for admin credentials and auto-create admin account if needed
-    if ((email === 'admin' || email === 'admin@climbhero.com') && password === 'admin123') {
+    // Admin bootstrap: only works when ADMIN_BOOTSTRAP_PASSWORD env var is set.
+    // Use case: first-time setup. After creating the real admin user and changing the password,
+    // unset ADMIN_BOOTSTRAP_PASSWORD in Cloudflare Pages env to fully disable this path.
+    const bootstrapPassword = (env as any).ADMIN_BOOTSTRAP_PASSWORD as string | undefined
+    if (
+      bootstrapPassword &&
+      bootstrapPassword.length >= 16 &&
+      email === 'admin@climbhero.com' &&
+      password === bootstrapPassword
+    ) {
       const adminEmail = 'admin@climbhero.com'
-      
-      // Check if admin exists in DB
+
       let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(adminEmail).first() as any
-      
+
       if (!adminUser) {
-        // Create admin account
-        const passwordHash = hashPassword('admin123')
-        const sessionToken = generateSessionToken()
-        
+        const passwordHash = await hashPassword(bootstrapPassword)
+
         const result = await env.DB.prepare(
-          'INSERT INTO users (email, username, password_hash, session_token, membership_type, is_admin) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(adminEmail, 'Administrator', passwordHash, sessionToken, 'premium', 1).run()
-        
+          'INSERT INTO users (email, username, password_hash, membership_type, is_admin) VALUES (?, ?, ?, ?, ?)'
+        ).bind(adminEmail, 'Administrator', passwordHash, 'premium', 1).run()
+
         adminUser = {
           id: result.meta.last_row_id,
           email: adminEmail,
           username: 'Administrator',
           membership_type: 'premium',
           is_admin: 1,
-          session_token: sessionToken
         }
-      } else {
-        // Update session token
-        const sessionToken = generateSessionToken()
-        await env.DB.prepare(
-          'UPDATE users SET session_token = ?, last_login = CURRENT_TIMESTAMP WHERE id = ?'
-        ).bind(sessionToken, adminUser.id).run()
-        adminUser.session_token = sessionToken
       }
-      
-      setCookie(c, 'session_token', adminUser.session_token, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 60 * 60 * 24 * 30,
-        sameSite: 'Lax'
-      })
 
+      await issueSession(c, env, adminUser)
       return c.json({
         success: true,
         user: {
@@ -139,32 +255,35 @@ app.post('/api/auth/login', async (c) => {
           email: adminUser.email,
           username: adminUser.username,
           membership_type: adminUser.membership_type,
-          is_admin: true
-        }
+          is_admin: true,
+        },
+        warning: 'Logged in via bootstrap. Change the password and unset ADMIN_BOOTSTRAP_PASSWORD now.',
       })
     }
 
     // Regular user authentication
-    const passwordHash = hashPassword(password)
     const user = await env.DB.prepare(
-      'SELECT * FROM users WHERE email = ? AND password_hash = ?'
-    ).bind(email, passwordHash).first() as any
+      'SELECT * FROM users WHERE email = ?'
+    ).bind(email).first() as any
 
     if (!user) {
       return c.json({ error: 'Invalid credentials' }, 401)
     }
 
-    const sessionToken = generateSessionToken()
-    await env.DB.prepare(
-      'UPDATE users SET session_token = ?, last_login = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(sessionToken, user.id).run()
+    const valid = await authVerifyPassword(password, user.password_hash)
+    if (!valid) {
+      return c.json({ error: 'Invalid credentials' }, 401)
+    }
 
-    setCookie(c, 'session_token', sessionToken, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 60 * 60 * 24 * 30,
-      sameSite: 'Lax'
-    })
+    // Auto-upgrade legacy hashes on successful login
+    if (isLegacyHash(user.password_hash)) {
+      const newHash = await hashPassword(password)
+      await env.DB
+        .prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+        .bind(newHash, user.id).run()
+    }
+
+    await issueSession(c, env, user)
 
     return c.json({
       success: true,
@@ -173,24 +292,35 @@ app.post('/api/auth/login', async (c) => {
         email: user.email,
         username: user.username,
         membership_type: user.membership_type,
-        is_admin: user.is_admin || false
-      }
+        is_admin: !!user.is_admin,
+      },
     })
   } catch (error: any) {
-    return c.json({ error: error.message }, 500)
+    console.error('Login error:', error.message, error.stack)
+    return c.json({ error: 'Login failed' }, 500)
   }
 })
 
 // Logout
 app.post('/api/auth/logout', async (c) => {
   const { env } = c
-  const sessionToken = getCookie(c, 'session_token')
+  const sessionToken = getCookie(c, SESSION_COOKIE)
 
   if (sessionToken) {
-    await env.DB.prepare('UPDATE users SET session_token = NULL WHERE session_token = ?').bind(sessionToken).run()
+    if (env.JWT_SECRET && sessionToken.includes('.')) {
+      const payload = await verifyJWT(sessionToken, env.JWT_SECRET)
+      if (payload?.jti && env.SESSIONS) {
+        await revokeSession(env.SESSIONS, payload.jti)
+      }
+    }
+    try {
+      await env.DB
+        .prepare('UPDATE users SET session_token = NULL WHERE session_token = ?')
+        .bind(sessionToken).run()
+    } catch {}
   }
 
-  setCookie(c, 'session_token', '', { maxAge: 0 })
+  setCookie(c, SESSION_COOKIE, '', { maxAge: 0, path: '/' })
   return c.json({ success: true })
 })
 
@@ -211,7 +341,7 @@ app.get('/api/auth/me', async (c) => {
     })
   }
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -229,39 +359,50 @@ app.get('/api/auth/me', async (c) => {
 app.post('/api/auth/password-reset/request', async (c) => {
   const { env } = c
   const { email } = await c.req.json()
-  
+
   try {
-    // Check if user exists
-    const result = await env.DB.prepare(`
-      SELECT id, email FROM users WHERE email = ?
-    `).bind(email).first()
-    
+    const result = await env.DB
+      .prepare('SELECT id, email FROM users WHERE email = ?')
+      .bind(email).first<any>()
+
+    // Always return success to avoid email enumeration
     if (!result) {
-      return c.json({ error: 'Email address not found' }, 404)
+      return c.json({ success: true, message: 'If the email exists, a reset link has been sent.' })
     }
-    
-    // Generate reset token (simple random string for demo)
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
-    
-    // Save token to database
-    await env.DB.prepare(`
-      INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
-      VALUES (?, ?, ?, 0)
-    `).bind(result.id, token, expiresAt).run()
-    
-    // In production, send email here with reset link
-    // For development, we'll just return success
-    // The frontend will show a modal with the reset link
-    
-    return c.json({ 
+
+    // Cryptographically random token
+    const { generateToken } = await import('./auth')
+    const token = generateToken(24)
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
+    await env.DB
+      .prepare('INSERT INTO password_reset_tokens (user_id, token, expires_at, used) VALUES (?, ?, ?, 0)')
+      .bind(result.id, token, expiresAt).run()
+
+    // Build absolute reset URL
+    const url = new URL(c.req.url)
+    const resetUrl = `${url.origin}/?reset-password=${token}&email=${encodeURIComponent(email)}`
+
+    // Send the email (best-effort)
+    let mailResult: any = null
+    try {
+      const { sendEmail, buildPasswordResetEmail } = await import('./email')
+      mailResult = await sendEmail(
+        buildPasswordResetEmail(email, resetUrl, 60),
+        env
+      )
+    } catch (e: any) {
+      mailResult = { ok: false, error: e.message }
+    }
+
+    return c.json({
       success: true,
-      message: 'Password reset link has been sent to your email',
-      // For development only - remove in production
-      dev_token: token,
-      dev_reset_url: `#reset-password?email=${encodeURIComponent(email)}&token=${token}`
+      message: 'If the email exists, a reset link has been sent.',
+      // Helpful in dev / when email backend is not yet configured:
+      ...(mailResult && !mailResult.ok ? { email_status: mailResult } : {}),
+      ...(mailResult && !mailResult.ok ? { dev_reset_url: resetUrl } : {}),
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Password reset request error:', error)
     return c.json({ error: 'Failed to process password reset request' }, 500)
   }
@@ -282,8 +423,8 @@ app.post('/api/auth/password-reset/confirm', async (c) => {
       return c.json({ error: 'User not found' }, 404)
     }
     
-    // Update password (in development, we skip token validation for simplicity)
-    const passwordHash = hashPassword(password)
+    // Update password (PBKDF2)
+    const passwordHash = await hashPassword(password)
     await env.DB.prepare(`
       UPDATE users SET password_hash = ? WHERE id = ?
     `).bind(passwordHash, user.id).run()
@@ -373,6 +514,32 @@ app.get('/api/videos', async (c) => {
     })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
+  }
+})
+
+// Curated videos: AI-quality-score-ranked, auto-imported videos
+// (Registered BEFORE /api/videos/:id so the literal path wins.)
+app.get('/api/videos/curated', async (c) => {
+  const { env } = c
+  const limit = parseInt(c.req.query('limit') || '20', 10)
+  const lang = c.req.query('lang') || 'ja'
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT * FROM videos
+       WHERE ai_quality_score IS NOT NULL
+       ORDER BY ai_quality_score DESC, views DESC
+       LIMIT ?`
+    ).bind(limit).all<any>()
+
+    const videos = (results || []).map((v: any) => {
+      if (lang === 'en' && v.title_en) { v.title = v.title_en; v.description = v.description_en }
+      else if (lang === 'zh' && v.title_zh) { v.title = v.title_zh; v.description = v.description_zh }
+      else if (lang === 'ko' && v.title_ko) { v.title = v.title_ko; v.description = v.description_ko }
+      return v
+    })
+    return c.json({ videos })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
   }
 })
 
@@ -601,7 +768,7 @@ function generateThumbnailUrl(url: string, mediaSource: string): string {
 app.post('/api/videos', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -656,7 +823,7 @@ app.post('/api/videos', async (c) => {
 app.post('/api/videos/:id/like', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -756,7 +923,7 @@ app.post('/api/videos/:id/like', async (c) => {
 app.get('/api/videos/:id/liked', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
 
   if (!user) {
     return c.json({ liked: false, user_like_count: 0, remaining_likes: 0 })
@@ -785,7 +952,7 @@ app.get('/api/videos/:id/liked', async (c) => {
 app.post('/api/videos/:id/favorite', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -815,7 +982,7 @@ app.post('/api/videos/:id/favorite', async (c) => {
 app.get('/api/videos/:id/favorited', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
 
   if (!user) {
     return c.json({ favorited: false })
@@ -858,7 +1025,7 @@ app.get('/api/videos/:id/comments', async (c) => {
 app.post('/api/videos/:id/comments', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1063,7 +1230,7 @@ app.get('/api/blog', async (c) => {
   const sessionToken = getCookie(c, 'session_token')
 
   try {
-    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const user = await getUserFromSession(env.DB, sessionToken || '', env)
     const userId = user ? (user as any).id : null
     
     let query = 'SELECT * FROM blog_posts'
@@ -1141,7 +1308,7 @@ app.get('/api/blog/:id', async (c) => {
     ).bind(post.id).first() as any
     
     // Check if user liked/favorited
-    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const user = await getUserFromSession(env.DB, sessionToken || '', env)
     const userId = user ? (user as any).id : null
     
     let is_liked = false
@@ -1179,7 +1346,7 @@ app.get('/api/blog/:id', async (c) => {
 app.post('/api/blog', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1207,7 +1374,7 @@ app.post('/api/blog', async (c) => {
 app.put('/api/blog/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1232,7 +1399,7 @@ app.put('/api/blog/:id', async (c) => {
 app.delete('/api/blog/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
 
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1367,7 +1534,7 @@ app.get('/api/users/:id/favorites', async (c) => {
 app.get('/api/collections', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1395,7 +1562,7 @@ app.get('/api/collections', async (c) => {
 app.post('/api/collections', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1426,7 +1593,7 @@ app.post('/api/collections', async (c) => {
 app.put('/api/collections/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1461,7 +1628,7 @@ app.put('/api/collections/:id', async (c) => {
 app.delete('/api/collections/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1491,7 +1658,7 @@ app.delete('/api/collections/:id', async (c) => {
 app.get('/api/collections/:id/items', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1549,7 +1716,7 @@ app.get('/api/collections/:id/items', async (c) => {
 app.post('/api/collections/:id/items', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1592,7 +1759,7 @@ app.post('/api/collections/:id/items', async (c) => {
 app.delete('/api/collections/:collectionId/items/:itemId', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -1640,6 +1807,15 @@ app.get('/', (c) => {
         <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
         <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
         <link rel="manifest" href="/static/site.webmanifest">
+
+        <!-- Theme color (dark) -->
+        <meta name="theme-color" content="#0b0814">
+        <meta name="color-scheme" content="dark">
+
+        <!-- Fonts: Inter (latin) + Noto Sans JP -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
         
         <!-- Meta Tags for SEO -->
         <meta name="description" content="ClimbHero - 世界中のクライミング動画を発見し共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。リアルタイムランキング、多言語対応。">
@@ -1815,7 +1991,7 @@ app.get('/api/search', async (c) => {
 app.get('/api/notifications', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
@@ -1838,7 +2014,7 @@ app.get('/api/notifications', async (c) => {
 app.post('/api/notifications/:id/read', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
@@ -1862,7 +2038,7 @@ app.post('/api/notifications/:id/read', async (c) => {
 app.post('/api/notifications/read-all', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
@@ -1905,7 +2081,7 @@ app.get('/api/videos/:id/comments', async (c) => {
 app.post('/api/videos/:id/comments', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
@@ -1938,7 +2114,7 @@ app.post('/api/videos/:id/comments', async (c) => {
 app.post('/api/shares', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   
   const { video_id, platform } = await c.req.json()
   
@@ -1959,7 +2135,7 @@ app.post('/api/shares', async (c) => {
 app.post('/api/users/:id/follow', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
@@ -2037,7 +2213,7 @@ app.get('/api/announcements', async (c) => {
 app.get('/api/admin/announcements', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2059,7 +2235,7 @@ app.get('/api/admin/announcements', async (c) => {
 app.post('/api/admin/announcements', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2092,7 +2268,7 @@ app.post('/api/admin/announcements', async (c) => {
 app.put('/api/admin/announcements/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2122,7 +2298,7 @@ app.put('/api/admin/announcements/:id', async (c) => {
 app.delete('/api/admin/announcements/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2172,7 +2348,7 @@ app.get('/api/banners/:position', async (c) => {
 app.get('/api/admin/banners', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2194,7 +2370,7 @@ app.get('/api/admin/banners', async (c) => {
 app.post('/api/admin/banners', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2238,7 +2414,7 @@ app.post('/api/admin/banners', async (c) => {
 app.put('/api/admin/banners/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2283,7 +2459,7 @@ app.put('/api/admin/banners/:id', async (c) => {
 app.delete('/api/admin/banners/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2308,7 +2484,7 @@ app.delete('/api/admin/banners/:id', async (c) => {
 app.post('/api/admin/ad-banners', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2349,7 +2525,7 @@ app.post('/api/admin/ad-banners', async (c) => {
 app.put('/api/admin/ad-banners/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2394,7 +2570,7 @@ app.put('/api/admin/ad-banners/:id', async (c) => {
 app.delete('/api/admin/ad-banners/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2419,7 +2595,7 @@ app.delete('/api/admin/ad-banners/:id', async (c) => {
 app.get('/api/admin/videos', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2441,7 +2617,7 @@ app.get('/api/admin/videos', async (c) => {
 app.put('/api/admin/videos/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2467,7 +2643,7 @@ app.put('/api/admin/videos/:id', async (c) => {
 app.delete('/api/admin/videos/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2492,7 +2668,7 @@ app.delete('/api/admin/videos/:id', async (c) => {
 app.get('/api/admin/users', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2515,7 +2691,7 @@ app.get('/api/admin/users', async (c) => {
 app.put('/api/admin/users/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2526,8 +2702,8 @@ app.put('/api/admin/users/:id', async (c) => {
   
   try {
     if (password) {
-      // Update with new password
-      const passwordHash = hashPassword(password)
+      // Update with new password (PBKDF2)
+      const passwordHash = await hashPassword(password)
       await env.DB.prepare(`
         UPDATE users 
         SET username = ?, email = ?, membership_type = ?, notes = ?, password_hash = ?, is_admin = ?
@@ -2552,7 +2728,7 @@ app.put('/api/admin/users/:id', async (c) => {
 app.delete('/api/admin/users/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2586,7 +2762,7 @@ app.delete('/api/admin/users/:id', async (c) => {
 app.post('/api/user/change-password', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'ログインが必要です' }, 401)
@@ -2603,14 +2779,14 @@ app.post('/api/user/change-password', async (c) => {
   }
   
   try {
-    // Verify current password
-    const currentHash = hashPassword(currentPassword)
-    if (user.password_hash !== currentHash) {
+    // Verify current password (supports both new PBKDF2 and legacy formats)
+    const valid = await authVerifyPassword(currentPassword, user.password_hash)
+    if (!valid) {
       return c.json({ error: '現在のパスワードが正しくありません' }, 400)
     }
-    
-    // Update password
-    const newHash = hashPassword(newPassword)
+
+    // Update password (PBKDF2)
+    const newHash = await hashPassword(newPassword)
     await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
       .bind(newHash, user.id).run()
     
@@ -2626,7 +2802,7 @@ app.post('/api/user/change-password', async (c) => {
 app.get('/api/admin/stripe-settings', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2652,7 +2828,7 @@ app.get('/api/admin/stripe-settings', async (c) => {
 app.post('/api/admin/stripe-settings', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2698,7 +2874,7 @@ app.post('/api/admin/stripe-settings', async (c) => {
 app.get('/api/admin/email-campaigns', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2720,7 +2896,7 @@ app.get('/api/admin/email-campaigns', async (c) => {
 app.post('/api/admin/email-campaigns', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2756,7 +2932,7 @@ app.post('/api/admin/email-campaigns', async (c) => {
 app.post('/api/admin/email-campaigns/:id/send', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2811,7 +2987,7 @@ app.post('/api/admin/email-campaigns/:id/send', async (c) => {
 app.delete('/api/admin/email-campaigns/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -2836,7 +3012,7 @@ app.delete('/api/admin/email-campaigns/:id', async (c) => {
 app.post('/api/media/validate', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -3043,7 +3219,7 @@ function simulateAIClassification(url: string, title: string) {
 app.post('/api/media/submit', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -3124,7 +3300,7 @@ app.post('/api/media/submit', async (c) => {
 app.get('/api/users/posting-stats', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -3214,7 +3390,7 @@ app.get('/api/contests/:id', async (c) => {
 app.post('/api/contests/:id/submit', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -3277,7 +3453,7 @@ app.post('/api/contests/:id/submit', async (c) => {
 app.post('/api/contests/:contestId/vote/:submissionId', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -3426,7 +3602,7 @@ app.get('/api/partners/:id', async (c) => {
 app.get('/api/admin/contests', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -3447,7 +3623,7 @@ app.get('/api/admin/contests', async (c) => {
 app.post('/api/admin/contests', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -3485,7 +3661,7 @@ app.post('/api/admin/contests', async (c) => {
 app.put('/api/admin/contests/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const user = await getUserFromSession(env.DB, sessionToken || '') as any
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
   
   if (!user || !user.is_admin) {
     return c.json({ error: 'Admin access required' }, 403)
@@ -3950,7 +4126,7 @@ ClimbHeroは、最新のテクノロジーで構築されています：
 app.get('/api/admin/users/export', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -3996,7 +4172,7 @@ app.get('/api/admin/users/export', async (c) => {
 app.post('/api/admin/users/import', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4034,8 +4210,8 @@ app.post('/api/admin/users/import', async (c) => {
         const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
         
         if (!existing) {
-          // Create new user with default password
-          const defaultPassword = hashPassword('ClimbHero2024!')
+          // Create new user with default password (PBKDF2)
+          const defaultPassword = await hashPassword('ClimbHero2024!')
           const result = await env.DB.prepare(`
             INSERT INTO users (email, username, password_hash, membership_type, notes)
             VALUES (?, ?, ?, ?, ?)
@@ -4070,7 +4246,7 @@ app.post('/api/admin/users/import', async (c) => {
 app.post('/api/admin/blog/genres', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4109,7 +4285,7 @@ app.post('/api/admin/blog/genres', async (c) => {
 app.put('/api/admin/blog/genres/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4146,7 +4322,7 @@ app.put('/api/admin/blog/genres/:id', async (c) => {
 app.delete('/api/admin/blog/genres/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4167,7 +4343,7 @@ app.delete('/api/admin/blog/genres/:id', async (c) => {
 app.post('/api/admin/blog/tags', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4195,7 +4371,7 @@ app.post('/api/admin/blog/tags', async (c) => {
 app.delete('/api/admin/blog/tags/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4215,7 +4391,7 @@ app.delete('/api/admin/blog/tags/:id', async (c) => {
 app.get('/api/admin/blog/posts', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4246,7 +4422,7 @@ app.get('/api/admin/blog/posts', async (c) => {
 app.post('/api/admin/blog/posts/:id/tags', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4274,7 +4450,7 @@ app.post('/api/admin/blog/posts/:id/tags', async (c) => {
 app.put('/api/admin/blog/posts/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4313,7 +4489,7 @@ app.put('/api/admin/blog/posts/:id', async (c) => {
 app.post('/api/admin/blog/posts', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4370,7 +4546,7 @@ app.get('/api/testimonials', async (c) => {
 app.get('/api/admin/testimonials', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4392,7 +4568,7 @@ app.get('/api/admin/testimonials', async (c) => {
 app.post('/api/admin/testimonials', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4437,7 +4613,7 @@ app.post('/api/admin/testimonials', async (c) => {
 app.put('/api/admin/testimonials/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4481,7 +4657,7 @@ app.put('/api/admin/testimonials/:id', async (c) => {
 app.delete('/api/admin/testimonials/:id', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser || !currentUser.is_admin) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -4502,7 +4678,7 @@ app.delete('/api/admin/testimonials/:id', async (c) => {
 app.post('/api/videos/analyze', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -4599,7 +4775,7 @@ app.post('/api/videos/analyze', async (c) => {
 app.post('/api/videos/analyze-url', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -4703,7 +4879,7 @@ app.post('/api/videos/analyze-url', async (c) => {
 app.get('/api/settings', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -4732,7 +4908,7 @@ app.get('/api/settings', async (c) => {
 app.put('/api/settings', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   if (!currentUser) {
     return c.json({ error: 'Authentication required' }, 401)
@@ -4808,7 +4984,7 @@ app.put('/api/settings', async (c) => {
 app.get('/api/admin/user-settings/:userId', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   const userId = c.req.param('userId')
   
   // Check if current user is admin
@@ -4850,7 +5026,7 @@ app.get('/api/admin/user-settings/:userId', async (c) => {
 app.put('/api/admin/user-settings/:userId', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   const userId = c.req.param('userId')
   
   // Check if current user is admin
@@ -4944,7 +5120,7 @@ app.get('/api/news', async (c) => {
   const sessionToken = getCookie(c, 'session_token')
   
   try {
-    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const user = await getUserFromSession(env.DB, sessionToken || '', env)
     const userId = user ? (user as any).id : null
     
     let query = 'SELECT * FROM news_articles WHERE is_active = 1'
@@ -5019,7 +5195,7 @@ app.get('/api/news/:id', async (c) => {
     ).bind(id).run()
     
     // Check if user liked/favorited
-    const user = await getUserFromSession(env.DB, sessionToken || '')
+    const user = await getUserFromSession(env.DB, sessionToken || '', env)
     const userId = user ? (user as any).id : null
     
     let is_liked = false
@@ -5082,7 +5258,7 @@ app.post('/api/news/:id/like', async (c) => {
   const articleId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5127,7 +5303,7 @@ app.delete('/api/news/:id/like', async (c) => {
   const articleId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5155,7 +5331,7 @@ app.post('/api/news/:id/favorite', async (c) => {
   const articleId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5192,7 +5368,7 @@ app.delete('/api/news/:id/favorite', async (c) => {
   const articleId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5216,7 +5392,7 @@ app.post('/api/blog/:id/like', async (c) => {
   const postId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5261,7 +5437,7 @@ app.delete('/api/blog/:id/like', async (c) => {
   const postId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5283,7 +5459,7 @@ app.post('/api/blog/:id/favorite', async (c) => {
   const postId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5320,7 +5496,7 @@ app.delete('/api/blog/:id/favorite', async (c) => {
   const postId = c.req.param('id')
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5344,7 +5520,7 @@ app.get('/api/favorites', async (c) => {
   const sessionToken = getCookie(c, 'session_token')
   const lang = c.req.query('lang') || 'ja'
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -5427,7 +5603,7 @@ app.get('/api/admin/news/settings', async (c) => {
   const sessionToken = getCookie(c, 'session_token')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || currentUser.role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -5456,7 +5632,7 @@ app.put('/api/admin/news/settings', async (c) => {
   const body = await c.req.json()
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || currentUser.role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -5543,7 +5719,7 @@ app.post('/api/admin/news/crawl', async (c) => {
   const sessionToken = getCookie(c, 'session_token')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || currentUser.role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -5583,7 +5759,7 @@ app.delete('/api/admin/news/:id', async (c) => {
   const id = c.req.param('id')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || currentUser.role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -5739,7 +5915,7 @@ async function generateMockNewsArticles(db: D1Database, settings: any): Promise<
 app.post('/api/admin/news/crawl-now', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+  const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
   
   // Check if current user is admin
   if (!currentUser || (currentUser as any).role !== 'admin') {
@@ -5942,7 +6118,7 @@ app.get('/api/subscription/current', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -6013,7 +6189,7 @@ app.post('/api/subscription/checkout', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -6290,7 +6466,7 @@ app.post('/api/subscription/toggle-auto-renew', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -6363,7 +6539,7 @@ app.post('/api/subscription/cancel', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -6467,7 +6643,7 @@ app.get('/api/subscription/history', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
   
-  const user = await getUserFromSession(env.DB, sessionToken || '')
+  const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)
   }
@@ -6486,6 +6662,707 @@ app.get('/api/subscription/history', async (c) => {
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
   }
+})
+
+// Admin video crawler page (redirect to static HTML)
+app.get('/admin/crawler', (c) => c.redirect('/static/admin-crawler.html'))
+
+// ===========================================
+// OAUTH (Google + X)
+// ===========================================
+
+import {
+  buildGoogleAuthUrl, exchangeGoogleCode, fetchGoogleUser,
+  buildXAuthUrl, exchangeXCode, fetchXUser,
+  createOAuthState, consumeOAuthState, generatePKCE, upsertOAuthUser,
+} from './oauth'
+
+function getOAuthRedirectUri(c: any, provider: string): string {
+  const url = new URL(c.req.url)
+  return `${url.origin}/api/auth/oauth/${provider}/callback`
+}
+
+// Google: initiate
+app.get('/api/auth/oauth/google', async (c) => {
+  const { env } = c
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return c.json({ error: 'Google OAuth is not configured' }, 503)
+  }
+  if (!env.SESSIONS) return c.json({ error: 'KV not configured' }, 503)
+
+  const redirectUri = getOAuthRedirectUri(c, 'google')
+  const redirectTo = c.req.query('redirect_to') || '/'
+  const state = await createOAuthState(env.SESSIONS, { provider: 'google', redirect_to: redirectTo })
+  const url = await buildGoogleAuthUrl(env.GOOGLE_CLIENT_ID, redirectUri, state)
+  return c.redirect(url)
+})
+
+// Google: callback
+app.get('/api/auth/oauth/google/callback', async (c) => {
+  const { env } = c
+  const code = c.req.query('code')
+  const state = c.req.query('state')
+  if (!code || !state) return c.json({ error: 'missing code or state' }, 400)
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return c.json({ error: 'Google OAuth is not configured' }, 503)
+  }
+
+  const stateData = env.SESSIONS ? await consumeOAuthState(env.SESSIONS, state) : null
+  if (!stateData || stateData.provider !== 'google') return c.json({ error: 'invalid state' }, 400)
+
+  const redirectUri = getOAuthRedirectUri(c, 'google')
+  const tokens = await exchangeGoogleCode(code, env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET, redirectUri)
+  if (!tokens) return c.json({ error: 'token exchange failed' }, 502)
+
+  const user = await fetchGoogleUser(tokens.access_token)
+  if (!user) return c.json({ error: 'failed to fetch user info' }, 502)
+
+  const dbUser = await upsertOAuthUser(env.DB, user)
+  await issueSession(c, env, dbUser)
+  return c.redirect(stateData.redirect_to || '/')
+})
+
+// X (Twitter): initiate
+app.get('/api/auth/oauth/x', async (c) => {
+  const { env } = c
+  if (!env.X_CLIENT_ID || !env.X_CLIENT_SECRET) {
+    return c.json({ error: 'X OAuth is not configured' }, 503)
+  }
+  if (!env.SESSIONS) return c.json({ error: 'KV not configured' }, 503)
+
+  const redirectUri = getOAuthRedirectUri(c, 'x')
+  const redirectTo = c.req.query('redirect_to') || '/'
+  const { verifier, challenge } = await generatePKCE()
+  const state = await createOAuthState(env.SESSIONS, {
+    provider: 'x', redirect_to: redirectTo, code_verifier: verifier,
+  })
+  const url = await buildXAuthUrl(env.X_CLIENT_ID, redirectUri, state, challenge)
+  return c.redirect(url)
+})
+
+// X: callback
+app.get('/api/auth/oauth/x/callback', async (c) => {
+  const { env } = c
+  const code = c.req.query('code')
+  const state = c.req.query('state')
+  if (!code || !state) return c.json({ error: 'missing code or state' }, 400)
+  if (!env.X_CLIENT_ID || !env.X_CLIENT_SECRET) {
+    return c.json({ error: 'X OAuth is not configured' }, 503)
+  }
+
+  const stateData = env.SESSIONS ? await consumeOAuthState(env.SESSIONS, state) : null
+  if (!stateData || stateData.provider !== 'x' || !stateData.code_verifier) {
+    return c.json({ error: 'invalid state' }, 400)
+  }
+
+  const redirectUri = getOAuthRedirectUri(c, 'x')
+  const tokens = await exchangeXCode(
+    code, env.X_CLIENT_ID, env.X_CLIENT_SECRET, redirectUri, stateData.code_verifier
+  )
+  if (!tokens) return c.json({ error: 'token exchange failed' }, 502)
+
+  const user = await fetchXUser(tokens.access_token)
+  if (!user) return c.json({ error: 'failed to fetch user info' }, 502)
+
+  const dbUser = await upsertOAuthUser(env.DB, user)
+  await issueSession(c, env, dbUser)
+  return c.redirect(stateData.redirect_to || '/')
+})
+
+// OAuth provider availability (for the login UI to show/hide buttons)
+app.get('/api/auth/oauth/providers', (c) => {
+  const { env } = c
+  return c.json({
+    google: !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+    x: !!(env.X_CLIENT_ID && env.X_CLIENT_SECRET),
+  })
+})
+
+// ===========================================
+// VIDEO CRAWLER API ENDPOINTS
+// (registered before the catch-all route below)
+// ===========================================
+
+// List crawler sources
+app.get('/api/admin/video-crawler/sources', async (c) => {
+  const { env } = c
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT * FROM video_crawler_sources ORDER BY priority DESC, id ASC`
+    ).all()
+    return c.json({ sources: results || [] })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Create source
+app.post('/api/admin/video-crawler/sources', async (c) => {
+  const { env } = c
+  try {
+    const body = await c.req.json()
+    const {
+      platform, source_type = 'query', query,
+      language, region, max_results = 25, min_views = 1000,
+      enabled = 1, priority = 0,
+    } = body
+    if (!platform || !query) return c.json({ error: 'platform and query are required' }, 400)
+    if (!['youtube', 'vimeo', 'tiktok', 'instagram'].includes(platform)) {
+      return c.json({ error: 'invalid platform' }, 400)
+    }
+    const result = await env.DB.prepare(
+      `INSERT INTO video_crawler_sources
+       (platform, source_type, query, language, region, max_results, min_views, enabled, priority)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(platform, source_type, query, language || null, region || null,
+           max_results, min_views, enabled ? 1 : 0, priority).run()
+    return c.json({ success: true, id: result.meta?.last_row_id })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Update source
+app.put('/api/admin/video-crawler/sources/:id', async (c) => {
+  const { env } = c
+  const id = parseInt(c.req.param('id'), 10)
+  try {
+    const body = await c.req.json()
+    const fields: string[] = []
+    const params: any[] = []
+    for (const k of ['platform', 'source_type', 'query', 'language', 'region',
+                     'max_results', 'min_views', 'enabled', 'priority']) {
+      if (body[k] !== undefined) {
+        fields.push(`${k} = ?`)
+        params.push(k === 'enabled' ? (body[k] ? 1 : 0) : body[k])
+      }
+    }
+    if (fields.length === 0) return c.json({ error: 'no fields to update' }, 400)
+    fields.push('updated_at = CURRENT_TIMESTAMP')
+    params.push(id)
+    await env.DB.prepare(
+      `UPDATE video_crawler_sources SET ${fields.join(', ')} WHERE id = ?`
+    ).bind(...params).run()
+    return c.json({ success: true })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Delete source
+app.delete('/api/admin/video-crawler/sources/:id', async (c) => {
+  const { env } = c
+  const id = parseInt(c.req.param('id'), 10)
+  try {
+    await env.DB.prepare('DELETE FROM video_crawler_sources WHERE id = ?').bind(id).run()
+    return c.json({ success: true })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Get crawler settings
+app.get('/api/admin/video-crawler/settings', async (c) => {
+  const { env } = c
+  try {
+    const row = await env.DB.prepare(
+      'SELECT * FROM video_crawler_settings WHERE id = 1'
+    ).first<any>()
+    if (row) {
+      if (row.youtube_api_key) row.youtube_api_key = '***' + row.youtube_api_key.slice(-4)
+      if (row.vimeo_access_token) row.vimeo_access_token = '***' + row.vimeo_access_token.slice(-4)
+      if (row.rapidapi_key) row.rapidapi_key = '***' + row.rapidapi_key.slice(-4)
+    }
+    return c.json({ settings: row })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Update crawler settings
+app.put('/api/admin/video-crawler/settings', async (c) => {
+  const { env } = c
+  try {
+    const body = await c.req.json()
+    const fields: string[] = []
+    const params: any[] = []
+    for (const k of ['youtube_api_key', 'vimeo_access_token', 'rapidapi_key',
+                     'cron_schedule', 'enabled', 'ai_analysis_enabled', 'translate_enabled']) {
+      if (body[k] !== undefined) {
+        if (typeof body[k] === 'string' && body[k].startsWith('***')) continue
+        fields.push(`${k} = ?`)
+        params.push(typeof body[k] === 'boolean' ? (body[k] ? 1 : 0) : body[k])
+      }
+    }
+    if (fields.length === 0) return c.json({ success: true, message: 'no changes' })
+    fields.push('updated_at = CURRENT_TIMESTAMP')
+    await env.DB.prepare(
+      `UPDATE video_crawler_settings SET ${fields.join(', ')} WHERE id = 1`
+    ).bind(...params).run()
+    return c.json({ success: true })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Trigger a manual crawl
+app.post('/api/admin/video-crawler/run', async (c) => {
+  const { env } = c
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    const { source_id, limit, run_ai } = body
+    const { runCrawl } = await import('./video-crawler-orchestrator')
+    const result = await runCrawl(env.DB, env, {
+      sourceId: source_id,
+      limit: limit ?? 5,
+      runAI: run_ai !== false,
+    })
+    return c.json({ success: true, result })
+  } catch (e: any) {
+    return c.json({ error: e.message, stack: e.stack }, 500)
+  }
+})
+
+// Crawler statistics (genre distribution, AI processing rate, top sources)
+app.get('/api/admin/video-crawler/stats', async (c) => {
+  const { env } = c
+  try {
+    const summary = await env.DB.prepare(`
+      SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN ai_processed_at IS NOT NULL THEN 1 ELSE 0 END) AS ai_processed,
+        SUM(CASE WHEN auto_imported = 1 THEN 1 ELSE 0 END) AS auto_imported,
+        SUM(CASE WHEN media_source = 'youtube' THEN 1 ELSE 0 END) AS youtube,
+        SUM(CASE WHEN media_source = 'instagram' THEN 1 ELSE 0 END) AS instagram,
+        SUM(CASE WHEN media_source = 'tiktok' THEN 1 ELSE 0 END) AS tiktok,
+        SUM(CASE WHEN media_source = 'vimeo' THEN 1 ELSE 0 END) AS vimeo,
+        AVG(ai_quality_score) AS avg_quality,
+        MAX(ai_quality_score) AS max_quality,
+        MIN(ai_quality_score) AS min_quality
+      FROM videos
+    `).first<any>()
+
+    const { results: genres } = await env.DB.prepare(`
+      SELECT COALESCE(ai_genre, category, 'unknown') AS genre, COUNT(*) AS count
+      FROM videos
+      GROUP BY genre
+      ORDER BY count DESC
+    `).all<any>()
+
+    const { results: qualityBuckets } = await env.DB.prepare(`
+      SELECT
+        CASE
+          WHEN ai_quality_score >= 90 THEN '90-100'
+          WHEN ai_quality_score >= 80 THEN '80-89'
+          WHEN ai_quality_score >= 70 THEN '70-79'
+          WHEN ai_quality_score >= 60 THEN '60-69'
+          WHEN ai_quality_score >= 40 THEN '40-59'
+          WHEN ai_quality_score IS NOT NULL THEN '0-39'
+          ELSE 'unprocessed'
+        END AS bucket,
+        COUNT(*) AS count
+      FROM videos
+      GROUP BY bucket
+      ORDER BY bucket DESC
+    `).all<any>()
+
+    const { results: recentRuns } = await env.DB.prepare(`
+      SELECT platform, query, fetched, inserted, errors, ran_at, duration_ms
+      FROM video_crawler_log
+      ORDER BY ran_at DESC
+      LIMIT 5
+    `).all<any>()
+
+    const { results: topSources } = await env.DB.prepare(`
+      SELECT s.id, s.platform, s.query, s.priority, s.last_status,
+             COALESCE(SUM(l.inserted), 0) AS total_inserted,
+             COUNT(l.id) AS run_count
+      FROM video_crawler_sources s
+      LEFT JOIN video_crawler_log l ON l.source_id = s.id
+      WHERE s.enabled = 1
+      GROUP BY s.id
+      ORDER BY total_inserted DESC, s.priority DESC
+      LIMIT 10
+    `).all<any>()
+
+    return c.json({
+      summary,
+      genres: genres || [],
+      quality_buckets: qualityBuckets || [],
+      recent_runs: recentRuns || [],
+      top_sources: topSources || [],
+    })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Get crawler logs
+app.get('/api/admin/video-crawler/log', async (c) => {
+  const { env } = c
+  const limit = parseInt(c.req.query('limit') || '50', 10)
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT l.*, s.query AS source_query
+       FROM video_crawler_log l
+       LEFT JOIN video_crawler_sources s ON s.id = l.source_id
+       ORDER BY l.ran_at DESC
+       LIMIT ?`
+    ).bind(limit).all()
+    return c.json({ logs: results || [] })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Backfill AI analysis for un-processed videos
+app.post('/api/admin/video-crawler/backfill-ai', async (c) => {
+  const { env } = c
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    const limit = body.limit ?? 5
+    const { backfillAIAnalysis } = await import('./video-crawler-orchestrator')
+    // Pass full env so Workers AI fallback works without Gemini key
+    const result = await backfillAIAnalysis(env.DB, env, limit)
+    return c.json({ success: true, ...result })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// (Public /api/videos/curated moved earlier in this file to avoid /api/videos/:id collision)
+
+// ===========================================
+// R2 UPLOAD API (Phase 3)
+// ===========================================
+import {
+  uploadAvatar, uploadThumbnail, uploadUserMedia,
+  serveObject, deleteObject,
+} from './r2-upload'
+
+// Upload avatar — must be authenticated
+app.post('/api/upload/avatar', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  if (!env.UPLOADS) return c.json({ error: 'R2 not configured. Enable R2 in Cloudflare Dashboard.' }, 503)
+
+  try {
+    const body = await c.req.arrayBuffer()
+    const contentType = c.req.header('content-type') || 'application/octet-stream'
+    const result = await uploadAvatar(env.UPLOADS, user.id, body, contentType, env.R2_PUBLIC_BASE)
+
+    await env.DB.prepare(
+      `INSERT INTO r2_uploads (user_id, kind, r2_key, content_type, size, url) VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(r2_key) DO UPDATE SET size = excluded.size, content_type = excluded.content_type`
+    ).bind(user.id, 'avatar', result.key, result.content_type, result.size, result.url).run()
+
+    await env.DB.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').bind(result.url, user.id).run()
+
+    return c.json({ success: true, ...result })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 400)
+  }
+})
+
+// General user media upload
+app.post('/api/upload/media', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  if (!env.UPLOADS) return c.json({ error: 'R2 not configured' }, 503)
+
+  try {
+    const body = await c.req.arrayBuffer()
+    const contentType = c.req.header('content-type') || 'application/octet-stream'
+    const result = await uploadUserMedia(env.UPLOADS, user.id, body, contentType, env.R2_PUBLIC_BASE)
+
+    await env.DB.prepare(
+      `INSERT INTO r2_uploads (user_id, kind, r2_key, content_type, size, url) VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(user.id, 'user_media', result.key, result.content_type, result.size, result.url).run()
+
+    return c.json({ success: true, ...result })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 400)
+  }
+})
+
+// Public delivery for R2 objects (used when no custom domain is configured)
+app.get('/api/uploads/:key{.+}', async (c) => {
+  const { env } = c
+  if (!env.UPLOADS) return c.json({ error: 'R2 not configured' }, 503)
+  const key = c.req.param('key')
+  return await serveObject(env.UPLOADS, key)
+})
+
+// Admin: delete an object
+app.delete('/api/admin/uploads/:key{.+}', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  if (!user?.is_admin) return c.json({ error: 'Forbidden' }, 403)
+  if (!env.UPLOADS) return c.json({ error: 'R2 not configured' }, 503)
+
+  const key = c.req.param('key')
+  await deleteObject(env.UPLOADS, key)
+  await env.DB.prepare('DELETE FROM r2_uploads WHERE r2_key = ?').bind(key).run()
+  return c.json({ success: true })
+})
+
+// ===========================================
+// STRIPE SUBSCRIPTION (Phase 6)
+// ===========================================
+import {
+  createCheckoutSession as stripeCreateCheckout,
+  createBillingPortal as stripeCreatePortal,
+  retrieveSubscription as stripeRetrieveSub,
+  verifyWebhookSignature as stripeVerifyWebhook,
+  isActiveStatus as stripeIsActive,
+} from './stripe'
+
+// Probe — show current plan + Stripe configuration status
+app.get('/api/billing/status', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  return c.json({
+    configured: !!(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_ID),
+    user: user ? {
+      membership_type: user.membership_type,
+      subscription_status: user.subscription_status,
+      current_period_end: user.subscription_current_period_end,
+      trial_ends_at: user.trial_ends_at,
+      has_customer: !!user.stripe_customer_id,
+    } : null,
+  })
+})
+
+// Start a Checkout Session for the Premium plan
+app.post('/api/billing/checkout', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRICE_ID) {
+    return c.json({ error: 'Stripe is not configured' }, 503)
+  }
+
+  try {
+    const url = new URL(c.req.url)
+    const session = await stripeCreateCheckout({
+      secretKey: env.STRIPE_SECRET_KEY,
+      priceId: env.STRIPE_PRICE_ID,
+      successUrl: `${url.origin}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${url.origin}/billing/cancel`,
+      customerEmail: user.stripe_customer_id ? undefined : user.email,
+      customerId: user.stripe_customer_id || undefined,
+      metadata: { user_id: String(user.id) },
+      trialDays: env.STRIPE_TRIAL_DAYS ? parseInt(env.STRIPE_TRIAL_DAYS, 10) : 15,
+    })
+    return c.json({ success: true, url: session.url, id: session.id })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Open Customer Portal
+app.post('/api/billing/portal', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  if (!user) return c.json({ error: 'Unauthorized' }, 401)
+  if (!user.stripe_customer_id) return c.json({ error: 'No Stripe customer' }, 400)
+  if (!env.STRIPE_SECRET_KEY) return c.json({ error: 'Stripe not configured' }, 503)
+
+  try {
+    const url = new URL(c.req.url)
+    const portal = await stripeCreatePortal({
+      secretKey: env.STRIPE_SECRET_KEY,
+      customerId: user.stripe_customer_id,
+      returnUrl: `${url.origin}/account`,
+    })
+    return c.json({ success: true, url: portal.url })
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// Stripe webhook — must use raw body for signature verification
+app.post('/api/billing/webhook', async (c) => {
+  const { env } = c
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) {
+    return c.json({ error: 'Stripe not configured' }, 503)
+  }
+
+  const sig = c.req.header('stripe-signature')
+  if (!sig) return c.json({ error: 'Missing signature' }, 400)
+
+  const rawBody = await c.req.text()
+  let event: any
+  try {
+    event = await stripeVerifyWebhook(rawBody, sig, env.STRIPE_WEBHOOK_SECRET)
+  } catch (e: any) {
+    return c.json({ error: 'Invalid signature: ' + e.message }, 400)
+  }
+
+  // Idempotency
+  const existing = await env.DB
+    .prepare('SELECT id FROM stripe_webhook_events WHERE id = ?')
+    .bind(event.id).first()
+  if (existing) return c.json({ received: true, duplicate: true })
+
+  try {
+    await env.DB
+      .prepare('INSERT INTO stripe_webhook_events (id, event_type, payload) VALUES (?, ?, ?)')
+      .bind(event.id, event.type, JSON.stringify(event).slice(0, 50000)).run()
+
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object
+        const userId = parseInt(session.metadata?.user_id || '0', 10)
+        if (userId && session.subscription) {
+          const sub = await stripeRetrieveSub(env.STRIPE_SECRET_KEY, session.subscription)
+          await env.DB.prepare(
+            `UPDATE users SET
+              stripe_customer_id = ?,
+              stripe_subscription_id = ?,
+              subscription_status = ?,
+              subscription_current_period_end = ?,
+              membership_type = ?
+             WHERE id = ?`
+          ).bind(
+            session.customer,
+            sub.id,
+            sub.status,
+            new Date((sub.current_period_end || 0) * 1000).toISOString(),
+            stripeIsActive(sub.status) ? 'premium' : 'free',
+            userId
+          ).run()
+        }
+        break
+      }
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object
+        await env.DB.prepare(
+          `UPDATE users SET
+            subscription_status = ?,
+            subscription_current_period_end = ?,
+            membership_type = ?
+           WHERE stripe_subscription_id = ?`
+        ).bind(
+          sub.status,
+          new Date((sub.current_period_end || 0) * 1000).toISOString(),
+          stripeIsActive(sub.status) ? 'premium' : 'free',
+          sub.id
+        ).run()
+        break
+      }
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object
+        if (invoice.subscription) {
+          await env.DB.prepare(
+            `UPDATE users SET subscription_status = 'past_due' WHERE stripe_subscription_id = ?`
+          ).bind(invoice.subscription).run()
+        }
+        break
+      }
+    }
+
+    return c.json({ received: true })
+  } catch (e: any) {
+    console.error('Stripe webhook handler error:', e)
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ===========================================
+// CLOUDFLARE ACCESS protection (Phase 5)
+// ===========================================
+import { cfAccessMiddleware } from './cf-access'
+app.use('/admin/*', cfAccessMiddleware())
+
+// Billing success / cancel landing pages
+const billingPage = (title: string, body: string) => `<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title} | ClimbHero</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head><body class="bg-gradient-to-br from-purple-900 via-gray-900 to-pink-900 min-h-screen flex items-center justify-center text-white">
+<div class="max-w-md w-full mx-4 bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl text-center">
+${body}
+<a href="/" class="inline-block mt-6 px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold transition">トップへ戻る</a>
+</div></body></html>`
+
+app.get('/billing/success', (c) => {
+  return c.html(billingPage(
+    'お申込みありがとうございます',
+    `<i class="fas fa-circle-check text-6xl text-green-400 mb-4"></i>
+     <h1 class="text-3xl font-bold mb-3">プレミアムプランへようこそ！</h1>
+     <p class="text-gray-200">15日間の無料トライアルが開始されました。</p>
+     <p class="text-gray-300 text-sm mt-3">プラン管理は <a href="/account" class="underline text-pink-300">マイアカウント</a> から行えます。</p>`
+  ))
+})
+
+app.get('/billing/cancel', (c) => {
+  return c.html(billingPage(
+    'お申込みキャンセル',
+    `<i class="fas fa-times-circle text-6xl text-yellow-400 mb-4"></i>
+     <h1 class="text-3xl font-bold mb-3">決済はキャンセルされました</h1>
+     <p class="text-gray-200">いつでもプレミアムプランにご登録いただけます。</p>`
+  ))
+})
+
+app.get('/account', async (c) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  if (!user) return c.redirect('/?login=1')
+
+  const trialEnds = user.trial_ends_at ? new Date(user.trial_ends_at).toLocaleString('ja-JP') : '—'
+  const periodEnd = user.subscription_current_period_end
+    ? new Date(user.subscription_current_period_end).toLocaleString('ja-JP') : '—'
+  const status = user.subscription_status || '未契約'
+  const plan = user.membership_type === 'premium' ? 'Premium' : 'Free'
+
+  return c.html(billingPage(
+    'マイアカウント',
+    `<i class="fas fa-user-circle text-6xl text-purple-300 mb-4"></i>
+     <h1 class="text-2xl font-bold mb-1">${user.username || user.email}</h1>
+     <p class="text-gray-300 text-sm mb-6">${user.email}</p>
+     <div class="bg-black/30 rounded-lg p-5 text-left space-y-2 text-sm">
+       <div class="flex justify-between"><span class="text-gray-400">プラン</span><span class="font-bold">${plan}</span></div>
+       <div class="flex justify-between"><span class="text-gray-400">ステータス</span><span>${status}</span></div>
+       <div class="flex justify-between"><span class="text-gray-400">次回更新</span><span class="text-xs">${periodEnd}</span></div>
+       <div class="flex justify-between"><span class="text-gray-400">トライアル終了</span><span class="text-xs">${trialEnds}</span></div>
+     </div>
+     ${user.stripe_customer_id ? `
+       <button onclick="openPortal()" class="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 rounded-lg font-bold transition">
+         <i class="fas fa-credit-card mr-2"></i>サブスクリプションを管理
+       </button>
+       <script>
+         async function openPortal() {
+           const r = await fetch('/api/billing/portal', { method: 'POST' });
+           const d = await r.json();
+           if (d.url) location.href = d.url; else alert(d.error || 'エラー');
+         }
+       </script>
+     ` : `
+       <button onclick="openCheckout()" class="w-full mt-4 px-6 py-3 bg-gradient-to-r from-yellow-500 to-pink-500 hover:opacity-90 rounded-lg font-bold transition">
+         <i class="fas fa-star mr-2"></i>Premiumに登録 (15日間無料)
+       </button>
+       <script>
+         async function openCheckout() {
+           const r = await fetch('/api/billing/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+           const d = await r.json();
+           if (d.url) location.href = d.url; else alert(d.error || '決済システムは現在準備中です');
+         }
+       </script>
+     `}`
+  ))
 })
 
 // ============ Default Route (Frontend) ============
@@ -6594,6 +7471,21 @@ export const scheduled = async (event: ScheduledEvent, env: Bindings, ctx: Execu
     } catch (error) {
       console.error('❌ Scheduled crawl error:', error)
     }
+
+    // Video crawler — runs every cron tick, processes top-priority sources
+    try {
+      const settingsRow = await env.DB.prepare(
+        'SELECT enabled FROM video_crawler_settings WHERE id = 1'
+      ).first<any>()
+      if (settingsRow?.enabled === 1) {
+        console.log('🎬 Scheduled video crawl triggered')
+        const { runCrawl } = await import('./video-crawler-orchestrator')
+        const result = await runCrawl(env.DB, env, { limit: 3, runAI: true })
+        console.log(`✅ Video crawl complete: inserted=${result.total_inserted} skipped=${result.total_skipped} errors=${result.total_errors}`)
+      }
+    } catch (error) {
+      console.error('❌ Video crawl error:', error)
+    }
 }
 
 // ===========================================
@@ -6652,7 +7544,7 @@ app.post('/api/contact', async (c) => {
     const sessionToken = getCookie(c, 'session_token')
     let userId = null
     if (sessionToken) {
-      const user = await getUserFromSession(env.DB, sessionToken)
+      const user = await getUserFromSession(env.DB, sessionToken, env)
       if (user) {
         userId = (user as any).id
       }
@@ -6697,7 +7589,7 @@ app.get('/api/admin/inquiries', async (c) => {
   const sessionToken = getCookie(c, 'session_token')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || (currentUser as any).role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -6788,7 +7680,7 @@ app.get('/api/admin/inquiries/:id', async (c) => {
   const inquiryId = c.req.param('id')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || (currentUser as any).role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -6843,7 +7735,7 @@ app.put('/api/admin/inquiries/:id', async (c) => {
   const inquiryId = c.req.param('id')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || (currentUser as any).role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -6899,7 +7791,7 @@ app.post('/api/admin/inquiries/:id/reply', async (c) => {
   const inquiryId = c.req.param('id')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || (currentUser as any).role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -6937,7 +7829,7 @@ app.delete('/api/admin/inquiries/:id', async (c) => {
   const inquiryId = c.req.param('id')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || (currentUser as any).role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }
@@ -6956,7 +7848,7 @@ app.get('/api/admin/inquiries/stats/summary', async (c) => {
   const sessionToken = getCookie(c, 'session_token')
   
   try {
-    const currentUser = await getUserFromSession(env.DB, sessionToken || '')
+    const currentUser = await getUserFromSession(env.DB, sessionToken || '', env)
     if (!currentUser || (currentUser as any).role !== 'admin') {
       return c.json({ error: 'Admin access required' }, 403)
     }

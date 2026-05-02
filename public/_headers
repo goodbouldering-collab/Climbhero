@@ -1,0 +1,12 @@
+# Cloudflare Pages headers — fix Japanese mojibake by forcing UTF-8 on JS/CSS
+/static/*.js
+  Content-Type: application/javascript; charset=utf-8
+
+/static/*.css
+  Content-Type: text/css; charset=utf-8
+
+/static/*.html
+  Content-Type: text/html; charset=utf-8
+
+/*.html
+  Content-Type: text/html; charset=utf-8

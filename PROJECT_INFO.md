@@ -9,7 +9,8 @@
 
 ### 本番環境
 - **メインURL**: https://project-02ceb497.pages.dev
-- **最新デプロイ**: https://b4004244.project-02ceb497.pages.dev
+- **最新デプロイ**: https://65917ee9.project-02ceb497.pages.dev ⭐ **動画自動巡回 + AI解析 実装**
+- **管理画面（クローラー）**: https://project-02ceb497.pages.dev/admin/crawler
 - **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
 
 ### サンドボックス環境

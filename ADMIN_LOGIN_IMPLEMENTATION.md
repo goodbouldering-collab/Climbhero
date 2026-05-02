@@ -1,17 +1,24 @@
-# ✅ 管理者ログイン機能 - 実装完了レポート
+# ⚠️ DEPRECATED 2026-05-03 — 旧版（参考のみ）
 
-## 🎯 実装内容
+> **このドキュメントの内容は 2026-05-03 時点で無効**。`admin123` ハードコードは削除され、
+> `ADMIN_BOOTSTRAP_PASSWORD` 環境変数（16文字以上）による一時 bootstrap に置き換えられた。
+> 本番への適用は migration `0061_lockout_legacy_admin.sql` 参照。
+>
+> 新しい admin 作成手順:
+> 1. Cloudflare Pages の env に `ADMIN_BOOTSTRAP_PASSWORD=<強いパスフレーズ>` を設定
+> 2. `/api/auth/login` に `email=admin@climbhero.com` + `password=<上記の値>` で POST
+> 3. ログイン後すぐにパスワード変更
+> 4. `ADMIN_BOOTSTRAP_PASSWORD` env を削除して bootstrap 経路を完全封鎖
 
-**管理者アカウントで常にログインできる機能**を実装しました。
+---
 
-### 🔐 管理者認証情報
+# 🎯 旧実装内容（2026-05-03 まで）
 
-```
-メールアドレス: admin
-パスワード: admin123
-```
+**管理者アカウントで常にログインできる機能**を実装していた（**現在は廃止**）。
 
-この認証情報で**いつでもどこでも**管理者としてログインできます。
+### 🔐 管理者認証情報（無効化済）
+
+~~`メールアドレス: admin / パスワード: admin123`~~ — **migration 0061 で無効化**
 
 ---
 

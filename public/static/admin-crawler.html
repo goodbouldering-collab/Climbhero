@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClimbHero — 動画クローラー管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    body { background: #0f172a; color: #e2e8f0; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge-yt { background: #dc2626; color: white; }
+    .badge-vimeo { background: #1ab7ea; color: white; }
+    .badge-tiktok { background: #000; color: white; }
+    .badge-instagram { background: #d6249f; color: white; }
+    .badge-ok { background: #16a34a; color: white; }
+    .badge-error { background: #dc2626; color: white; }
+    input, select, textarea { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; border-radius: 6px; padding: 8px 12px; }
+    input:focus, select:focus { border-color: #6366f1; outline: none; }
+    button { transition: all 0.15s; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+    .btn-danger { background: #dc2626; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+    .btn-secondary { background: #475569; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #334155; font-size: 13px; }
+    th { background: #0f172a; color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+    .toggle { width: 40px; height: 22px; background: #475569; border-radius: 11px; position: relative; cursor: pointer; }
+    .toggle.on { background: #6366f1; }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: 0.2s; }
+    .toggle.on::after { left: 20px; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-7xl mx-auto p-6">
+    <header class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-white"><i class="fas fa-spider mr-2"></i>動画クローラー管理</h1>
+        <p class="text-slate-400 text-sm">YouTube / Vimeo / TikTok / Instagram の自動巡回・AI解析を管理します</p>
+      </div>
+      <a href="/" class="text-slate-400 hover:text-white text-sm"><i class="fas fa-arrow-left mr-1"></i>サイトに戻る</a>
+    </header>
+
+    <!-- Stats -->
+    <div id="stats" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"></div>
+
+    <!-- Analytics -->
+    <section class="card mb-6">
+      <h2 class="text-lg font-bold mb-4"><i class="fas fa-chart-pie mr-2"></i>解析サマリー</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 text-sm">
+        <div>
+          <h3 class="text-slate-400 text-xs uppercase font-bold mb-2">プラットフォーム別</h3>
+          <div id="platform-bars" class="space-y-2"></div>
+        </div>
+        <div>
+          <h3 class="text-slate-400 text-xs uppercase font-bold mb-2">ジャンル分布 (AI解析)</h3>
+          <div id="genre-bars" class="space-y-2"></div>
+        </div>
+        <div>
+          <h3 class="text-slate-400 text-xs uppercase font-bold mb-2">品質スコア分布</h3>
+          <div id="quality-bars" class="space-y-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="card mb-6">
+      <h2 class="text-lg font-bold mb-4"><i class="fas fa-cog mr-2"></i>クローラー設定</h2>
+      <div id="settings" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"></div>
+      <div class="mt-4 flex gap-2">
+        <button class="btn-primary" onclick="saveSettings()">設定を保存</button>
+      </div>
+    </section>
+
+    <!-- Manual run -->
+    <section class="card mb-6">
+      <h2 class="text-lg font-bold mb-4"><i class="fas fa-play mr-2"></i>手動実行</h2>
+      <div class="flex flex-wrap items-end gap-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">実行するソース数</label>
+          <input id="run-limit" type="number" value="3" min="1" max="20" class="w-24" />
+        </div>
+        <label class="flex items-center gap-2 mt-5">
+          <input type="checkbox" id="run-ai" checked />
+          <span class="text-sm">AI解析も実行</span>
+        </label>
+        <button class="btn-primary" onclick="runCrawl()"><i class="fas fa-play mr-1"></i>巡回実行</button>
+        <button class="btn-secondary" onclick="backfillAI()"><i class="fas fa-magic mr-1"></i>未解析動画にAI処理</button>
+      </div>
+      <div id="run-result" class="mt-4 text-sm"></div>
+    </section>
+
+    <!-- Sources -->
+    <section class="card mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold"><i class="fas fa-list mr-2"></i>巡回ソース</h2>
+        <button class="btn-primary text-sm" onclick="showAddForm()"><i class="fas fa-plus mr-1"></i>追加</button>
+      </div>
+      <div id="add-form" class="hidden mb-4 p-4 bg-slate-900 rounded-lg">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <select id="new-platform" class="text-sm">
+            <option value="youtube">YouTube</option>
+            <option value="vimeo">Vimeo</option>
+            <option value="tiktok">TikTok</option>
+            <option value="instagram">Instagram</option>
+          </select>
+          <input id="new-query" placeholder="検索クエリ (例: bouldering 2026)" class="text-sm md:col-span-2" />
+          <select id="new-lang" class="text-sm">
+            <option value="">言語指定なし</option>
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+            <option value="ko">한국어</option>
+          </select>
+          <input id="new-region" placeholder="地域 (JP/US...)" class="text-sm" />
+          <input id="new-min-views" type="number" placeholder="最低視聴回数" value="1000" class="text-sm" />
+          <input id="new-priority" type="number" placeholder="優先度" value="50" class="text-sm" />
+          <div class="flex gap-2">
+            <button class="btn-primary text-sm" onclick="addSource()">追加</button>
+            <button class="btn-secondary" onclick="hideAddForm()">キャンセル</button>
+          </div>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>有効</th>
+              <th>Plat</th>
+              <th>クエリ</th>
+              <th>言語/地域</th>
+              <th>最低再生</th>
+              <th>優先</th>
+              <th>最終巡回</th>
+              <th>状態</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="sources-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Logs -->
+    <section class="card">
+      <h2 class="text-lg font-bold mb-4"><i class="fas fa-history mr-2"></i>巡回ログ（直近50件）</h2>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>実行日時</th>
+              <th>Plat</th>
+              <th>クエリ</th>
+              <th>取得</th>
+              <th>新規</th>
+              <th>更新</th>
+              <th>スキップ</th>
+              <th>エラー</th>
+              <th>所要(ms)</th>
+              <th>詳細</th>
+            </tr>
+          </thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const platBadge = (p) => `<span class="badge badge-${p === 'youtube' ? 'yt' : p}">${p}</span>`;
+
+    async function loadAll() {
+      await Promise.all([loadStats(), loadSettings(), loadSources(), loadLogs()]);
+    }
+
+    async function loadStats() {
+      const [s, sources, logs, stats] = await Promise.all([
+        fetch('/api/admin/video-crawler/settings').then(r => r.json()),
+        fetch('/api/admin/video-crawler/sources').then(r => r.json()),
+        fetch('/api/admin/video-crawler/log?limit=200').then(r => r.json()),
+        fetch('/api/admin/video-crawler/stats').then(r => r.json()).catch(() => ({})),
+      ]);
+      const enabledCount = (sources.sources || []).filter(x => x.enabled).length;
+      const totalImported = s.settings?.total_videos_imported || 0;
+      const lastCrawl = s.settings?.last_crawl_at || '—';
+      const recentInserted = (logs.logs || []).reduce((a, l) => a + (l.inserted || 0), 0);
+      const summary = stats.summary || {};
+      const aiPct = summary.total ? Math.round((summary.ai_processed / summary.total) * 100) : 0;
+      const avgQ = summary.avg_quality ? Math.round(summary.avg_quality) : '—';
+      $('stats').innerHTML = `
+        <div class="card"><div class="text-slate-400 text-xs">動画総数 / AI解析率</div><div class="text-3xl font-bold mt-1">${summary.total || 0}<span class="text-base text-slate-400 ml-2">${aiPct}%</span></div></div>
+        <div class="card"><div class="text-slate-400 text-xs">アクティブソース</div><div class="text-3xl font-bold mt-1">${enabledCount}</div></div>
+        <div class="card"><div class="text-slate-400 text-xs">平均品質スコア</div><div class="text-3xl font-bold mt-1">${avgQ}<span class="text-base text-slate-400 ml-2">/100</span></div></div>
+        <div class="card"><div class="text-slate-400 text-xs">最終巡回</div><div class="text-sm font-mono mt-2">${lastCrawl}</div></div>
+      `;
+
+      // Render bars
+      const platforms = [
+        { key: 'youtube', label: 'YouTube', color: '#dc2626' },
+        { key: 'instagram', label: 'Instagram', color: '#d6249f' },
+        { key: 'tiktok', label: 'TikTok', color: '#000' },
+        { key: 'vimeo', label: 'Vimeo', color: '#1ab7ea' },
+      ];
+      const total = summary.total || 1;
+      $('platform-bars').innerHTML = platforms.map(p => {
+        const v = summary[p.key] || 0;
+        const pct = Math.round((v / total) * 100);
+        return `
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span>${p.label}</span><span class="text-slate-400">${v} (${pct}%)</span></div>
+            <div class="h-2 bg-slate-700 rounded overflow-hidden"><div style="width:${pct}%; background:${p.color}; height:100%"></div></div>
+          </div>`;
+      }).join('');
+
+      // Genre bars
+      const genres = stats.genres || [];
+      $('genre-bars').innerHTML = genres.length ? genres.map(g => {
+        const pct = Math.round((g.count / total) * 100);
+        return `
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span>${escapeHTML(g.genre)}</span><span class="text-slate-400">${g.count}</span></div>
+            <div class="h-2 bg-slate-700 rounded overflow-hidden"><div style="width:${pct}%; background:linear-gradient(90deg,#6366f1,#8b5cf6); height:100%"></div></div>
+          </div>`;
+      }).join('') : '<div class="text-xs text-slate-500">データなし</div>';
+
+      // Quality buckets
+      const qbs = stats.quality_buckets || [];
+      $('quality-bars').innerHTML = qbs.length ? qbs.map(q => {
+        const pct = Math.round((q.count / total) * 100);
+        const color = q.bucket === '90-100' ? '#16a34a' : q.bucket === '80-89' ? '#65a30d' : q.bucket === '70-79' ? '#ca8a04' : q.bucket === 'unprocessed' ? '#475569' : '#dc2626';
+        return `
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span>${q.bucket}</span><span class="text-slate-400">${q.count}</span></div>
+            <div class="h-2 bg-slate-700 rounded overflow-hidden"><div style="width:${pct}%; background:${color}; height:100%"></div></div>
+          </div>`;
+      }).join('') : '<div class="text-xs text-slate-500">データなし</div>';
+    }
+
+    async function loadSettings() {
+      const { settings } = await fetch('/api/admin/video-crawler/settings').then(r => r.json());
+      const s = settings || {};
+      $('settings').innerHTML = `
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">YouTube Data API Key</label>
+          <input id="set-yt" placeholder="${s.youtube_api_key || '未設定 (env YOUTUBE_API_KEY 推奨)'}" class="w-full" value="${(s.youtube_api_key || '').startsWith('***') ? s.youtube_api_key : ''}" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Vimeo Access Token</label>
+          <input id="set-vimeo" placeholder="${s.vimeo_access_token || '未設定 (env VIMEO_ACCESS_TOKEN 推奨)'}" class="w-full" value="${(s.vimeo_access_token || '').startsWith('***') ? s.vimeo_access_token : ''}" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">RapidAPI Key (TikTok/IG用)</label>
+          <input id="set-rapid" placeholder="${s.rapidapi_key || '未設定 (将来TikTok/IG巡回で使用)'}" class="w-full" value="${(s.rapidapi_key || '').startsWith('***') ? s.rapidapi_key : ''}" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Cron スケジュール</label>
+          <input id="set-cron" value="${s.cron_schedule || '0 */6 * * *'}" class="w-full font-mono" />
+        </div>
+        <div class="flex items-center gap-3 mt-2">
+          <span class="text-sm">巡回 有効</span>
+          <div class="toggle ${s.enabled ? 'on' : ''}" id="t-enabled" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="flex items-center gap-3 mt-2">
+          <span class="text-sm">AI解析 有効</span>
+          <div class="toggle ${s.ai_analysis_enabled ? 'on' : ''}" id="t-ai" onclick="this.classList.toggle('on')"></div>
+        </div>
+      `;
+    }
+
+    async function saveSettings() {
+      const body = {
+        cron_schedule: $('set-cron').value,
+        enabled: $('t-enabled').classList.contains('on'),
+        ai_analysis_enabled: $('t-ai').classList.contains('on'),
+      };
+      const yt = $('set-yt').value; if (yt && !yt.startsWith('***')) body.youtube_api_key = yt;
+      const vi = $('set-vimeo').value; if (vi && !vi.startsWith('***')) body.vimeo_access_token = vi;
+      const rp = $('set-rapid').value; if (rp && !rp.startsWith('***')) body.rapidapi_key = rp;
+      const r = await fetch('/api/admin/video-crawler/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      }).then(r => r.json());
+      alert(r.success ? '保存しました' : 'エラー: ' + (r.error || ''));
+      loadStats();
+    }
+
+    async function loadSources() {
+      const { sources } = await fetch('/api/admin/video-crawler/sources').then(r => r.json());
+      $('sources-body').innerHTML = (sources || []).map(s => `
+        <tr>
+          <td><div class="toggle ${s.enabled ? 'on' : ''}" onclick="toggleSource(${s.id}, ${!s.enabled})"></div></td>
+          <td>${platBadge(s.platform)}</td>
+          <td class="font-mono text-xs">${escapeHTML(s.query)}</td>
+          <td class="text-xs">${s.language || '-'} / ${s.region || '-'}</td>
+          <td>${s.min_views.toLocaleString()}</td>
+          <td>${s.priority}</td>
+          <td class="text-xs">${s.last_crawled_at || '—'}</td>
+          <td>${s.last_status === 'ok' ? '<span class="badge badge-ok">ok</span>' : s.last_status === 'error' ? `<span class="badge badge-error" title="${escapeHTML(s.last_error || '')}">error</span>` : '—'}</td>
+          <td class="flex gap-1">
+            <button class="btn-secondary" onclick="runOne(${s.id})"><i class="fas fa-play"></i></button>
+            <button class="btn-danger" onclick="deleteSource(${s.id})"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function toggleSource(id, enabled) {
+      await fetch(`/api/admin/video-crawler/sources/${id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+      loadSources();
+    }
+
+    async function deleteSource(id) {
+      if (!confirm('このソースを削除しますか？')) return;
+      await fetch(`/api/admin/video-crawler/sources/${id}`, { method: 'DELETE' });
+      loadSources(); loadStats();
+    }
+
+    function showAddForm() { $('add-form').classList.remove('hidden'); }
+    function hideAddForm() { $('add-form').classList.add('hidden'); }
+
+    async function addSource() {
+      const body = {
+        platform: $('new-platform').value,
+        query: $('new-query').value.trim(),
+        language: $('new-lang').value || null,
+        region: $('new-region').value.trim() || null,
+        min_views: parseInt($('new-min-views').value || '1000', 10),
+        priority: parseInt($('new-priority').value || '50', 10),
+      };
+      if (!body.query) { alert('クエリを入力してください'); return; }
+      const r = await fetch('/api/admin/video-crawler/sources', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }).then(r => r.json());
+      if (r.error) { alert(r.error); return; }
+      hideAddForm(); $('new-query').value = '';
+      loadSources(); loadStats();
+    }
+
+    async function runCrawl() {
+      $('run-result').innerHTML = '<i class="fas fa-spinner fa-spin"></i> 実行中...';
+      const r = await fetch('/api/admin/video-crawler/run', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: parseInt($('run-limit').value, 10), run_ai: $('run-ai').checked }),
+      }).then(r => r.json());
+      if (r.error) {
+        $('run-result').innerHTML = `<div class="text-red-400">エラー: ${escapeHTML(r.error)}</div>`;
+        return;
+      }
+      const res = r.result;
+      $('run-result').innerHTML = `
+        <div class="text-green-400">完了: 取得 ${res.total_fetched} / 新規 ${res.total_inserted} / 更新 ${res.total_skipped} / エラー ${res.total_errors}</div>
+        <div class="text-xs text-slate-400 mt-2">
+          ${res.per_source.map(p => `<div>${p.platform}: ${escapeHTML(p.query)} → 取得${p.fetched} 新規${p.inserted}${p.error_message ? ' <span class="text-red-400">' + escapeHTML(p.error_message) + '</span>' : ''}</div>`).join('')}
+        </div>
+      `;
+      loadAll();
+    }
+
+    async function runOne(id) {
+      const r = await fetch('/api/admin/video-crawler/run', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_id: id, run_ai: $('run-ai').checked }),
+      }).then(r => r.json());
+      alert(r.error ? 'エラー: ' + r.error : `取得${r.result.total_fetched} / 新規${r.result.total_inserted}`);
+      loadAll();
+    }
+
+    async function backfillAI() {
+      if (!confirm('未解析の動画10件にGemini解析を実行しますか？')) return;
+      $('run-result').innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI解析中...';
+      const r = await fetch('/api/admin/video-crawler/backfill-ai', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit: 10 }),
+      }).then(r => r.json());
+      $('run-result').innerHTML = `<div class="text-green-400">AI解析: 処理 ${r.processed || 0} / エラー ${r.errors || 0}</div>`;
+    }
+
+    async function loadLogs() {
+      const { logs } = await fetch('/api/admin/video-crawler/log?limit=50').then(r => r.json());
+      $('log-body').innerHTML = (logs || []).map(l => {
+        let detail = '';
+        try { if (l.details) detail = JSON.parse(l.details).error || ''; } catch {}
+        return `
+          <tr>
+            <td class="text-xs font-mono">${l.ran_at}</td>
+            <td>${platBadge(l.platform)}</td>
+            <td class="font-mono text-xs">${escapeHTML(l.source_query || l.query || '')}</td>
+            <td>${l.fetched}</td>
+            <td class="${l.inserted > 0 ? 'text-green-400 font-bold' : ''}">${l.inserted}</td>
+            <td>${l.updated || 0}</td>
+            <td>${l.skipped}</td>
+            <td class="${l.errors > 0 ? 'text-red-400' : ''}">${l.errors}</td>
+            <td>${l.duration_ms || 0}</td>
+            <td class="text-xs text-red-400">${escapeHTML(detail).slice(0, 80)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHTML(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[c]));
+    }
+
+    loadAll();
+    setInterval(loadStats, 30000);
+  </script>
+</body>
+</html>

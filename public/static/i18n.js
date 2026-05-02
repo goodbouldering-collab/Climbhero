@@ -14,10 +14,19 @@ const translations = {
     'nav.profile': 'プロフィール',
     
     // Hero Section
-    'hero.title': 'クライミング動画共有プラットフォーム',
-    'hero.subtitle': 'ClimbHero - 世界中のクライミング動画を発見し共有しよう',
-    'hero.upload': '動画を投稿',
+    'hero.title': 'その1本が、文化を動かす。',
+    'hero.title_kicker': '世界中のクライミング動画を、クライマーの目で。',
+    'hero.subtitle': '「これはすごい」をURLで共有。いいねと投票が集まるほど、クライミングの魅力は世界に広がる。あなたの1本が、次のスタークライマーを生む。',
+    'hero.cta_recommend': 'URLで動画をシェア',
+    'hero.cta_browse': '人気動画を見る',
+    'hero.upload': 'URLで動画をシェア',
     'hero.premium_badge': 'Premium',
+    'hero.tagline_1': '出会う',
+    'hero.tagline_1_desc': 'AI厳選の世界トップ動画を、4言語で。',
+    'hero.tagline_2': '届ける',
+    'hero.tagline_2_desc': 'URLを貼るだけ。お気に入りの1本を世界に。',
+    'hero.tagline_3': '広がる',
+    'hero.tagline_3_desc': '投票・いいねが、クライマーを応援する力に。',
     
     // Section Headers
     'section.latest': '最新動画',
@@ -703,10 +712,19 @@ const translations = {
     'nav.profile': 'Profile',
     
     // Hero Section
-    'hero.title': 'Climbing Video Sharing Platform',
-    'hero.subtitle': 'ClimbHero - Discover and share climbing videos from around the world',
-    'hero.upload': 'Upload Video',
+    'hero.title': 'One climb can move the culture.',
+    'hero.title_kicker': 'Climbing videos from around the world, curated by climbers.',
+    'hero.subtitle': 'Share what blew your mind by URL. Every vote helps a climber go global. ClimbHero turns your favorites into the next stars of climbing.',
+    'hero.cta_recommend': 'Share a URL',
+    'hero.cta_browse': 'See top videos',
+    'hero.upload': 'Share a URL',
     'hero.premium_badge': 'Premium',
+    'hero.tagline_1': 'Discover',
+    'hero.tagline_1_desc': 'AI-picked top climbs in 4 languages.',
+    'hero.tagline_2': 'Share',
+    'hero.tagline_2_desc': 'Just paste a URL. Send your favorite to the world.',
+    'hero.tagline_3': 'Amplify',
+    'hero.tagline_3_desc': 'Votes turn climbers into stars.',
     
     // Section Headers
     'section.latest': 'Latest Videos',
@@ -1394,10 +1412,19 @@ const translations = {
     'nav.profile': '个人资料',
     
     // Hero Section
-    'hero.title': '攀岩视频分享平台',
-    'hero.subtitle': 'ClimbHero - 发现并分享来自世界各地的攀岩视频',
-    'hero.upload': '上传视频',
+    'hero.title': '一段攀登，改变文化。',
+    'hero.title_kicker': '世界各地的攀岩视频，由攀岩者亲手挑选。',
+    'hero.subtitle': '把震撼你的瞬间用 URL 分享。每一票都让一位攀岩者走向世界。ClimbHero —— 你的分享，造就下一位攀岩之星。',
+    'hero.cta_recommend': '分享 URL',
+    'hero.cta_browse': '查看热门视频',
+    'hero.upload': '分享 URL',
     'hero.premium_badge': '高级',
+    'hero.tagline_1': '发现',
+    'hero.tagline_1_desc': 'AI 精选全球攀岩视频，4 种语言展示。',
+    'hero.tagline_2': '分享',
+    'hero.tagline_2_desc': '粘贴 URL，把你的最爱送给世界。',
+    'hero.tagline_3': '扩散',
+    'hero.tagline_3_desc': '投票让攀岩者闪耀全球。',
     
     // Section Headers
     'section.latest': '最新视频',
@@ -1754,10 +1781,19 @@ const translations = {
     'nav.profile': '프로필',
     
     // Hero Section
-    'hero.title': '클라이밍 비디오 공유 플랫폼',
-    'hero.subtitle': 'ClimbHero - 전 세계의 클라이밍 비디오를 발견하고 공유하세요',
-    'hero.upload': '비디오 업로드',
+    'hero.title': '한 편이, 문화를 움직인다.',
+    'hero.title_kicker': '전 세계 클라이밍 영상을, 클라이머의 눈으로.',
+    'hero.subtitle': '"이건 대단해"를 URL로 공유하세요. 투표가 모일수록 클라이밍의 매력은 세계로 퍼집니다. ClimbHero가 당신의 한 편을 다음 스타로 만듭니다.',
+    'hero.cta_recommend': 'URL로 공유하기',
+    'hero.cta_browse': '인기 영상 보기',
+    'hero.upload': 'URL로 공유하기',
     'hero.premium_badge': '프리미엄',
+    'hero.tagline_1': '발견',
+    'hero.tagline_1_desc': 'AI가 엄선한 세계 최고의 영상을 4개 언어로.',
+    'hero.tagline_2': '공유',
+    'hero.tagline_2_desc': 'URL 붙여넣기만으로 즐겨찾는 1편을 세계로.',
+    'hero.tagline_3': '확산',
+    'hero.tagline_3_desc': '투표·좋아요가 클라이머를 응원하는 힘이 됩니다.',
     
     // Section Headers
     'section.latest': '최신 비디오',

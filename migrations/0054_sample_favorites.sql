@@ -3,11 +3,12 @@
 -- Purpose: Restore favorites list with sample data
 
 -- Create a demo user if not exists (for testing)
-INSERT OR IGNORE INTO users (id, email, username, membership_type, created_at)
+INSERT OR IGNORE INTO users (id, email, username, password_hash, membership_type, created_at)
 VALUES (
   999,
   'demo@climbhero.jp',
   'デモユーザー',
+  '!disabled',
   'free',
   CURRENT_TIMESTAMP
 );

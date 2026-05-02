@@ -164,15 +164,16 @@ window.addEventListener('languageChanged', async (e) => {
       return;
     } else {
       // No cache, load all data
-      const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes, newsRes] = await Promise.all([
+      const [blogRes, announcementsRes, videosRes, trendingRes, topLikedRes, newsRes, curatedRes] = await Promise.all([
         axios.get(`/api/blog?lang=${lang}`),
         axios.get(`/api/announcements?lang=${lang}`),
         axios.get(`/api/videos?limit=20&lang=${lang}`),
         axios.get(`/api/videos/trending?limit=10&lang=${lang}`),
         axios.get(`/api/videos/top-liked?limit=20&period=${state.currentRankingPeriod || 'all'}&lang=${lang}`),
-        axios.get(`/api/news?lang=${lang}&limit=10`)
+        axios.get(`/api/news?lang=${lang}&limit=10`),
+        axios.get(`/api/videos/curated?limit=10&lang=${lang}`).catch(() => ({ data: { videos: [] } }))
       ]);
-      
+
       state.blogPosts = blogRes.data || [];
       state.announcements = announcementsRes.data || [];
       state.videos = videosRes.data.videos || [];
@@ -180,6 +181,7 @@ window.addEventListener('languageChanged', async (e) => {
       state.trendingVideos = trendingRes.data.videos || [];
       state.topLikedVideos = topLikedRes.data.videos || [];
       state.newsArticles = newsRes.data.articles || [];
+      state.curatedVideos = curatedRes.data?.videos || [];
       
       // Cache the loaded data
       state.translationCache[lang] = {
@@ -620,12 +622,18 @@ function renderHomePage() {
                 <i class="fas fa-star text-yellow-500"></i>
                 <span class="hidden sm:inline">${i18n.t('mypage.favorites')}</span>
               </button>
-              
+
               <!-- My Page Button -->
               <button onclick="navigateToMyPage()" class="btn btn-sm btn-secondary px-3 text-base">
                 ${i18n.t('mypage.title')}
               </button>
-              
+
+              <!-- Account / Billing Button -->
+              <a href="/account" class="btn btn-sm btn-secondary px-3 text-base flex items-center gap-1" title="アカウント・課金管理">
+                <i class="fas fa-credit-card"></i>
+                <span class="hidden md:inline">アカウント</span>
+              </a>
+
               <!-- Logout Button -->
               <button onclick="logout()" class="btn btn-sm btn-primary px-3 text-base">
                 ${i18n.t('nav.logout')}
@@ -651,63 +659,100 @@ function renderHomePage() {
           `).join('')}
         </div>
         <div class="hero-content">
+
+          <!-- Eyebrow / kicker -->
+          <div class="hero-eyebrow">
+            <span class="hero-eyebrow-dot"></span>
+            ${i18n.t('hero.title_kicker')}
+          </div>
+
+          <!-- Main copy -->
           <h1 class="hero-title">
-            ${i18n.t('hero.title')}
+            <span class="hero-title-gradient">${i18n.t('hero.title')}</span>
           </h1>
+
           <p class="hero-subtitle">
             ${i18n.t('hero.subtitle')}
           </p>
-          
-          <!-- Auto-Play Video Carousel (Ranking Digest) - Above Upload Button -->
-          <div class="mt-8 mb-6 max-w-4xl mx-auto">
-            <div class="bg-black/40 backdrop-blur-md rounded-xl p-4 shadow-2xl">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-play text-white text-sm"></i>
+
+          <!-- CTA buttons (above the fold) -->
+          <div class="hero-cta-buttons">
+            <button onclick="handleUploadClick()" class="hero-cta-btn hero-cta-primary">
+              <i class="fas fa-link"></i>
+              ${i18n.t('hero.cta_recommend')}
+            </button>
+            <a href="#curated" onclick="event.preventDefault(); document.getElementById('curated-anchor')?.scrollIntoView({behavior:'smooth'});" class="hero-cta-btn hero-cta-secondary">
+              <i class="fas fa-fire"></i>
+              ${i18n.t('hero.cta_browse')}
+            </a>
+          </div>
+
+          <!-- Three-step explainer (1: 出会う / 2: 届ける / 3: 広がる) -->
+          <div class="hero-steps">
+            <div class="hero-step">
+              <div class="hero-step-num">01</div>
+              <div class="hero-step-body">
+                <div class="hero-step-title">${i18n.t('hero.tagline_1')}</div>
+                <div class="hero-step-desc">${i18n.t('hero.tagline_1_desc')}</div>
+              </div>
+            </div>
+            <div class="hero-step-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="hero-step">
+              <div class="hero-step-num hero-step-num-accent">02</div>
+              <div class="hero-step-body">
+                <div class="hero-step-title">${i18n.t('hero.tagline_2')}</div>
+                <div class="hero-step-desc">${i18n.t('hero.tagline_2_desc')}</div>
+              </div>
+            </div>
+            <div class="hero-step-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="hero-step">
+              <div class="hero-step-num hero-step-num-accent2">03</div>
+              <div class="hero-step-body">
+                <div class="hero-step-title">${i18n.t('hero.tagline_3')}</div>
+                <div class="hero-step-desc">${i18n.t('hero.tagline_3_desc')}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compact ranking digest player (smaller, fits in viewport) -->
+          <div class="hero-player">
+            <div class="hero-player-frame">
+              <div class="hero-player-header">
+                <div class="hero-player-header-left">
+                  <div class="hero-player-icon">
+                    <i class="fas fa-play"></i>
                   </div>
                   <div>
-                    <h3 class="text-base md:text-lg font-bold text-white">${i18n.t('section.autoplay')}</h3>
-                    <p class="text-xs text-gray-300">${i18n.t('section.autoplay_subtitle')}</p>
+                    <h3 class="hero-player-title">${i18n.t('section.autoplay')}</h3>
+                    <p class="hero-player-sub">${i18n.t('section.autoplay_subtitle')}</p>
                   </div>
                 </div>
-                <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="px-2 py-1 md:px-3 md:py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all text-xs md:text-sm">
-                  <i id="autoplay-icon" class="fas fa-pause mr-1"></i>
+                <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="hero-player-pause">
+                  <i id="autoplay-icon" class="fas fa-pause"></i>
                   <span id="autoplay-text" class="hidden md:inline">${i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지'}</span>
                 </button>
               </div>
-              
-              <!-- Video Carousel Container with Flip Animation -->
+
               <div class="relative">
-                <!-- Previous Button (Left) -->
-                <button 
-                  onclick="skipToPreviousVideo()" 
-                  class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
-                  id="prev-video-btn">
+                <button onclick="skipToPreviousVideo()" id="prev-video-btn"
+                  class="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm">
                   <i class="fas fa-chevron-left text-sm"></i>
                 </button>
-                
-                <!-- Next Button (Right) -->
-                <button 
-                  onclick="skipToNextVideo()" 
-                  class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm"
-                  id="next-video-btn">
+                <button onclick="skipToNextVideo()" id="next-video-btn"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-all shadow-lg backdrop-blur-sm">
                   <i class="fas fa-chevron-right text-sm"></i>
                 </button>
-                
-                <!-- Video Player with Flip Effect -->
+
                 <div class="relative bg-black rounded-lg overflow-hidden shadow-xl" id="video-carousel-wrapper">
                   <div id="autoplay-video-container" class="w-full aspect-video transition-all duration-500 ease-out" style="perspective: 1000px;">
-                    <!-- Video will be loaded here -->
                     <div class="w-full h-full flex items-center justify-center text-white">
                       <div class="text-center">
-                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
                         <p class="text-xs">${i18n.getCurrentLanguage() === 'ja' ? '動画を読み込み中...' : i18n.getCurrentLanguage() === 'en' ? 'Loading video...' : i18n.getCurrentLanguage() === 'zh' ? '正在加载视频...' : '동영상 로딩 중...'}</p>
                       </div>
                     </div>
                   </div>
-                  
-                  <!-- Video Info Overlay (Compact) -->
+
                   <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 md:p-3">
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex-1 min-w-0">
@@ -718,57 +763,38 @@ function renderHomePage() {
                           <span id="current-video-platform" class="px-1 py-0.5 bg-white/20 rounded text-xs">YouTube</span>
                         </div>
                       </div>
-                      <!-- Progress Counter -->
                       <div class="text-white text-xs bg-black/50 px-1.5 py-0.5 rounded">
                         <span id="autoplay-queue-count">1/20</span>
                       </div>
                     </div>
                   </div>
-                  
-                  <!-- Progress Indicator (Top) -->
+
                   <div class="absolute top-0 left-0 right-0 h-1 bg-white/20">
                     <div id="autoplay-progress" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300" style="width: 0%"></div>
                   </div>
                 </div>
-                
-                <!-- Dots Indicator -->
-                <div class="flex items-center justify-center gap-1 mt-2" id="carousel-dots">
-                  <!-- Dots will be inserted here -->
-                </div>
+
+                <div class="flex items-center justify-center gap-1 mt-2" id="carousel-dots"></div>
               </div>
             </div>
           </div>
-          
-          <div class="hero-cta-buttons">
-            <button onclick="handleUploadClick()" class="hero-cta-btn hero-cta-primary">
-              <i class="fas fa-upload"></i>
-              ${i18n.t('hero.upload')}
-              ${!state.currentUser || state.currentUser.membership_type !== 'premium' ? `<span class="ml-2 text-xs bg-black/30 px-3 py-1 rounded-full">${i18n.t('hero.premium_badge')}</span>` : ''}
-            </button>
-            ${!state.currentUser ? `
-              <button onclick="showPricingModal()" class="hero-cta-btn hero-cta-secondary">
-                <i class="fas fa-star"></i>
-                ${i18n.t('pricing.trial')}
-              </button>
-            ` : ''}
-          </div>
-          
-          <!-- Announcements inside Hero (2 lines max, clickable) -->
+
+          <!-- Announcements -->
           ${state.announcements && state.announcements.length > 0 ? `
-            <div class="mt-6 space-y-2">
-              ${state.announcements.slice(0, 2).map(a => `
-                <div 
-                  onclick="showAnnouncementsModal()" 
-                  class="text-white text-sm bg-black/20 backdrop-blur-sm px-4 py-2 rounded cursor-pointer hover:bg-black/30 transition-all">
-                  <div class="line-clamp-2">
-                    <span class="font-bold">● ${a.title}:</span> ${a.content}
-                  </div>
+            <div class="hero-announcements">
+              ${state.announcements.slice(0, 1).map(a => `
+                <div onclick="showAnnouncementsModal()" class="hero-announcement-item">
+                  <span class="hero-announcement-pill">NEWS</span>
+                  <span class="hero-announcement-text"><strong>${a.title}</strong> — ${a.content}</span>
                 </div>
               `).join('')}
             </div>
           ` : ''}
         </div>
       </section>
+
+      <!-- Anchor target for "see top videos" CTA -->
+      <div id="curated-anchor" style="position: relative; top: -60px;"></div>
       
       
       <!-- ★ MY FAVORITES SECTION - TOP PRIORITY FOR LOGGED IN USERS ★ -->
@@ -1186,7 +1212,7 @@ function renderHomePage() {
               <span>いいね急増中</span>
             </div>
           </div>
-          
+
           <div class="carousel-container" id="trending-carousel">
             <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('trending-carousel', -1)">
               <i class="fas fa-chevron-left"></i>
@@ -1195,6 +1221,33 @@ function renderHomePage() {
               ${state.trendingVideos.map(video => renderVideoCard(video)).join('')}
             </div>
             <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('trending-carousel', 1)">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+      ` : ''}
+
+      <!-- AI Curated Section (AI厳選・品質スコア順) -->
+      ${state.curatedVideos && state.curatedVideos.length > 0 ? `
+      <section class="py-6 bg-gradient-to-br from-purple-50 to-pink-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="section-header mb-4 flex items-center justify-between">
+            <div class="section-title">
+              <i class="fas fa-wand-magic-sparkles text-purple-600"></i>
+              <span>AI厳選</span>
+              <span class="text-xs text-gray-500 ml-2 font-normal">品質スコアTop 10</span>
+            </div>
+          </div>
+
+          <div class="carousel-container" id="curated-carousel">
+            <button class="carousel-btn carousel-btn-left" onclick="scrollCarousel('curated-carousel', -1)">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="horizontal-scroll" id="curated-scroll">
+              ${state.curatedVideos.map(video => renderVideoCard(video)).join('')}
+            </div>
+            <button class="carousel-btn carousel-btn-right" onclick="scrollCarousel('curated-carousel', 1)">
               <i class="fas fa-chevron-right"></i>
             </button>
           </div>
@@ -2778,26 +2831,60 @@ async function startCheckout(planType) {
     showToast('プランを選択するにはログインが必要です', 'info');
     return;
   }
-  
+
   try {
     showToast('決済画面を準備中...', 'info');
-    
-    const response = await axios.post('/api/subscription/checkout', {
-      plan_type: planType
-    });
-    
-    if (response.data.checkout_url) {
-      // Redirect to Stripe Checkout
-      window.location.href = response.data.checkout_url;
+
+    // First try the new Cloudflare-native billing endpoint
+    let url = null;
+    try {
+      const r1 = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_type: planType }),
+      });
+      const data = await r1.json();
+      if (r1.ok && data.url) { url = data.url; }
+      else if (r1.status === 503) {
+        showToast('決済システムは現在準備中です', 'info');
+        return;
+      }
+    } catch {}
+
+    // Fallback to legacy endpoint
+    if (!url) {
+      const response = await axios.post('/api/subscription/checkout', { plan_type: planType });
+      url = response.data.checkout_url;
+    }
+
+    if (url) {
+      window.location.href = url;
     } else {
       showToast('決済画面の準備に失敗しました', 'error');
     }
   } catch (error) {
     console.error('Checkout error:', error);
-    const message = error.response?.data?.error || '決済処理に失敗しました';
+    const message = error.response?.data?.error || error.message || '決済処理に失敗しました';
     showToast(message, 'error');
   }
 }
+
+// Open Stripe Customer Portal (manage / cancel subscription)
+async function openBillingPortal() {
+  if (!state.currentUser) {
+    showAuthModal('login');
+    return;
+  }
+  try {
+    const r = await fetch('/api/billing/portal', { method: 'POST' });
+    const data = await r.json();
+    if (data.url) window.location.href = data.url;
+    else showToast(data.error || 'ポータルを開けませんでした', 'error');
+  } catch (e) {
+    showToast('ポータル接続エラー', 'error');
+  }
+}
+window.openBillingPortal = openBillingPortal;
 
 async function handlePremiumSubscribe(event) {
   event.preventDefault();
@@ -2831,17 +2918,25 @@ function showAuthModal(type) {
         </div>
       </div>
       
-      <!-- Google Login Button -->
-      <button onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-3 rounded-lg transition shadow-sm hover:shadow-md">
-        <svg class="w-5 h-5" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        <span>Googleでログイン</span>
-      </button>
-      
+      <!-- OAuth buttons -->
+      <div class="space-y-2">
+        <button onclick="handleGoogleLogin()" class="w-full flex items-center justify-center gap-3 border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-3 rounded-lg transition shadow-sm hover:shadow-md">
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          <span>Googleでログイン</span>
+        </button>
+        <button onclick="handleXLogin()" class="w-full flex items-center justify-center gap-3 border-2 border-gray-900 bg-black hover:bg-gray-800 text-white font-medium px-4 py-3 rounded-lg transition shadow-sm hover:shadow-md">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="white">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          <span>Xでログイン</span>
+        </button>
+      </div>
+
       <div class="relative my-6">
         <div class="absolute inset-0 flex items-center">
           <div class="w-full border-t border-gray-300"></div>
@@ -2930,33 +3025,6 @@ function showAuthModal(type) {
         </button>
       </form>
       
-      ${type === 'login' ? `
-        <div class="mt-4">
-          <div class="relative my-4">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-300"></div>
-            </div>
-            <div class="relative flex justify-center text-xs">
-              <span class="px-3 bg-white text-gray-500 font-medium">管理者用</span>
-            </div>
-          </div>
-          
-          <button 
-            type="button"
-            onclick="quickAdminLogin()" 
-            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            <i class="fas fa-crown text-yellow-300 mr-2"></i>
-            👑 管理者としてログイン
-          </button>
-          
-          <p class="text-xs text-center text-gray-500 mt-2">
-            <i class="fas fa-info-circle mr-1"></i>
-            開発・テスト用の管理者アカウントで即座にログインします
-          </p>
-        </div>
-      ` : ''}
-      
       ${type === 'register' ? `
         <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p class="text-xs text-blue-800">
@@ -3012,52 +3080,6 @@ async function handleAuth(event, type) {
   }
 }
 
-// Quick Admin Login (Development/Testing Only)
-async function quickAdminLogin() {
-  console.log('👑 quickAdminLogin called');
-  try {
-    // Admin credentials
-    const adminData = {
-      email: 'admin@climbhero.com',
-      password: 'admin123'
-    };
-    
-    console.log('📤 Posting login request...');
-    const response = await axios.post('/api/auth/login', adminData);
-    console.log('✅ Login response:', response.data);
-    
-    console.log('🔍 Checking auth status...');
-    await checkAuth();
-    
-    // ログイン後にお気に入りをロード
-    if (state.currentUser) {
-      await loadUserLikeStatus();
-      await loadUserFavorites();
-    }
-    
-    console.log('👤 Current user after auth:', state.currentUser);
-    
-    // Close auth modal
-    console.log('🚪 Closing modal...');
-    closeModal('auth-modal');
-    
-    // Redirect to app
-    console.log('🔄 Re-rendering app...');
-    renderApp();
-    showToast('👑 管理者としてログインしました - マイページから管理画面へアクセスできます', 'success');
-    
-    // Navigate to mypage after short delay
-    console.log('⏱️ Scheduling navigation to mypage...');
-    setTimeout(() => {
-      console.log('📍 Navigating to mypage now');
-      navigateTo('mypage');
-    }, 1000);
-  } catch (error) {
-    console.error('❌ Quick admin login error:', error);
-    showToast('管理者ログインに失敗しました: ' + (error.response?.data?.error || error.message), 'error');
-  }
-}
-
 function togglePasswordVisibility(inputId, iconId) {
   const input = document.getElementById(inputId);
   const icon = document.getElementById(iconId);
@@ -3074,36 +3096,34 @@ function togglePasswordVisibility(inputId, iconId) {
 }
 
 async function handleGoogleLogin() {
+  const redirectTo = encodeURIComponent(window.location.pathname + window.location.search);
   try {
-    // Google OAuth2の認証URL生成
-    const clientId = ''; // Google Cloud ConsoleでクライアントIDを取得して設定
-    const redirectUri = window.location.origin + '/auth/google/callback';
-    const scope = 'email profile';
-    const state = Math.random().toString(36).substring(7);
-    
-    // セッションストレージにstateを保存（CSRF対策）
-    sessionStorage.setItem('google_oauth_state', state);
-    
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=code&` +
-      `scope=${encodeURIComponent(scope)}&` +
-      `state=${state}&` +
-      `access_type=offline&` +
-      `prompt=consent`;
-    
-    // 実装ノート: 本番環境ではGoogle Cloud Consoleでクライアント IDを取得し設定が必要
-    // 現在はデモ用にアラートを表示
-    showToast('Googleログインは開発中です。通常のログインをご利用ください。', 'info');
-    
-    // 本番では以下のコードを使用:
-    // window.location.href = authUrl;
-  } catch (error) {
-    console.error('Google login error:', error);
+    const probe = await fetch('/api/auth/oauth/providers').then(r => r.json());
+    if (!probe.google) {
+      showToast('Googleログインは現在設定されていません。メールでログインしてください。', 'info');
+      return;
+    }
+    window.location.href = `/api/auth/oauth/google?redirect_to=${redirectTo}`;
+  } catch (e) {
     showToast('Googleログインに失敗しました', 'error');
   }
 }
+window.handleGoogleLogin = handleGoogleLogin;
+
+async function handleXLogin() {
+  const redirectTo = encodeURIComponent(window.location.pathname + window.location.search);
+  try {
+    const probe = await fetch('/api/auth/oauth/providers').then(r => r.json());
+    if (!probe.x) {
+      showToast('Xログインは現在設定されていません。', 'info');
+      return;
+    }
+    window.location.href = `/api/auth/oauth/x?redirect_to=${redirectTo}`;
+  } catch (e) {
+    showToast('Xログインに失敗しました', 'error');
+  }
+}
+window.handleXLogin = handleXLogin;
 
 async function logout() {
   // Show confirmation dialog
@@ -3574,7 +3594,7 @@ function showPremiumUploadModal() {
           <i class="fas fa-upload text-white text-xl"></i>
         </div>
         <h3 class="text-base font-bold text-gray-900 mb-1">動画投稿はプレミアム限定</h3>
-        <p class="text-xs text-gray-600">プレミアムプランで無制限に動画を投稿できます</p>
+        <p class="text-xs text-gray-600">プレミアムプランで無制限に動画をシェアできます</p>
       </div>
       
       <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 mb-4">
@@ -3627,7 +3647,7 @@ function showUploadModal() {
   modal.innerHTML = `
     <div class="modal-content">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-bold">動画を投稿</h3>
+        <h3 class="text-xl font-bold">動画をシェア</h3>
         <button onclick="closeModal('upload-modal')" class="text-gray-400 hover:text-gray-600">
           <i class="fas fa-times text-xl"></i>
         </button>
@@ -3798,7 +3818,7 @@ async function handleUpload(event) {
     closeModal('upload-modal');
     await loadInitialData();
     renderApp();
-    showToast('動画を投稿しました', 'success');
+    showToast('動画をシェアしました', 'success');
   } catch (error) {
     showToast('投稿に失敗しました', 'error');
   }
@@ -7960,7 +7980,7 @@ async function submitVideo(event) {
   
   try {
     await axios.post('/api/videos', videoData);
-    showToast('動画を投稿しました！', 'success');
+    showToast('動画をシェアしました！', 'success');
     state.uploadProgress = null;
     form.reset();
     window.location.hash = 'videos';
@@ -8542,7 +8562,7 @@ function renderVideosPage() {
             ${state.currentUser ? `
               <button onclick="navigateTo('upload')" class="btn btn-primary mt-4">
                 <i class="fas fa-upload"></i>
-                最初の動画を投稿する
+                最初の動画をシェアする
               </button>
             ` : ''}
           </div>
