@@ -33,3 +33,5 @@ logs/
 # But keep backups/ directory tracked
 !backups/
 !backups/**/*
+.claude/
+_hero_full.png
