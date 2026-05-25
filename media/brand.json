@@ -1,0 +1,11 @@
+{
+  "name": "ClimbHero",
+  "accent": "#667eea",
+  "brandLabel": "CLIMBHERO",
+  "colors": {
+    "bg": "#0b0c14",
+    "fg": "#ffffff",
+    "sub": "#b6bcd6",
+    "card": "#151728"
+  }
+}
