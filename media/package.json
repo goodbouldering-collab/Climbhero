@@ -9,6 +9,7 @@
     "topo": "node ../../_shared/media-kit/topo/topo.mjs --brand brand.json --in routes/sample.json --out output",
     "video": "bash ../../_shared/media-kit/video/export.sh clips/demo.mp4 output",
     "caption": "node ../../_shared/media-kit/video/caption.mjs --brand brand.json --video clips/demo-vertical.mp4 --captions clips/captions.json --out output",
-    "image": "node ../../_shared/media-kit/image-gen/gen.mjs --brand brand.json --out output"
+    "image": "node ../../_shared/media-kit/image-gen/gen.mjs --brand brand.json --out output",
+    "image-imagen": "node ../../_shared/media-kit/image-gen/gen-imagen.mjs --out output"
   }
 }
