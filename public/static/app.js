@@ -4525,6 +4525,12 @@ function renderAdminPage() {
                 <i class="fas fa-chevron-down ml-2 text-xs text-gray-400 group-open:rotate-180 transition-transform"></i>
               </h2>
               <div class="flex gap-2">
+                <a href="/static/admin/content-studio/blog.html" onclick="event.stopPropagation()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-xs">
+                  <i class="fas fa-pen-nib mr-1"></i>ブログ Studio
+                </a>
+                <a href="/static/admin/content-studio/reel.html" onclick="event.stopPropagation()" class="px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors text-xs">
+                  <i class="fas fa-film mr-1"></i>リール Studio
+                </a>
                 <button onclick="event.stopPropagation(); loadAdminBlogs()" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors text-xs">
                   <i class="fas fa-sync-alt mr-1"></i>再読み込み
                 </button>
@@ -4534,6 +4540,7 @@ function renderAdminPage() {
               </div>
             </summary>
             <div class="p-3 max-h-96 overflow-y-auto">
+              <p class="mb-3 text-xs text-gray-600">このサイト内でClimbHeroの事業情報に固定してブログとリールを作成します。既存記事の保存・公開は下のブログ管理を使用します。</p>
               <div id="admin-blog-list" class="overflow-x-auto">
                 <div class="text-center py-8 text-gray-500 text-sm">
                   ${i18n.t('common.loading')}

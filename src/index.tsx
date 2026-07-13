@@ -6667,18 +6667,15 @@ app.get('/api/subscription/history', async (c) => {
 // Admin video crawler page (redirect to static HTML)
 app.get('/admin/crawler', (c) => c.redirect('/static/admin-crawler.html'))
 
-// Shared business content studio launchers. Keep these explicit before the
-// frontend catch-all route so the admin URLs never fall back to the SPA shell.
-const contentStudioUrl = (c: any, mode: 'blog' | 'reel' | 'studio') => {
-  const base = (c.env as any).CONTENT_APP_SERVER_URL || 'https://business-content-app-server.vercel.app'
-  return `${base}/${mode}?business=climbhero`
-}
-app.get('/admin-content-studio', (c) => c.redirect(contentStudioUrl(c, 'studio')))
-app.get('/admin-content-studio.html', (c) => c.redirect(contentStudioUrl(c, 'studio')))
-app.get('/admin-blog-app', (c) => c.redirect(contentStudioUrl(c, 'blog')))
-app.get('/admin-blog-app.html', (c) => c.redirect(contentStudioUrl(c, 'blog')))
-app.get('/admin-reel-app', (c) => c.redirect(contentStudioUrl(c, 'reel')))
-app.get('/admin-reel-app.html', (c) => c.redirect(contentStudioUrl(c, 'reel')))
+// Retired shared launchers stay as same-site redirects so bookmarks keep working.
+const localBlogStudio = '/static/admin/content-studio/blog.html'
+const localReelStudio = '/static/admin/content-studio/reel.html'
+app.get('/admin-content-studio', (c) => c.redirect(localBlogStudio))
+app.get('/admin-content-studio.html', (c) => c.redirect(localBlogStudio))
+app.get('/admin-blog-app', (c) => c.redirect(localBlogStudio))
+app.get('/admin-blog-app.html', (c) => c.redirect(localBlogStudio))
+app.get('/admin-reel-app', (c) => c.redirect(localReelStudio))
+app.get('/admin-reel-app.html', (c) => c.redirect(localReelStudio))
 
 // ===========================================
 // OAUTH (Google + X)

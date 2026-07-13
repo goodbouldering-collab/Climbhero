@@ -2,9 +2,10 @@
   "name": "webapp",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/clean-dist.mjs",
     "dev": "vite --port 3001",
     "dev:sandbox": "wrangler pages dev dist --d1=webapp-production --local --ip 0.0.0.0 --port 3000",
-    "build": "vite build && mkdir -p dist/static dist/.well-known && cp -r public/static/* dist/static/ && cp public/favicon-*.png public/apple-touch-icon.png public/android-chrome-*.png public/site.webmanifest public/openapi.json public/robots.txt public/sitemap.xml public/llmo.txt public/admin-content-studio.html public/admin-blog-app.html public/admin-reel-app.html dist/ && cp public/.well-known/ai-plugin.json dist/.well-known/",
+    "build": "vite build",
     "preview": "wrangler pages dev dist",
     "deploy": "npm run build && wrangler pages deploy dist --project-name project-02ceb497",
     "deploy:prod": "npm run build && wrangler pages deploy dist --project-name project-02ceb497",

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "siteId": "climbhero",
+  "apiBase": "https://business-content-app-server.vercel.app",
+  "profileId": "climbhero",
+  "localAdmin": true,
+  "adminUrl": "/#admin",
+  "publicBase": "/static/admin/content-studio"
+}
