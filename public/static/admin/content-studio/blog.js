@@ -3,6 +3,8 @@ import { $, $$, api, bindApiKeyPanel, configureStudioShell, escapeHtml, loadProf
 const state = {
   profiles: [],
   profile: null,
+  trendDiscovery: null,
+  selectedTrend: null,
   research: null,
   titlePlan: null,
   outlinePlan: null,
@@ -30,8 +32,21 @@ function payload() {
     audience: $("#audience").value.trim(),
     ownerStory: $("#owner-story").value.trim(),
     officialUrls: lines($("#official-urls").value),
-    cta: $("#cta").value.trim()
+    cta: $("#cta").value.trim(),
+    selectedTrend: state.selectedTrend
   };
+}
+
+function mergeSources(...groups) {
+  const seen = new Set();
+  return groups.flat().filter((source) => {
+    const href = safeUrl(source?.url);
+    if (!href || seen.has(href)) return false;
+    seen.add(href);
+    source.url = href;
+    if (!source.claim && source.signal) source.claim = source.signal;
+    return true;
+  });
 }
 
 function showStep(step) {
@@ -44,7 +59,17 @@ function showStep(step) {
   document.querySelector(`[data-step="${step}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function resetWorkflow() {
+function resetWorkflow({ keepDiscovery = false } = {}) {
+  if (!keepDiscovery) {
+    state.trendDiscovery = null;
+    state.selectedTrend = null;
+    $("#trend-status").hidden = true;
+    $("#trend-status").textContent = "";
+    $("#trend-results").hidden = true;
+    $("#trend-options").innerHTML = "";
+    $("#trend-method").textContent = "";
+    $("#trend-warnings").textContent = "";
+  }
   state.research = null;
   state.titlePlan = null;
   state.outlinePlan = null;
@@ -90,17 +115,67 @@ async function initialize() {
   applyProfile();
 }
 
+async function discoverTrends() {
+  resetWorkflow();
+  const button = $("#discover-trends");
+  const status = $("#trend-status");
+  button.disabled = true;
+  button.textContent = "国内の話題を調査中…";
+  status.hidden = false;
+  status.textContent = "直近7日・30日・90日の国内情報と一次資料を確認しています…";
+  try {
+    const result = await api("/api/blog/research", {
+      method: "POST",
+      body: JSON.stringify({ ...payload(), mode: "discovery" })
+    });
+    const completed = result.status === "completed" ? result : await pollResearch(result.id, "discovery");
+    state.trendDiscovery = completed.discovery;
+    renderTrendDiscovery(Boolean(completed.mock));
+  } catch (error) {
+    status.textContent = error.message;
+    toast(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "国内トレンドからネタを探す";
+  }
+}
+
+function renderTrendDiscovery(mock = false) {
+  const discovery = state.trendDiscovery;
+  if (!discovery) return;
+  const ideas = [...(discovery.ideas || [])].sort((a, b) => Number(b.buzzScore) - Number(a.buzzScore));
+  $("#trend-status").hidden = false;
+  $("#trend-status").textContent = mock ? "デモ候補です。実際の国内話題度は取得していません。" : `${discovery.asOf || "現在"}時点の国内話題を確認しました。`;
+  $("#trend-method").textContent = discovery.rankingMethod || "推定話題度順";
+  $("#trend-warnings").textContent = (discovery.warnings || []).join(" / ");
+  $("#trend-options").innerHTML = ideas.map((idea, index) => `
+    <article class="trend-card" data-trend-card="${index}">
+      <div class="trend-rank"><b>${index + 1}</b><span>推定話題度 ${escapeHtml(idea.buzzScore)} / 100</span><em>${escapeHtml(idea.buzzLabel || "")}</em></div>
+      <h4>${escapeHtml(idea.topic)}</h4>
+      <p class="trend-reason">${escapeHtml(idea.buzzReason)}</p>
+      <dl><div><dt>誰向け</dt><dd>${escapeHtml(idea.audience)}</dd></div><div><dt>悩み</dt><dd>${escapeHtml(idea.problem)}</dd></div><div><dt>この事業が書く理由</dt><dd>${escapeHtml(idea.businessFit)}</dd></div><div><dt>記事の切り口</dt><dd>${escapeHtml(idea.articleAngle)}</dd></div><div><dt>次の行動</dt><dd>${escapeHtml(idea.nextAction)}</dd></div></dl>
+      <details><summary>出典と媒体展開を見る</summary><div class="trend-source-list">${(idea.sources || []).map((source) => {
+        const href = safeUrl(source.url);
+        return href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"><b>${escapeHtml(source.title || href)}</b><small>${escapeHtml([source.publisher, source.publishedAt, source.signal || source.claim].filter(Boolean).join(" / "))}</small></a>` : "";
+      }).join("")}</div><p class="trend-media"><b>ブログ:</b> ${escapeHtml(idea.mediaPlan?.blog || "")}<br><b>SNS:</b> ${escapeHtml(idea.mediaPlan?.sns || "")}<br><b>note:</b> ${escapeHtml(idea.mediaPlan?.note || "")}<br><b>YouTube:</b> ${escapeHtml(idea.mediaPlan?.youtube || "")}</p></details>
+      <button class="primary select-trend" type="button" data-trend-index="${index}">このネタを選んで詳しく調査</button>
+    </article>`).join("");
+  state.trendDiscovery.ideas = ideas;
+  $("#trend-results").hidden = false;
+}
+
 async function startResearch() {
   const input = payload();
   if (!input.topic) return toast("今回のテーマを入力してください");
-  resetWorkflow();
+  resetWorkflow({ keepDiscovery: true });
   showStep(2);
   const progress = $("#research-progress");
   progress.querySelector("span").textContent = "Web・公式情報・地域検索・最新動向を調査しています…";
   $("#start-research").disabled = true;
   try {
     const result = await api("/api/blog/research", { method: "POST", body: JSON.stringify(input) });
-    state.research = result.status === "completed" ? result : await pollResearch(result.id);
+    state.research = result.status === "completed" ? result : await pollResearch(result.id, "topic");
+    state.research.sources = mergeSources(state.selectedTrend?.sources || [], state.research.sources || []);
     renderResearch();
   } catch (error) {
     progress.querySelector("span").textContent = error.message;
@@ -110,11 +185,12 @@ async function startResearch() {
   }
 }
 
-async function pollResearch(id) {
+async function pollResearch(id, mode = "topic") {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    const result = await api(`/api/blog/research-status?id=${encodeURIComponent(id)}&profileId=${encodeURIComponent(state.profile.id)}`);
-    $("#research-progress span").textContent = `調査中… ${result.status}`;
+    const result = await api(`/api/blog/research-status?id=${encodeURIComponent(id)}&profileId=${encodeURIComponent(state.profile.id)}&mode=${encodeURIComponent(mode)}`);
+    const status = mode === "discovery" ? $("#trend-status") : $("#research-progress span");
+    status.textContent = `調査中… ${result.status}`;
     if (result.complete) return result;
     if (["failed", "cancelled", "incomplete"].includes(result.status)) {
       throw new Error(result.error?.message || `調査が${result.status}になりました`);
@@ -431,6 +507,8 @@ function packageData() {
     createdAt: new Date().toISOString(),
     profile: state.profile,
     input: payload(),
+    trendDiscovery: state.trendDiscovery,
+    selectedTrend: state.selectedTrend,
     research: state.research,
     titlePlan: state.titlePlan,
     outlinePlan: state.outlinePlan,
@@ -504,6 +582,7 @@ async function saveBlogPackage() {
 }
 
 $("#profile").addEventListener("change", () => applyProfile({ reset: true }));
+$("#discover-trends").addEventListener("click", discoverTrends);
 $("#start-research").addEventListener("click", startResearch);
 $("#make-plan").addEventListener("click", makePlan);
 $("#make-outlines").addEventListener("click", makeOutlines);
@@ -528,6 +607,17 @@ $("#preview-desktop").addEventListener("click", () => $(".preview-column").class
 $("#preview-mobile").addEventListener("click", () => $(".preview-column").classList.add("mobile-preview"));
 $("#title-options").addEventListener("change", (event) => {
   if (event.target.name === "title-option") $("#selected-title").value = state.titlePlan.titles[Number(event.target.value)].title;
+});
+$("#trend-options").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-trend-index]");
+  if (!button) return;
+  const idea = state.trendDiscovery?.ideas?.[Number(button.dataset.trendIndex)];
+  if (!idea) return;
+  state.selectedTrend = idea;
+  $("#topic").value = idea.topic;
+  $("#audience").value = idea.audience || state.profile.audience || "";
+  $$('[data-trend-card]').forEach((card) => card.classList.toggle("selected", card.dataset.trendCard === button.dataset.trendIndex));
+  startResearch();
 });
 $("#title-options").addEventListener("input", (event) => {
   if (!event.target.dataset.titleField) return;

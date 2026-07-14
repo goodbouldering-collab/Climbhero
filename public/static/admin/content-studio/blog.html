@@ -43,7 +43,13 @@
           <label>事業<select id="profile"></select></label><label>今回のテーマ・検索語<input id="topic" placeholder="例：AIで請求書作業を減らしたい"></label>
           <label class="wide">主な読者<input id="audience"></label><label class="wide">事業者本人の言葉・実話メモ<textarea id="owner-story" rows="6" placeholder="実際の会話、失敗、修正、場所、確認済み数字など。入力のない実績はAIが作りません。"></textarea></label>
           <label class="wide">追加の公式URL（1行1件）<textarea id="official-urls" rows="3"></textarea></label><label class="wide">記事後の行動<input id="cta"></label>
-        </div><div class="actions"><button class="primary" id="start-research">1. トレンドと検索意図を調査</button></div>
+        </div>
+        <section class="trend-discovery" aria-labelledby="trend-discovery-heading">
+          <div class="trend-discovery-head"><div><span class="eyebrow">DOMESTIC TREND DISCOVERY</span><h3 id="trend-discovery-heading">テーマ未定なら、国内で話題のソースから探す</h3><p>直近性・国内での複数報道や一次情報・全国性を基に、事業との接点があるネタを推定話題度順で並べます。</p></div><button class="secondary" id="discover-trends" type="button">国内トレンドからネタを探す</button></div>
+          <div class="trend-status" id="trend-status" hidden></div>
+          <div class="trend-results" id="trend-results" hidden><div class="trend-method" id="trend-method"></div><div class="trend-grid" id="trend-options"></div><div class="plan-notes" id="trend-warnings"></div></div>
+        </section>
+        <div class="actions"><button class="primary" id="start-research">入力したテーマを詳しく調査</button></div>
       </section>
       <section class="panel" data-step="2" hidden>
         <div class="panel-head"><span>STEP 2</span><h2>SEO・MEO・LLMO調査</h2></div><div class="progress" id="research-progress"><i></i><span>調査を準備しています</span></div><div class="research-report" id="research-report"></div><div class="sources" id="research-sources"></div><div class="actions"><button class="primary" id="make-plan" disabled>2. タイトル候補を3つ作る</button></div>
