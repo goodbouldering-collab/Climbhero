@@ -58,11 +58,16 @@ const state = {
     currentIndex: 0,
     playlist: [],
     player: null,
+    playerType: null,
     interval: null,
+    initTimer: null,
+    startupTimer: null,
+    loadToken: 0,
+    startedToken: 0,
+    timerElapsed: 0,
+    timerStartedAt: null,
     videoDuration: 15000, // Default 15 seconds per video
-    initialized: false, // Prevent multiple initializations
-    skipRetryCount: 0, // Track skip retries to prevent infinite loops
-    maxSkipRetries: 5 // Maximum number of consecutive skips
+    initialized: false // Prevent multiple initializations
   }
 };
 
@@ -542,13 +547,15 @@ function handleNavigation() {
 // ============ Main Render ============
 function renderApp() {
   const root = document.getElementById('root');
+  resetAutoPlayPlaylist();
   
   if (state.currentView === 'home') {
     root.innerHTML = renderHomePage();
     initializeCarousels();
     // Initialize auto-play after a short delay
-    setTimeout(() => {
-      if (state.topLikedVideos.length > 0) {
+    state.autoPlay.initTimer = setTimeout(() => {
+      state.autoPlay.initTimer = null;
+      if (state.currentView === 'home' && document.getElementById('autoplay-video-container')) {
         initAutoPlayPlaylist();
       }
     }, 500);
@@ -687,33 +694,6 @@ function renderHomePage() {
             </a>
           </div>
 
-          <!-- Three-step explainer (1: 出会う / 2: 届ける / 3: 広がる) -->
-          <div class="hero-steps">
-            <div class="hero-step">
-              <div class="hero-step-num">01</div>
-              <div class="hero-step-body">
-                <div class="hero-step-title">${i18n.t('hero.tagline_1')}</div>
-                <div class="hero-step-desc">${i18n.t('hero.tagline_1_desc')}</div>
-              </div>
-            </div>
-            <div class="hero-step-arrow"><i class="fas fa-chevron-right"></i></div>
-            <div class="hero-step">
-              <div class="hero-step-num hero-step-num-accent">02</div>
-              <div class="hero-step-body">
-                <div class="hero-step-title">${i18n.t('hero.tagline_2')}</div>
-                <div class="hero-step-desc">${i18n.t('hero.tagline_2_desc')}</div>
-              </div>
-            </div>
-            <div class="hero-step-arrow"><i class="fas fa-chevron-right"></i></div>
-            <div class="hero-step">
-              <div class="hero-step-num hero-step-num-accent2">03</div>
-              <div class="hero-step-body">
-                <div class="hero-step-title">${i18n.t('hero.tagline_3')}</div>
-                <div class="hero-step-desc">${i18n.t('hero.tagline_3_desc')}</div>
-              </div>
-            </div>
-          </div>
-
           <!-- Compact ranking digest player (smaller, fits in viewport) -->
           <div class="hero-player">
             <div class="hero-player-frame">
@@ -728,8 +708,10 @@ function renderHomePage() {
                   </div>
                 </div>
                 <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="hero-player-pause">
-                  <i id="autoplay-icon" class="fas fa-pause"></i>
-                  <span id="autoplay-text" class="hidden md:inline">${i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지'}</span>
+                  <i id="autoplay-icon" class="fas ${state.autoPlay.isPlaying ? 'fa-pause' : 'fa-play'}"></i>
+                  <span id="autoplay-text" class="hidden md:inline">${state.autoPlay.isPlaying
+                    ? (i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지')
+                    : (i18n.getCurrentLanguage() === 'ja' ? '再生' : i18n.getCurrentLanguage() === 'en' ? 'Play' : i18n.getCurrentLanguage() === 'zh' ? '播放' : '재생')}</span>
                 </button>
               </div>
 
@@ -775,6 +757,33 @@ function renderHomePage() {
                 </div>
 
                 <div class="flex items-center justify-center gap-1 mt-2" id="carousel-dots"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Three-step explainer (1: 出会う / 2: 届ける / 3: 広がる) -->
+          <div class="hero-steps">
+            <div class="hero-step">
+              <div class="hero-step-num">01</div>
+              <div class="hero-step-body">
+                <div class="hero-step-title">${i18n.t('hero.tagline_1')}</div>
+                <div class="hero-step-desc">${i18n.t('hero.tagline_1_desc')}</div>
+              </div>
+            </div>
+            <div class="hero-step-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="hero-step">
+              <div class="hero-step-num hero-step-num-accent">02</div>
+              <div class="hero-step-body">
+                <div class="hero-step-title">${i18n.t('hero.tagline_2')}</div>
+                <div class="hero-step-desc">${i18n.t('hero.tagline_2_desc')}</div>
+              </div>
+            </div>
+            <div class="hero-step-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="hero-step">
+              <div class="hero-step-num hero-step-num-accent2">03</div>
+              <div class="hero-step-body">
+                <div class="hero-step-title">${i18n.t('hero.tagline_3')}</div>
+                <div class="hero-step-desc">${i18n.t('hero.tagline_3_desc')}</div>
               </div>
             </div>
           </div>
@@ -9772,6 +9781,22 @@ window.confirmAddToCollection = confirmAddToCollection;
 
 // ============ Auto-Play Video Feature ============
 
+function resetAutoPlayPlaylist() {
+  if (state.autoPlay.initTimer) {
+    clearTimeout(state.autoPlay.initTimer);
+    state.autoPlay.initTimer = null;
+  }
+
+  state.autoPlay.loadToken += 1;
+  destroyAutoPlayPlayer();
+  state.autoPlay.playlist = [];
+  state.autoPlay.currentIndex = 0;
+  state.autoPlay.initialized = false;
+  state.autoPlay.startedToken = 0;
+  state.autoPlay.timerElapsed = 0;
+  state.autoPlay.timerStartedAt = null;
+}
+
 // Initialize auto-play playlist from top-ranked videos
 function initAutoPlayPlaylist() {
   // Prevent multiple initializations
@@ -9835,11 +9860,12 @@ function initAutoPlayPlaylist() {
   if (playlist.length === 0) {
     console.warn('❌ No playable videos available for auto-play');
     console.warn(`📊 Sources checked: topLiked=${state.topLikedVideos?.length || 0}, trending=${state.trendingVideos?.length || 0}, videos=${state.videos?.length || 0}`);
-    // Hide auto-play section
-    const autoPlaySection = document.querySelector('.bg-gradient-to-br.from-gray-900');
+    // Keep the rest of the home page intact when the digest has no playable media.
+    const autoPlaySection = document.querySelector('.hero-player');
     if (autoPlaySection) {
       autoPlaySection.style.display = 'none';
     }
+    document.querySelector('.hero-content')?.classList.add('hero-player-unavailable');
     return;
   }
   
@@ -9856,9 +9882,6 @@ function initAutoPlayPlaylist() {
   
   // Load first video
   loadAutoPlayVideo(0, 'none');
-  
-  // Start auto-play timer
-  startAutoPlayTimer();
 }
 
 // Render carousel dots indicator
@@ -9869,7 +9892,7 @@ function renderCarouselDots() {
   if (!dotsContainer || !state.autoPlay.playlist.length) return;
   
   // Update counter
-  countSpan.textContent = `${state.autoPlay.currentIndex + 1}/${state.autoPlay.playlist.length}`;
+  if (countSpan) countSpan.textContent = `${state.autoPlay.currentIndex + 1}/${state.autoPlay.playlist.length}`;
   
   // Create dots (max 10 visible, show relevant range)
   const totalDots = state.autoPlay.playlist.length;
@@ -9888,9 +9911,9 @@ function renderCarouselDots() {
   
   // Show first dot if not in range
   if (startDot > 0) {
-    dotsHTML += `<div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>`;
+    dotsHTML += `<div class="carousel-dot"></div>`;
     if (startDot > 1) {
-      dotsHTML += `<div class="text-white/50 text-xs">...</div>`;
+      dotsHTML += `<div class="carousel-dot-more">...</div>`;
     }
   }
   
@@ -9898,202 +9921,354 @@ function renderCarouselDots() {
   for (let i = startDot; i < endDot; i++) {
     const isActive = i === currentIndex;
     dotsHTML += `
-      <div 
-        class="transition-all cursor-pointer ${
-          isActive 
-            ? 'w-6 h-1.5 bg-gradient-to-r from-red-500 to-pink-500' 
-            : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/60'
-        } rounded-full"
+      <button
+        type="button"
+        class="carousel-dot ${isActive ? 'is-active' : ''}"
+        aria-label="${i + 1}番目の動画を再生"
         onclick="loadAutoPlayVideo(${i}, 'flip')">
-      </div>
+      </button>
     `;
   }
   
   // Show last dot if not in range
   if (endDot < totalDots) {
     if (endDot < totalDots - 1) {
-      dotsHTML += `<div class="text-white/50 text-xs">...</div>`;
+      dotsHTML += `<div class="carousel-dot-more">...</div>`;
     }
-    dotsHTML += `<div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>`;
+    dotsHTML += `<div class="carousel-dot"></div>`;
   }
   
   dotsContainer.innerHTML = dotsHTML;
 }
 
-// Load specific video in auto-play player with flip animation
-function loadAutoPlayVideo(index, direction = 'right') {
-  if (index < 0 || index >= state.autoPlay.playlist.length) return;
-  
-  const prevIndex = state.autoPlay.currentIndex;
-  state.autoPlay.currentIndex = index;
-  const video = state.autoPlay.playlist[index];
-  
-  // Reset skip retry counter when manually changing video
-  if (direction === 'flip' || direction === 'left' || direction === 'right') {
-    state.autoPlay.skipRetryCount = 0;
+let youTubePlayerApiPromise = null;
+let vimeoPlayerApiPromise = null;
+
+function ensureYouTubePlayerApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (youTubePlayerApiPromise) return youTubePlayerApiPromise;
+
+  youTubePlayerApiPromise = new Promise((resolve, reject) => {
+    const previousReady = window.onYouTubeIframeAPIReady;
+    const timeout = setTimeout(() => reject(new Error('YouTube player API timeout')), 8000);
+
+    window.onYouTubeIframeAPIReady = () => {
+      clearTimeout(timeout);
+      if (typeof previousReady === 'function') previousReady();
+      resolve(window.YT);
+    };
+
+    let script = document.getElementById('youtube-iframe-api');
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'youtube-iframe-api';
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error('YouTube player API failed to load'));
+      };
+      document.head.appendChild(script);
+    }
+  }).catch(error => {
+    youTubePlayerApiPromise = null;
+    throw error;
+  });
+
+  return youTubePlayerApiPromise;
+}
+
+function ensureVimeoPlayerApi() {
+  if (window.Vimeo?.Player) return Promise.resolve(window.Vimeo);
+  if (vimeoPlayerApiPromise) return vimeoPlayerApiPromise;
+
+  vimeoPlayerApiPromise = new Promise((resolve, reject) => {
+    let script = document.getElementById('vimeo-player-api');
+    const timeout = setTimeout(() => reject(new Error('Vimeo player API timeout')), 8000);
+    const finish = () => {
+      if (!window.Vimeo?.Player) return;
+      clearTimeout(timeout);
+      resolve(window.Vimeo);
+    };
+
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'vimeo-player-api';
+      script.src = 'https://player.vimeo.com/api/player.js';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+
+    script.addEventListener('load', finish, { once: true });
+    script.addEventListener('error', () => {
+      clearTimeout(timeout);
+      reject(new Error('Vimeo player API failed to load'));
+    }, { once: true });
+    finish();
+  }).catch(error => {
+    vimeoPlayerApiPromise = null;
+    throw error;
+  });
+
+  return vimeoPlayerApiPromise;
+}
+
+function destroyAutoPlayPlayer() {
+  if (state.autoPlay.interval) {
+    clearInterval(state.autoPlay.interval);
+    state.autoPlay.interval = null;
   }
-  
-  // Determine animation direction
-  if (direction === 'flip') {
-    direction = index > prevIndex ? 'right' : 'left';
+  if (state.autoPlay.startupTimer) {
+    clearTimeout(state.autoPlay.startupTimer);
+    state.autoPlay.startupTimer = null;
   }
-  
-  console.log(`▶️ Loading video ${index + 1}/${state.autoPlay.playlist.length}:`, video.title);
-  
-  // Update info display
-  document.getElementById('current-video-title').textContent = video.title || 'Untitled';
-  document.getElementById('current-video-views').innerHTML = `<i class="fas fa-eye mr-1"></i>${formatNumber(video.views || 0)} 回視聴`;
-  document.getElementById('current-video-likes').innerHTML = `<i class="fas fa-heart mr-1"></i>${formatNumber(video.likes || 0)} いいね`;
-  
-  const platformIcons = {
-    youtube: '🎬 YouTube',
-    vimeo: '🎥 Vimeo',
-    tiktok: '🎵 TikTok',
-    instagram: '📷 Instagram'
-  };
-  document.getElementById('current-video-platform').textContent = platformIcons[video.media_source] || video.media_source;
-  
-  // Update dots display
-  renderCarouselDots();
-  
-  // Load video player with animation
-  const container = document.getElementById('autoplay-video-container');
-  
-  // Apply flip animation
-  if (direction !== 'none') {
-    container.style.transform = direction === 'right' ? 'rotateY(90deg)' : 'rotateY(-90deg)';
-    container.style.opacity = '0';
-    
-    setTimeout(() => {
-      loadVideoIframe(container, video);
-      container.style.transform = 'rotateY(0deg)';
-      container.style.opacity = '1';
-    }, 250);
-  } else {
-    loadVideoIframe(container, video);
-  }
-  
-  // Reset progress bar
-  document.getElementById('autoplay-progress').style.width = '0%';
-  
-  // Restart timer if playing
-  if (state.autoPlay.isPlaying) {
-    startAutoPlayTimer();
+
+  const player = state.autoPlay.player;
+  state.autoPlay.player = null;
+  state.autoPlay.playerType = null;
+  if (!player || typeof player.destroy !== 'function') return;
+
+  try {
+    const result = player.destroy();
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } catch (error) {
+    console.debug('Player cleanup skipped:', error);
   }
 }
 
-// Load video iframe
-function loadVideoIframe(container, video) {
-  // Use url or media_url field (fallback for compatibility)
-  const videoUrl = video.url || video.media_url;
-  
-  if (!videoUrl) {
-    console.error('❌ No video URL found:', video);
-    // Skip to next video instead of showing error (with retry limit)
-    if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) {
-      state.autoPlay.skipRetryCount++;
-      console.log(`⏭️ Skipping to next video... (${state.autoPlay.skipRetryCount}/${state.autoPlay.maxSkipRetries})`);
-      setTimeout(() => skipToNextVideo(), 500);
-    } else {
-      console.error('❌ Too many consecutive skips. Stopping auto-play.');
-      state.autoPlay.isPlaying = false;
-      container.innerHTML = '<div class="w-full h-full flex items-center justify-center text-white bg-gray-800"><p class="text-lg">再生可能な動画が見つかりません</p></div>';
-    }
+function isCurrentAutoPlayLoad(video, token) {
+  return token === state.autoPlay.loadToken && state.autoPlay.playlist[state.autoPlay.currentIndex] === video;
+}
+
+function updateAutoPlayVideoInfo(video) {
+  const title = document.getElementById('current-video-title');
+  const views = document.getElementById('current-video-views');
+  const likes = document.getElementById('current-video-likes');
+  const platform = document.getElementById('current-video-platform');
+  const platformLabels = { youtube: 'YouTube', vimeo: 'Vimeo' };
+
+  if (title) title.textContent = video.title || 'Untitled';
+  if (views) views.innerHTML = `<i class="fas fa-eye mr-1"></i>${formatNumber(video.views || 0)} 回視聴`;
+  if (likes) likes.innerHTML = `<i class="fas fa-heart mr-1"></i>${formatNumber(video.likes || 0)} いいね`;
+  if (platform) platform.textContent = platformLabels[video.media_source] || video.media_source;
+}
+
+function armAutoPlayStartupTimer(video, token) {
+  if (state.autoPlay.startupTimer) clearTimeout(state.autoPlay.startupTimer);
+  state.autoPlay.startupTimer = setTimeout(() => {
+    rejectAutoPlayVideo(video, token, 'playback startup timeout');
+  }, 6000);
+}
+
+function confirmAutoPlayVideo(video, token) {
+  if (!isCurrentAutoPlayLoad(video, token) || state.autoPlay.startedToken === token) return;
+
+  state.autoPlay.startedToken = token;
+  state.autoPlay.timerElapsed = 0;
+  state.autoPlay.timerStartedAt = null;
+  if (state.autoPlay.startupTimer) {
+    clearTimeout(state.autoPlay.startupTimer);
+    state.autoPlay.startupTimer = null;
+  }
+
+  const container = document.getElementById('autoplay-video-container');
+  if (container) {
+    container.style.visibility = 'visible';
+    container.style.transform = 'rotateY(0deg)';
+    container.style.opacity = '1';
+  }
+
+  updateAutoPlayVideoInfo(video);
+  renderCarouselDots();
+  if (state.autoPlay.isPlaying) startAutoPlayTimer();
+}
+
+function rejectAutoPlayVideo(video, token, reason) {
+  if (!isCurrentAutoPlayLoad(video, token)) return;
+  console.warn('Skipping unavailable autoplay video:', video.title, reason);
+
+  state.autoPlay.loadToken += 1;
+  destroyAutoPlayPlayer();
+
+  const container = document.getElementById('autoplay-video-container');
+  if (container) {
+    container.replaceChildren();
+    container.style.visibility = 'hidden';
+    container.style.opacity = '0';
+  }
+
+  const rejectedIndex = state.autoPlay.currentIndex;
+  state.autoPlay.playlist.splice(rejectedIndex, 1);
+
+  if (!state.autoPlay.playlist.length) {
+    state.autoPlay.isPlaying = false;
+    document.querySelector('.hero-player')?.style.setProperty('display', 'none');
+    document.querySelector('.hero-content')?.classList.add('hero-player-unavailable');
     return;
   }
-  
-  // Reset skip retry counter on successful URL
-  state.autoPlay.skipRetryCount = 0;
-  
-  if (video.media_source === 'youtube') {
-    const videoId = extractYouTubeVideoId(videoUrl);
-    
-    if (!videoId) {
-      console.error('❌ Failed to extract YouTube video ID from:', videoUrl);
-      if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) {
-        state.autoPlay.skipRetryCount++;
-        console.log(`⏭️ Skipping to next video... (${state.autoPlay.skipRetryCount}/${state.autoPlay.maxSkipRetries})`);
-        setTimeout(() => skipToNextVideo(), 500);
+
+  state.autoPlay.currentIndex = rejectedIndex % state.autoPlay.playlist.length;
+  setTimeout(() => loadAutoPlayVideo(state.autoPlay.currentIndex, 'none'), 0);
+}
+
+// Load a specific video. Unavailable entries remain hidden and are removed from
+// this session's playlist before the next candidate is tried.
+function loadAutoPlayVideo(index, direction = 'right') {
+  if (!state.autoPlay.playlist.length || index < 0 || index >= state.autoPlay.playlist.length) return;
+
+  const prevIndex = state.autoPlay.currentIndex;
+  const video = state.autoPlay.playlist[index];
+  const container = document.getElementById('autoplay-video-container');
+  if (!container) return;
+
+  const token = state.autoPlay.loadToken + 1;
+  state.autoPlay.loadToken = token;
+  state.autoPlay.startedToken = 0;
+  destroyAutoPlayPlayer();
+  state.autoPlay.timerElapsed = 0;
+  state.autoPlay.timerStartedAt = null;
+  state.autoPlay.currentIndex = index;
+
+  if (direction === 'flip') direction = index > prevIndex ? 'right' : 'left';
+
+  container.style.visibility = 'hidden';
+  container.style.opacity = '0';
+  if (direction !== 'none') {
+    container.style.transform = direction === 'right' ? 'rotateY(24deg)' : 'rotateY(-24deg)';
+  }
+  container.replaceChildren();
+
+  const progress = document.getElementById('autoplay-progress');
+  if (progress) progress.style.width = '0%';
+
+  loadVideoIframe(container, video, token);
+}
+
+// Create a player and wait for an actual ready/play signal. iframe onerror alone
+// cannot detect deleted, private or embed-disabled cross-origin videos.
+async function loadVideoIframe(container, video, token) {
+  const videoUrl = video.url || video.media_url;
+  if (!videoUrl) {
+    rejectAutoPlayVideo(video, token, 'missing URL');
+    return;
+  }
+
+  try {
+    if (video.media_source === 'youtube') {
+      const videoId = extractYouTubeVideoId(videoUrl);
+      if (!videoId) throw new Error('invalid YouTube URL');
+
+      const YT = await ensureYouTubePlayerApi();
+      if (!isCurrentAutoPlayLoad(video, token)) return;
+      armAutoPlayStartupTimer(video, token);
+
+      const mount = document.createElement('div');
+      mount.id = `youtube-autoplay-${token}`;
+      container.replaceChildren(mount);
+
+      const player = new YT.Player(mount, {
+        videoId,
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          autoplay: state.autoPlay.isPlaying ? 1 : 0,
+          mute: 1,
+          controls: 1,
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1
+        },
+        events: {
+          onReady: event => {
+            if (!isCurrentAutoPlayLoad(video, token)) return;
+            if (state.autoPlay.isPlaying) {
+              event.target.mute();
+              event.target.playVideo();
+            } else {
+              confirmAutoPlayVideo(video, token);
+            }
+          },
+          onStateChange: event => {
+            if (!isCurrentAutoPlayLoad(video, token)) return;
+            if (event.data === YT.PlayerState.PLAYING) confirmAutoPlayVideo(video, token);
+            if (event.data === YT.PlayerState.ENDED) skipToNextVideo();
+          },
+          onError: event => rejectAutoPlayVideo(video, token, `YouTube error ${event.data}`)
+        }
+      });
+
+      state.autoPlay.player = player;
+      state.autoPlay.playerType = 'youtube';
+      return;
+    }
+
+    if (video.media_source === 'vimeo') {
+      const videoId = extractVimeoVideoId(videoUrl);
+      if (!videoId) throw new Error('invalid Vimeo URL');
+
+      const Vimeo = await ensureVimeoPlayerApi();
+      if (!isCurrentAutoPlayLoad(video, token)) return;
+      armAutoPlayStartupTimer(video, token);
+
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=0&muted=1&controls=1&playsinline=1`;
+      iframe.width = '100%';
+      iframe.height = '100%';
+      iframe.frameBorder = '0';
+      iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+      iframe.allowFullscreen = true;
+      iframe.className = 'w-full h-full';
+      container.replaceChildren(iframe);
+
+      const player = new Vimeo.Player(iframe);
+      state.autoPlay.player = player;
+      state.autoPlay.playerType = 'vimeo';
+
+      player.on('play', () => confirmAutoPlayVideo(video, token));
+      player.on('ended', () => {
+        if (isCurrentAutoPlayLoad(video, token)) skipToNextVideo();
+      });
+      player.on('error', error => rejectAutoPlayVideo(video, token, error?.name || 'Vimeo error'));
+
+      await player.ready();
+      if (!isCurrentAutoPlayLoad(video, token)) return;
+      await player.setVolume(0);
+      if (state.autoPlay.isPlaying) {
+        await player.play();
+      } else {
+        confirmAutoPlayVideo(video, token);
       }
       return;
     }
-    // Add rel=0 to minimize related videos, playlist for continuous play
-    container.innerHTML = `
-      <iframe 
-        width="100%" 
-        height="100%" 
-        src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&loop=0" 
-        frameborder="0" 
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-        allowfullscreen
-        class="w-full h-full"
-        id="youtube-player-${videoId}"
-        onerror="console.error('❌ Failed to load YouTube iframe:', '${videoId}'); if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) { state.autoPlay.skipRetryCount++; setTimeout(() => skipToNextVideo(), 1000); }">
-      </iframe>
-    `;
-    
-    // Log successful iframe creation
-    console.log(`✅ YouTube iframe created for: ${videoId}`);
-  } else if (video.media_source === 'vimeo') {
-    const videoId = extractVimeoVideoId(videoUrl);
-    
-    if (!videoId) {
-      console.error('❌ Failed to extract Vimeo video ID from:', videoUrl);
-      if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) {
-        state.autoPlay.skipRetryCount++;
-        console.log(`⏭️ Skipping to next video... (${state.autoPlay.skipRetryCount}/${state.autoPlay.maxSkipRetries})`);
-        setTimeout(() => skipToNextVideo(), 500);
-      }
-      return;
-    }
-    container.innerHTML = `
-      <iframe 
-        src="https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=0&controls=1&playsinline=1" 
-        width="100%" 
-        height="100%" 
-        frameborder="0" 
-        allow="autoplay; fullscreen; picture-in-picture" 
-        allowfullscreen
-        class="w-full h-full"
-        id="vimeo-player-${videoId}"
-        onerror="console.error('❌ Failed to load Vimeo iframe:', '${videoId}'); if (state.autoPlay.skipRetryCount < state.autoPlay.maxSkipRetries) { state.autoPlay.skipRetryCount++; setTimeout(() => skipToNextVideo(), 1000); }">
-      </iframe>
-    `;
-    
-    // Log successful iframe creation
-    console.log(`✅ Vimeo iframe created for: ${videoId}`);
-  } else if (video.media_source === 'instagram' || video.media_source === 'tiktok') {
-    // Instagram Reels and TikTok cannot autoplay due to platform restrictions
-    // Skip to next video that supports autoplay
-    console.log(`⏭️ Skipping ${video.media_source} video (autoplay not supported): ${video.title}`);
-    setTimeout(() => skipToNextVideo(), 500);
-  } else {
-    // Unknown platform - skip to next
-    console.log(`⏭️ Skipping unknown platform: ${video.media_source}`);
-    setTimeout(() => skipToNextVideo(), 500);
+
+    rejectAutoPlayVideo(video, token, `unsupported source ${video.media_source}`);
+  } catch (error) {
+    rejectAutoPlayVideo(video, token, error?.message || 'player failed');
   }
 }
 
 // Start auto-play timer
 function startAutoPlayTimer() {
-  // Clear existing interval
   if (state.autoPlay.interval) {
     clearInterval(state.autoPlay.interval);
+    state.autoPlay.interval = null;
   }
-  
-  if (!state.autoPlay.isPlaying) return;
-  
+
+  if (!state.autoPlay.isPlaying || state.autoPlay.startedToken !== state.autoPlay.loadToken) return;
+
   const duration = state.autoPlay.videoDuration;
-  const startTime = Date.now();
-  
+  state.autoPlay.timerStartedAt = Date.now();
+
   state.autoPlay.interval = setInterval(() => {
-    const elapsed = Date.now() - startTime;
+    const elapsed = state.autoPlay.timerElapsed + (Date.now() - state.autoPlay.timerStartedAt);
     const progress = Math.min((elapsed / duration) * 100, 100);
-    
-    document.getElementById('autoplay-progress').style.width = `${progress}%`;
-    
+
+    const progressBar = document.getElementById('autoplay-progress');
+    if (progressBar) progressBar.style.width = `${progress}%`;
+
     if (progress >= 100) {
-      // Move to next video
+      state.autoPlay.timerElapsed = 0;
+      state.autoPlay.timerStartedAt = null;
       skipToNextVideo();
     }
   }, 100);
@@ -10107,15 +10282,38 @@ function toggleAutoPlay() {
   const textEl = document.getElementById('autoplay-text');
   
   if (state.autoPlay.isPlaying) {
-    iconEl.className = 'fas fa-pause mr-1 md:mr-2';
+    if (iconEl) iconEl.className = 'fas fa-pause mr-1 md:mr-2';
     if (textEl) textEl.textContent = '停止';
-    startAutoPlayTimer();
+    if (state.autoPlay.playerType === 'youtube') {
+      state.autoPlay.player?.playVideo?.();
+    } else if (state.autoPlay.playerType === 'vimeo') {
+      const resume = state.autoPlay.player?.play?.();
+      if (resume && typeof resume.catch === 'function') {
+        const video = state.autoPlay.playlist[state.autoPlay.currentIndex];
+        const token = state.autoPlay.loadToken;
+        resume.catch(error => rejectAutoPlayVideo(video, token, error?.message || 'resume failed'));
+      }
+    }
+    if (state.autoPlay.startedToken === state.autoPlay.loadToken) startAutoPlayTimer();
     console.log('▶️ Auto-play resumed');
   } else {
-    iconEl.className = 'fas fa-play mr-1 md:mr-2';
+    if (iconEl) iconEl.className = 'fas fa-play mr-1 md:mr-2';
     if (textEl) textEl.textContent = '再生';
+    if (state.autoPlay.timerStartedAt !== null) {
+      state.autoPlay.timerElapsed = Math.min(
+        state.autoPlay.videoDuration,
+        state.autoPlay.timerElapsed + (Date.now() - state.autoPlay.timerStartedAt)
+      );
+      state.autoPlay.timerStartedAt = null;
+    }
     if (state.autoPlay.interval) {
       clearInterval(state.autoPlay.interval);
+      state.autoPlay.interval = null;
+    }
+    if (state.autoPlay.playerType === 'youtube') state.autoPlay.player?.pauseVideo?.();
+    if (state.autoPlay.playerType === 'vimeo') {
+      const pause = state.autoPlay.player?.pause?.();
+      if (pause && typeof pause.catch === 'function') pause.catch(() => {});
     }
     console.log('⏸️ Auto-play paused');
   }
@@ -10123,12 +10321,14 @@ function toggleAutoPlay() {
 
 // Skip to next video
 function skipToNextVideo() {
+  if (!state.autoPlay.playlist.length) return;
   const nextIndex = (state.autoPlay.currentIndex + 1) % state.autoPlay.playlist.length;
   loadAutoPlayVideo(nextIndex, 'right');
 }
 
 // Skip to previous video
 function skipToPreviousVideo() {
+  if (!state.autoPlay.playlist.length) return;
   const prevIndex = state.autoPlay.currentIndex === 0 
     ? state.autoPlay.playlist.length - 1 
     : state.autoPlay.currentIndex - 1;
@@ -10147,13 +10347,13 @@ function extractYouTubeVideoId(url) {
     if (match) return match[1];
   }
   
-  return url;
+  return null;
 }
 
 // Extract Vimeo video ID from URL
 function extractVimeoVideoId(url) {
   const match = url.match(/vimeo\.com\/(\d+)/);
-  return match ? match[1] : url;
+  return match ? match[1] : null;
 }
 
 // Get thumbnail URL with fallback
