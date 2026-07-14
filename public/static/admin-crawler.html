@@ -412,8 +412,21 @@
       }[c]));
     }
 
-    loadAll();
-    setInterval(loadStats, 30000);
+    async function startAdmin() {
+      const authCheck = await fetch('/api/admin/video-crawler/settings');
+      if (authCheck.status === 401 || authCheck.status === 403) {
+        window.location.replace('/?login=1');
+        return;
+      }
+      if (!authCheck.ok) {
+        document.body.innerHTML = '<main class="min-h-screen flex items-center justify-center p-6"><div class="card max-w-lg text-center"><h1 class="text-xl font-bold mb-2">管理画面を読み込めません</h1><p class="text-slate-400">APIの状態を確認してから再読み込みしてください。</p></div></main>';
+        return;
+      }
+      await loadAll();
+      setInterval(loadStats, 30000);
+    }
+
+    startAdmin();
   </script>
 </body>
 </html>

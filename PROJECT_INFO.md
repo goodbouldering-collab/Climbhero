@@ -1,41 +1,37 @@
-# ClimbHero - プロジェクト情報
+# ClimbHero プロジェクト情報
 
-## 📋 基本情報
-- **プロジェクトタイトル**: ClimbHero - クライミング動画共有プラットフォーム
-- **コードネーム**: webapp
-- **Cloudflareプロジェクト名**: project-02ceb497
+## 基本情報
 
-## 🌐 デプロイURL
+- プロジェクト: ClimbHero — クライミング動画共有プラットフォーム
+- GitHub: `goodbouldering-collab/Climbhero`
+- 正規ホスティング: Vercel
+- Vercel project: `goodboulderings-projects/climbhero`
 
-### 本番環境
-- **メインURL**: https://project-02ceb497.pages.dev
-- **最新デプロイ**: https://65917ee9.project-02ceb497.pages.dev ⭐ **動画自動巡回 + AI解析 実装**
-- **管理画面（クローラー）**: https://project-02ceb497.pages.dev/admin/crawler
-- **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
+## 正規URL
 
-### サンドボックス環境
-- **開発サーバー**: https://3000-ihff41104hfhdqarv2j1z-de59bda9.sandbox.novita.ai
+- 公開サイト: https://climbhero.vercel.app
+- 管理画面: https://climbhero.vercel.app/admin/crawler
+- ブログ App Server: https://climbhero.vercel.app/static/admin/content-studio/blog.html
+- リール App Server: https://climbhero.vercel.app/static/admin/content-studio/reel.html
+- OpenAPI: https://climbhero.vercel.app/openapi.json
+- AI Plugin: https://climbhero.vercel.app/.well-known/ai-plugin.json
+- LLMO: https://climbhero.vercel.app/llmo.txt
 
-## 📝 重要な注意事項
+## バックエンド
 
-### タイトル管理
-- プロジェクトタイトルは `meta_info` で管理
-- Gensparkの有料機能切れに影響されません
-- 変更方法: `meta_info(action="write", key="project_title", value="新しいタイトル")`
+- API origin: https://project-02ceb497.pages.dev
+- D1 database: `webapp-production`
+- Cloudflare Pages project: `project-02ceb497`
 
-### GitHub同期
-- ローカル変更は必ず `git push origin main` でGitHubに反映
-- デプロイ前に必ずGitHubと同期を確認
-- サンドボックスとGitHubのズレを防ぐため、常に最新状態を保つ
+Cloudflare Pages URLはAPI実行・D1/KV接続のための内部originとして扱い、利用者向けの正規URLとして案内しない。Vercelの `/api/*` rewriteを通して利用する。
 
-### デプロイフロー
-1. ローカルで開発・テスト
-2. `git add . && git commit -m "message"`
-3. `git push origin main` (GitHubに反映)
-4. `npm run build`
-5. `npx wrangler pages deploy dist --project-name project-02ceb497`
-6. デプロイURL確認
+## デプロイフロー
 
-## 🔗 最新URL（自動更新）
-最終更新: $(date '+%Y-%m-%d %H:%M:%S')
+1. クリーンなブランチで変更する。
+2. `npm run build` と `npm run build:vercel` を実行する。
+3. commitして `main` へpushする。
+4. `npm run deploy` でVercel本番へ反映する。
+5. 正規URLのトップ、管理画面、`/api/videos`、`/api/news` を確認する。
+6. API backendを変更したときだけ `npm run deploy:cloudflare-backend` を実行する。
 
+最終更新: 2026-07-14

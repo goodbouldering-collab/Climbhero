@@ -1,5 +1,7 @@
 # Cloudflare Pages デプロイメントガイド
 
+> **2026-07-14運用変更:** 正規公開先はVercelの `https://climbhero.vercel.app` です。この文書はD1/KV/Honoを使うCloudflare API backendの保守用です。利用者向け公開サイトのデプロイには [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) を使ってください。
+
 ## 🚨 IP制限エラーの解決方法
 
 現在、Cloudflare API tokenにIP制限がかかっているため、サンドボックス環境からの直接デプロイができません：

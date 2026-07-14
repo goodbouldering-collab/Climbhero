@@ -2,10 +2,84 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "vercel-dist",
+  "routes": [
+    {
+      "src": "/api/admin/video-crawler(?:/.*)?",
+      "status": 503,
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store"
+      }
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://project-02ceb497.pages.dev/api/:path*"
+    },
+    {
+      "source": "/account",
+      "destination": "https://project-02ceb497.pages.dev/account"
+    },
+    {
+      "source": "/billing/:path*",
+      "destination": "https://project-02ceb497.pages.dev/billing/:path*"
+    },
+    {
+      "source": "/admin/crawler",
+      "destination": "/static/admin-crawler.html"
+    },
+    {
+      "source": "/admin-content-studio",
+      "destination": "/static/admin/content-studio/blog.html"
+    },
+    {
+      "source": "/admin-content-studio.html",
+      "destination": "/static/admin/content-studio/blog.html"
+    },
+    {
+      "source": "/admin-blog-app",
+      "destination": "/static/admin/content-studio/blog.html"
+    },
+    {
+      "source": "/admin-blog-app.html",
+      "destination": "/static/admin/content-studio/blog.html"
+    },
+    {
+      "source": "/admin-reel-app",
+      "destination": "/static/admin/content-studio/reel.html"
+    },
+    {
+      "source": "/admin-reel-app.html",
+      "destination": "/static/admin/content-studio/reel.html"
+    },
+    {
+      "source": "/studio",
+      "destination": "/static/admin/content-studio/blog.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/news",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/news/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/rankings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/rankings/:path*",
+      "destination": "/index.html"
     }
   ]
 }

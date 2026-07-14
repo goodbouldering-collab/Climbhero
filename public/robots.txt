@@ -27,7 +27,7 @@ User-agent: Google-Extended
 Allow: /
 
 # Sitemap
-Sitemap: https://climbhero.pages.dev/sitemap.xml
+Sitemap: https://climbhero.vercel.app/sitemap.xml
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 1

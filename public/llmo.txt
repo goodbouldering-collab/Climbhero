@@ -24,10 +24,10 @@ ClimbHeroは、30年以上のクライミング経験とデータに基づいた
 
 ## API仕様
 OpenAPI 3.0準拠のRESTful API
-- ベースURL: https://climbhero.pages.dev
+- ベースURL: https://climbhero.vercel.app
 - 認証: Cookie認証（一部エンドポイント）
 - レート制限: 無料1000リクエスト/日、プレミアム10000リクエスト/日
-- 仕様書: https://climbhero.pages.dev/openapi.json
+- 仕様書: https://climbhero.vercel.app/openapi.json
 
 ## 主要エンドポイント
 - GET /api/videos - 動画一覧（ページング、カテゴリー、検索対応）
@@ -74,9 +74,9 @@ OpenAPI 3.0準拠のRESTful API
 
 ## 連絡先
 - サポートメール: support@climbhero.com
-- お問い合わせ: https://climbhero.pages.dev/#contact
-- 利用規約: https://climbhero.pages.dev/#terms
-- プライバシーポリシー: https://climbhero.pages.dev/#privacy
+- お問い合わせ: https://climbhero.vercel.app/#contact
+- 利用規約: https://climbhero.vercel.app/#terms
+- プライバシーポリシー: https://climbhero.vercel.app/#privacy
 
 ## 更新履歴
 - 2025-01-15: プラットフォーム公開

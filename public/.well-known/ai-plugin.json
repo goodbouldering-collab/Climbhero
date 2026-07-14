@@ -9,10 +9,10 @@
   },
   "api": {
     "type": "openapi",
-    "url": "https://climbhero.pages.dev/openapi.json",
+    "url": "https://climbhero.vercel.app/openapi.json",
     "is_user_authenticated": false
   },
-  "logo_url": "https://climbhero.pages.dev/android-chrome-512x512.png",
+  "logo_url": "https://climbhero.vercel.app/android-chrome-512x512.png",
   "contact_email": "support@climbhero.com",
-  "legal_info_url": "https://climbhero.pages.dev/#terms"
+  "legal_info_url": "https://climbhero.vercel.app/#terms"
 }

@@ -2,7 +2,7 @@
 
 ## 📋 プロジェクト概要
 
-**ClimbHero**は、クライミングコミュニティのための本格的な動画共有プラットフォームです。参考サイト（https://climbhero.info）のデザインを模倣しつつ、充実した機能を提供します。
+**ClimbHero**は、クライミングコミュニティのための動画共有プラットフォームです。世界の動画・ニュース・ランキングを、現場で探しやすく見続けやすい形にまとめます。
 
 ### 主な特徴
 
@@ -13,7 +13,7 @@
 - **横カルーセルUI**: 全セクションで滑らかなスクロール体験
 - **拡張ランキング**: デイリー・週間・月間・年間の4期間対応
 - **充実のサンプルデータ**: 10本の動画（6プラットフォーム）と5本のニュース記事（永続化済み）📦
-- **自動バックアップシステム**: デプロイ前に自動でバックアップを作成してGitHub同期 🔄
+- **バックアップシステム**: 必要なタイミングでD1データのスナップショットを保存 🔄
 - **プレミアムプラン**: $20/月 + 15日間無料トライアル
 - **完全なフッター**: 会社情報、リンク、連絡先を網羅
 - **動画投稿機能**: URLを入力するだけで簡単投稿
@@ -22,39 +22,43 @@
 
 > 📌 **重要**: 最新のデプロイURLは `PROJECT_INFO.md` で常に管理されています
 
-- **本番環境（メイン）**: https://project-02ceb497.pages.dev
-- **最新デプロイ**: https://803ebee7.project-02ceb497.pages.dev ⭐ **横フリップカルーセル実装**
+- **本番環境（正規）**: https://climbhero.vercel.app
+- **管理画面**: https://climbhero.vercel.app/admin/crawler
 - **GitHub**: https://github.com/goodbouldering-collab/Climbhero ✅
-- **開発環境**: https://3000-ihff41104hfhdqarv2j1z-de59bda9.sandbox.novita.ai
-- **OpenAPI仕様**: https://project-02ceb497.pages.dev/openapi.json
-- **AI Plugin**: https://project-02ceb497.pages.dev/.well-known/ai-plugin.json
-- **LLMO**: https://project-02ceb497.pages.dev/llmo.txt
+- **API backend origin**: https://project-02ceb497.pages.dev
+- **OpenAPI仕様**: https://climbhero.vercel.app/openapi.json
+- **AI Plugin**: https://climbhero.vercel.app/.well-known/ai-plugin.json
+- **LLMO**: https://climbhero.vercel.app/llmo.txt
+
+公開フロントと管理画面はVercel、D1/KVを使うHono APIはCloudflare backendで運用します。利用者向けにはVercel URLだけを案内します。
+
+> セキュリティ移行中: 動画クローラー管理APIはCloudflare側の管理者認証を本番反映するまで、Vercel入口で一時的に503へ固定しています。公開サイト、Blog/Reel Studio、通常APIには影響しません。
 
 ### 本番環境の確認
 
 ```bash
 # 動画データ確認（25本 - 4プラットフォーム）
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos?limit=3&lang=ja"
+curl "https://climbhero.vercel.app/api/videos?limit=3&lang=ja"
 
 # YouTube動画（10本）
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos?limit=30" | jq '.videos[] | select(.media_source == "youtube")'
+curl "https://climbhero.vercel.app/api/videos?limit=30" | jq '.videos[] | select(.media_source == "youtube")'
 
 # TikTok動画（5本）
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos?limit=30" | jq '.videos[] | select(.media_source == "tiktok")'
+curl "https://climbhero.vercel.app/api/videos?limit=30" | jq '.videos[] | select(.media_source == "tiktok")'
 
 # Instagram動画（5本）
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos?limit=30" | jq '.videos[] | select(.media_source == "instagram")'
+curl "https://climbhero.vercel.app/api/videos?limit=30" | jq '.videos[] | select(.media_source == "instagram")'
 
 # Vimeo動画（5本）
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos?limit=30" | jq '.videos[] | select(.media_source == "vimeo")'
+curl "https://climbhero.vercel.app/api/videos?limit=30" | jq '.videos[] | select(.media_source == "vimeo")'
 
 # ブログデータ確認（5本）
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/blog?lang=ja"
+curl "https://climbhero.vercel.app/api/blog?lang=ja"
 
 # 多言語対応確認
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=en"  # English
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=zh"  # Chinese
-curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korean
+curl "https://climbhero.vercel.app/api/videos/1?lang=en"  # English
+curl "https://climbhero.vercel.app/api/videos/1?lang=zh"  # Chinese
+curl "https://climbhero.vercel.app/api/videos/1?lang=ko"  # Korean
 ```
 
 ## ✨ 完成済み機能
@@ -367,7 +371,8 @@ curl "https://fb4d2735.project-02ceb497.pages.dev/api/videos/1?lang=ko"  # Korea
 ### 必要要件
 - Node.js 18+
 - npm or pnpm
-- Cloudflare account (本番デプロイ用)
+- Vercel account (正規公開用)
+- Cloudflare account (API backend・D1運用用)
 
 ### セットアップ
 ```bash
@@ -533,7 +538,7 @@ curl http://localhost:3000/api/news/3/translate/en  # 英語
 # ローカル開発用
 echo "GEMINI_API_KEY=your-gemini-api-key" > .dev.vars
 
-# 本番環境用（Cloudflare Pages）
+# API backend本番用（Cloudflare）
 npx wrangler secret put GEMINI_API_KEY --project-name project-02ceb497
 ```
 
@@ -592,8 +597,8 @@ npm run backup
 # 自動バックアップ + Git コミット
 npm run backup:auto
 
-# デプロイ前自動バックアップ（predeploy hook）
-npm run deploy  # 自動的にbackup:autoが実行されます
+# backend変更前など、必要なときだけ明示的にバックアップ
+npm run backup
 ```
 
 #### サンプルデータファイル
@@ -611,48 +616,27 @@ npm run deploy  # 自動的にbackup:autoが実行されます
   - 完全4言語翻訳
   - AIジャンル分類
 
-#### デプロイ時の自動化
+#### デプロイとデータ更新の分離
 
-`npm run deploy`により、以下が自動実行されます：
+`npm run deploy` はVercelの正規公開サイトだけを更新します。D1のバックアップ、migration、seed、Cloudflare backendの更新は自動実行しません。必要な処理だけを明示的に実行してください。
 
-1. **自動バックアップ**: `predeploy`フックでbackups/ディレクトリに保存
-2. **Git自動コミット**: バックアップファイルを自動的にGitHubに同期
-3. **プロジェクトビルド**: Viteによる最適化ビルド
-4. **Cloudflareデプロイ**: 本番環境に自動デプロイ
-
-**注意**: データベースマイグレーションは手動で実行する必要があります：
 ```bash
-npm run db:migrate:prod     # 本番マイグレーション
-npm run db:seed:prod        # 本番サンプルデータ投入
-npm run db:verify -- --remote  # 本番データ検証
+npm run backup                     # D1バックアップ
+npm run db:migrate:prod            # D1本番migration
+npm run db:seed:prod               # D1本番seed
+npm run db:verify -- --remote      # D1本番確認
+npm run deploy:cloudflare-backend  # Hono APIを変更した場合だけ
 ```
-3. **サンプルデータ投入**: 本番環境に自動適用
-4. **Cloudflareデプロイ**: 本番環境に自動デプロイ
-
-**重要**: GitHubにプッシュするだけで、すべてのサンプルデータが自動的に本番環境に同期されます。
 
 ## 🌍 デプロイ
 
-### GitHub + Cloudflare Pages 自動デプロイ（推奨）🎯 NEW
+### Vercel正規公開
 
-**✅ 自動CI/CD**: GitHubへのプッシュで自動デプロイ
-
-#### セットアップ手順
-
-1. **GitHubリポジトリ**: `https://github.com/goodbouldering-collab/Climbhero`
-
-2. **GitHub Secretsの設定** (Settings → Secrets and variables → Actions):
-   ```
-   CLOUDFLARE_API_TOKEN: Cloudflare API トークン
-   CLOUDFLARE_ACCOUNT_ID: CloudflareアカウントID
-   ```
-
-3. **自動デプロイフロー**:
-   - `main`ブランチへのプッシュ → 自動ビルド＆デプロイ
-   - Pull Request → プレビュー環境作成
-   - デプロイ状況はGitHub Actionsで確認
-
-4. **デプロイURL**: `https://project-02ceb497.pages.dev`
+- **Vercel project**: `goodboulderings-projects/climbhero`
+- **Production URL**: `https://climbhero.vercel.app`
+- **Build command**: `npm run build:vercel`
+- **Output directory**: `vercel-dist`
+- **API接続**: `/api/*` を `https://project-02ceb497.pages.dev/api/*` へrewrite
 
 #### 手動デプロイ（ローカルマシンから）
 
@@ -664,14 +648,12 @@ cd Climbhero
 # 依存関係インストール
 npm install
 
-# ビルド
+# Cloudflare backendとVercel公開物の両方を検証
 npm run build
+npm run build:vercel
 
-# Cloudflare認証
-npx wrangler login
-
-# デプロイ
-npm run deploy:prod
+# Vercel本番へデプロイ
+npm run deploy
 ```
 
 #### データベースマイグレーション
@@ -686,13 +668,7 @@ npm run db:migrate:prod
 2. "Run workflow" → Environment: `production`
 3. マイグレーション実行
 
-#### 設定情報
-- **プロジェクト名**: `project-02ceb497`
-- **GitHubリポジトリ**: `goodbouldering-collab/Climbhero`
-- **ビルドコマンド**: `npm run build`
-- **出力ディレクトリ**: `dist`
-- **Node.js バージョン**: 18.x
-- **自動デプロイ**: ✅ GitHub Actions
+Cloudflare APIコードを変更した場合だけ、Vercel公開前に `npm run deploy:cloudflare-backend` を実行します。
 
 ## 📦 技術スタック
 
@@ -700,7 +676,8 @@ npm run db:migrate:prod
 - **バックエンド**: Hono (Cloudflare Workers)
 - **データベース**: Cloudflare D1 (SQLite)
 - **ビルドツール**: Vite
-- **デプロイ**: Cloudflare Pages
+- **正規公開**: Vercel
+- **API実行基盤**: Cloudflare Pages Functions
 - **プロセス管理**: PM2
 - **HTTP クライアント**: Axios
 - **AI連携**: OpenAPI 3.0, AI Plugin, LLMO最適化 🤖 NEW
@@ -708,7 +685,7 @@ npm run db:migrate:prod
 
 ## 🎯 参考サイト
 
-デザイン参考: https://climbhero.info
+デザイン参考（正規公開URLではありません）: https://climbhero.info
 
 以下の要素を模倣：
 - ビジュアル重視のワイドレイアウト
@@ -742,11 +719,10 @@ MIT License
 
 ---
 
-**最終更新日**: 2025-11-17 20:30 JST
-**プロジェクト状態**: ✅ **本番稼働中（管理者ログインUI改善版）**
-**本番URL**: https://9fa95b71.project-02ceb497.pages.dev ⭐ 最新デプロイ（モーダル内クイックログイン）
+**最終更新日**: 2026-07-14
+**プロジェクト状態**: ✅ **Vercel正規公開・Cloudflare API backend稼働**
+**本番URL**: https://climbhero.vercel.app
 **GitHubリポジトリ**: https://github.com/goodbouldering-collab/Climbhero
-**参考サイト**: https://climbhero.info
 
 ### 本番環境データ統計
 - **動画**: 25本（**4プラットフォーム完全対応**）
@@ -794,8 +770,9 @@ pm2 start ecosystem.config.cjs
 
 ## 📖 詳細ドキュメント
 
-- **デプロイガイド**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Cloudflare Pages + D1完全手順
-- **Cloudflare設定**: [CLOUDFLARE_DEPLOYMENT.md](./CLOUDFLARE_DEPLOYMENT.md) - 旧マニュアルデプロイ手順
+- **正規公開ガイド**: [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) - Vercel本番デプロイと確認手順
+- **API/DBガイド**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Cloudflare backend + D1手順
+- **Cloudflare設定**: [CLOUDFLARE_DEPLOYMENT.md](./CLOUDFLARE_DEPLOYMENT.md) - API backend保守手順
 - **Genspark連携**: [GENSPARK_INTEGRATION.md](./GENSPARK_INTEGRATION.md) - AI連携API仕様
 
 ## 💡 推奨追加機能（実装検討中）

@@ -7,7 +7,7 @@
     "contact": {
       "name": "ClimbHero Support",
       "email": "support@climbhero.com",
-      "url": "https://climbhero.pages.dev/contact"
+      "url": "https://climbhero.vercel.app/#contact"
     },
     "license": {
       "name": "MIT",
@@ -16,7 +16,7 @@
   },
   "servers": [
     {
-      "url": "https://climbhero.pages.dev",
+      "url": "https://climbhero.vercel.app",
       "description": "Production server"
     },
     {
@@ -375,22 +375,22 @@
                         "ja": {
                           "type": "string",
                           "format": "uri",
-                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=ja"
+                          "example": "https://climbhero.vercel.app/blog/10-new-gym-partners?lang=ja"
                         },
                         "en": {
                           "type": "string",
                           "format": "uri",
-                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=en"
+                          "example": "https://climbhero.vercel.app/blog/10-new-gym-partners?lang=en"
                         },
                         "zh": {
                           "type": "string",
                           "format": "uri",
-                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=zh"
+                          "example": "https://climbhero.vercel.app/blog/10-new-gym-partners?lang=zh"
                         },
                         "ko": {
                           "type": "string",
                           "format": "uri",
-                          "example": "https://climbhero.pages.dev/blog/10-new-gym-partners?lang=ko"
+                          "example": "https://climbhero.vercel.app/blog/10-new-gym-partners?lang=ko"
                         }
                       }
                     },
@@ -594,7 +594,7 @@
             "type": "string",
             "format": "uri",
             "description": "記事URL",
-            "example": "https://climbhero.pages.dev/blog/10-new-gym-partners"
+            "example": "https://climbhero.vercel.app/blog/10-new-gym-partners"
           },
           "image_url": {
             "type": "string",

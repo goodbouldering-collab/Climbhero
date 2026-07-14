@@ -86,21 +86,21 @@ async function getUserFromSession(
   // New flow: JWT
   if (env?.JWT_SECRET && sessionToken.includes('.')) {
     const payload = await verifyJWT(sessionToken, env.JWT_SECRET)
-    if (payload?.sub) {
-      // Optional revocation check
-      if (payload.jti && env.SESSIONS) {
-        const sess = await kvGetSession(env.SESSIONS, payload.jti)
-        if (sess?.revoked) return null
-      }
-      const user = await db
-        .prepare('SELECT * FROM users WHERE id = ?')
-        .bind(payload.sub)
-        .first()
-      if (user) return user
+    if (!payload?.sub) return null
+
+    // Optional revocation check
+    if (payload.jti && env.SESSIONS) {
+      const sess = await kvGetSession(env.SESSIONS, payload.jti)
+      if (sess?.revoked) return null
     }
+    return await db
+      .prepare('SELECT * FROM users WHERE id = ?')
+      .bind(payload.sub)
+      .first()
   }
 
-  // Legacy fallback: session_token column
+  // Legacy fallback is only for the old opaque token format, never a failed JWT.
+  if (sessionToken.includes('.')) return null
   return await db
     .prepare('SELECT * FROM users WHERE session_token = ?')
     .bind(sessionToken)
@@ -1444,7 +1444,7 @@ app.post('/api/genspark/blog-url', async (c) => {
     }
 
     // Base URL (use environment variable or default)
-    const baseUrl = 'https://climbhero.pages.dev'
+    const baseUrl = 'https://climbhero.vercel.app'
 
     // Generate URLs for all 4 languages
     const urls = {
@@ -1824,14 +1824,14 @@ app.get('/', (c) => {
         
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
-        <meta property="og:url" content="https://climbhero.pages.dev/">
+        <meta property="og:url" content="https://climbhero.vercel.app/">
         <meta property="og:title" content="ClimbHero - 世界中のクライミング動画を発見し共有しよう">
         <meta property="og:description" content="世界中のクライミング動画を発見し共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
         <meta property="og:image" content="/android-chrome-512x512.png">
         
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
-        <meta property="twitter:url" content="https://climbhero.pages.dev/">
+        <meta property="twitter:url" content="https://climbhero.vercel.app/">
         <meta property="twitter:title" content="ClimbHero - 世界中のクライミング動画を発見し共有しよう">
         <meta property="twitter:description" content="世界中のクライミング動画を発見し共有しよう。YouTube、Instagram、TikTok、Vimeoの動画を一括管理。">
         <meta property="twitter:image" content="/android-chrome-512x512.png">
@@ -6241,7 +6241,7 @@ app.post('/api/subscription/checkout', async (c) => {
     }
     
     // Create Checkout Session
-    const baseUrl = c.req.header('origin') || 'https://project-02ceb497.pages.dev'
+    const baseUrl = getPublicOrigin(c)
     
     const checkoutParams = new URLSearchParams({
       'mode': 'subscription',
@@ -6687,9 +6687,12 @@ import {
   createOAuthState, consumeOAuthState, generatePKCE, upsertOAuthUser,
 } from './oauth'
 
+function getPublicOrigin(_c: any): string {
+  return 'https://climbhero.vercel.app'
+}
+
 function getOAuthRedirectUri(c: any, provider: string): string {
-  const url = new URL(c.req.url)
-  return `${url.origin}/api/auth/oauth/${provider}/callback`
+  return `${getPublicOrigin(c)}/api/auth/oauth/${provider}/callback`
 }
 
 // Google: initiate
@@ -6792,6 +6795,17 @@ app.get('/api/auth/oauth/providers', (c) => {
 // VIDEO CRAWLER API ENDPOINTS
 // (registered before the catch-all route below)
 // ===========================================
+
+// Every crawler endpoint changes or exposes operational settings, logs, or API keys.
+// Protect the complete route family before registering any individual handler.
+app.use('/api/admin/video-crawler/*', async (c, next) => {
+  const { env } = c
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(env.DB, sessionToken || '', env) as any
+  if (!user) return c.json({ error: 'Not authenticated' }, 401)
+  if (!user.is_admin) return c.json({ error: 'Admin access required' }, 403)
+  return next()
+})
 
 // List crawler sources
 app.get('/api/admin/video-crawler/sources', async (c) => {
