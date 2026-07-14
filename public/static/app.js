@@ -513,13 +513,7 @@ function handleNavigation() {
       return;
     }
   } else if (hash === 'admin') {
-    if (state.currentUser?.is_admin) {
-      state.currentView = 'admin';
-    } else {
-      showToast('管理者権限が必要です', 'error');
-      window.location.hash = 'home';
-      return;
-    }
+    state.currentView = 'admin';
   } else if (hash.startsWith('blog/')) {
     state.currentView = 'blog-detail';
     state.currentBlogId = hash.split('/')[1];
@@ -569,7 +563,7 @@ function renderApp() {
     root.innerHTML = renderSettingsPage();
   } else if (state.currentView === 'admin') {
     root.innerHTML = renderAdminPage();
-    loadAdminData();
+    if (state.currentUser?.is_admin) loadAdminData();
   } else if (state.currentView === 'mypage') {
     root.innerHTML = renderMyPage();
     // Load subscription management after page renders
@@ -4394,10 +4388,48 @@ async function cancelSubscription(immediate) {
 }
 
 // ============ Admin Page (Simplified) ============
+function renderAdminLoginPage() {
+  return `
+    <main class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex items-center justify-center px-4 py-12">
+      <section class="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 shadow-2xl">
+        <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 text-white"><i class="fas fa-lock"></i></div>
+        <h1 class="text-2xl font-bold text-slate-900">管理者ログイン</h1>
+        <p class="mt-2 text-sm text-slate-500">管理パスワードだけでログインできます。</p>
+        <form class="mt-6 space-y-4" onsubmit="handleAdminLogin(event)">
+          <input id="admin-login-password" type="password" autocomplete="current-password" maxlength="512" required autofocus placeholder="管理パスワード" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-purple-500" />
+          <button id="admin-login-button" type="submit" class="w-full rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 font-bold text-white transition hover:opacity-90">ログイン</button>
+          <p id="admin-login-error" class="min-h-5 text-sm text-red-600" role="alert"></p>
+        </form>
+        <button type="button" onclick="navigateTo('home')" class="mt-3 w-full text-sm text-slate-500 hover:text-slate-800">サイトへ戻る</button>
+      </section>
+    </main>`;
+}
+
+async function handleAdminLogin(event) {
+  event.preventDefault();
+  const passwordInput = document.getElementById('admin-login-password');
+  const button = document.getElementById('admin-login-button');
+  const errorElement = document.getElementById('admin-login-error');
+  button.disabled = true;
+  button.textContent = '確認中…';
+  errorElement.textContent = '';
+  try {
+    const response = await axios.post('/api/auth/admin-login', { password: passwordInput.value });
+    if (!response.data?.user?.is_admin) throw new Error('管理者ログインに失敗しました。');
+    state.currentUser = response.data.user;
+    passwordInput.value = '';
+    renderApp();
+  } catch (error) {
+    errorElement.textContent = '管理パスワードが正しくありません。';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'ログイン';
+  }
+}
+
 function renderAdminPage() {
   if (!state.currentUser || !state.currentUser.is_admin) {
-    navigateTo('home');
-    return '';
+    return renderAdminLoginPage();
   }
 
   return `
@@ -5617,7 +5649,7 @@ async function deleteAnnouncement(announcementId) {
 }
 
 // Call load functions when admin page is rendered
-if (window.location.hash === '#admin') {
+if (window.location.hash === '#admin' && state.currentUser?.is_admin) {
   setTimeout(() => {
     loadAdminVideos();
     loadAdminAnnouncements();
@@ -5769,7 +5801,7 @@ async function deleteEmailCampaign(campaignId) {
 }
 
 // Call load functions when admin page is rendered
-if (window.location.hash === '#admin') {
+if (window.location.hash === '#admin' && state.currentUser?.is_admin) {
   setTimeout(() => {
     loadAdminVideos();
     loadAdminAnnouncements();

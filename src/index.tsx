@@ -27,6 +27,7 @@ type Bindings = {
   X_CLIENT_SECRET?: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
+  ADMIN_BOOTSTRAP_PASSWORD?: string;
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -113,7 +114,8 @@ async function getUserFromSession(
 async function issueSession(
   c: any,
   env: Bindings,
-  user: { id: number; email: string; is_admin?: number; membership_type?: string }
+  user: { id: number; email: string; is_admin?: number; membership_type?: string },
+  maxAge = COOKIE_MAX_AGE
 ): Promise<string> {
   const jti = crypto.randomUUID()
   const jwt = await issueJWT(user, env.JWT_SECRET, jti)
@@ -138,12 +140,21 @@ async function issueSession(
   setCookie(c, SESSION_COOKIE, jwt, {
     httpOnly: true,
     secure: true,
-    maxAge: COOKIE_MAX_AGE,
+    maxAge,
     sameSite: 'Lax',
     path: '/',
   })
   return jwt
 }
+
+// Every management API requires a valid administrator session. Individual
+// handlers keep their own checks as defense in depth.
+app.use('/api/admin/*', async (c, next) => {
+  const sessionToken = getCookie(c, SESSION_COOKIE)
+  const user = await getUserFromSession(c.env.DB, sessionToken || '', c.env) as any
+  if (!user || !user.is_admin) return c.json({ error: 'Admin authentication required' }, 401)
+  await next()
+})
 
 // ============ Authentication API ============
 
@@ -217,50 +228,6 @@ app.post('/api/auth/login', async (c) => {
   }
 
   try {
-    // Admin bootstrap: only works when ADMIN_BOOTSTRAP_PASSWORD env var is set.
-    // Use case: first-time setup. After creating the real admin user and changing the password,
-    // unset ADMIN_BOOTSTRAP_PASSWORD in Cloudflare Pages env to fully disable this path.
-    const bootstrapPassword = (env as any).ADMIN_BOOTSTRAP_PASSWORD as string | undefined
-    if (
-      bootstrapPassword &&
-      bootstrapPassword.length >= 16 &&
-      email === 'admin@climbhero.com' &&
-      password === bootstrapPassword
-    ) {
-      const adminEmail = 'admin@climbhero.com'
-
-      let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(adminEmail).first() as any
-
-      if (!adminUser) {
-        const passwordHash = await hashPassword(bootstrapPassword)
-
-        const result = await env.DB.prepare(
-          'INSERT INTO users (email, username, password_hash, membership_type, is_admin) VALUES (?, ?, ?, ?, ?)'
-        ).bind(adminEmail, 'Administrator', passwordHash, 'premium', 1).run()
-
-        adminUser = {
-          id: result.meta.last_row_id,
-          email: adminEmail,
-          username: 'Administrator',
-          membership_type: 'premium',
-          is_admin: 1,
-        }
-      }
-
-      await issueSession(c, env, adminUser)
-      return c.json({
-        success: true,
-        user: {
-          id: adminUser.id,
-          email: adminUser.email,
-          username: adminUser.username,
-          membership_type: adminUser.membership_type,
-          is_admin: true,
-        },
-        warning: 'Logged in via bootstrap. Change the password and unset ADMIN_BOOTSTRAP_PASSWORD now.',
-      })
-    }
-
     // Regular user authentication
     const user = await env.DB.prepare(
       'SELECT * FROM users WHERE email = ?'
@@ -268,6 +235,10 @@ app.post('/api/auth/login', async (c) => {
 
     if (!user) {
       return c.json({ error: 'Invalid credentials' }, 401)
+    }
+
+    if (user.is_admin) {
+      return c.json({ error: 'Use the administrator login page' }, 403)
     }
 
     const valid = await authVerifyPassword(password, user.password_hash)
@@ -301,6 +272,60 @@ app.post('/api/auth/login', async (c) => {
   }
 })
 
+// Administrator login: the browser sends only the management password. The
+// fixed account identifier never appears in the UI or request payload.
+app.post('/api/auth/admin-login', async (c) => {
+  const { env } = c
+  const body = await c.req.json().catch(() => ({})) as any
+  const password = typeof body.password === 'string' ? body.password : ''
+  if (!password || password.length > 512) return c.json({ error: 'Invalid credentials' }, 401)
+
+  try {
+    const adminEmail = 'admin@climbhero.com'
+    const bootstrapPassword = env.ADMIN_BOOTSTRAP_PASSWORD
+    let adminUser = await env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(adminEmail).first() as any
+
+    if (!adminUser && bootstrapPassword && bootstrapPassword.length >= 16 && password === bootstrapPassword) {
+      const passwordHash = await hashPassword(bootstrapPassword)
+      const result = await env.DB.prepare(
+        'INSERT INTO users (email, username, password_hash, membership_type, is_admin) VALUES (?, ?, ?, ?, ?)'
+      ).bind(adminEmail, 'Administrator', passwordHash, 'premium', 1).run()
+      adminUser = {
+        id: result.meta.last_row_id,
+        email: adminEmail,
+        username: 'Administrator',
+        membership_type: 'premium',
+        is_admin: 1,
+        password_hash: passwordHash,
+      }
+    }
+
+    if (!adminUser || !adminUser.is_admin) return c.json({ error: 'Invalid credentials' }, 401)
+    const validPassword = await authVerifyPassword(password, adminUser.password_hash)
+    const validBootstrap = Boolean(bootstrapPassword && bootstrapPassword.length >= 16 && password === bootstrapPassword)
+    if (!validPassword && !validBootstrap) return c.json({ error: 'Invalid credentials' }, 401)
+
+    if (validPassword && isLegacyHash(adminUser.password_hash)) {
+      const newHash = await hashPassword(password)
+      await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(newHash, adminUser.id).run()
+    }
+
+    await issueSession(c, env, adminUser, 60 * 60 * 8)
+    return c.json({
+      success: true,
+      user: {
+        id: adminUser.id,
+        username: adminUser.username,
+        membership_type: adminUser.membership_type,
+        is_admin: true,
+      },
+    })
+  } catch (error: any) {
+    console.error('Admin login error:', error.message)
+    return c.json({ error: 'Login failed' }, 500)
+  }
+})
+
 // Logout
 app.post('/api/auth/logout', async (c) => {
   const { env } = c
@@ -321,6 +346,7 @@ app.post('/api/auth/logout', async (c) => {
   }
 
   setCookie(c, SESSION_COOKIE, '', { maxAge: 0, path: '/' })
+  setCookie(c, 'admin_session', '', { maxAge: 0, path: '/' })
   return c.json({ success: true })
 })
 
@@ -328,19 +354,6 @@ app.post('/api/auth/logout', async (c) => {
 app.get('/api/auth/me', async (c) => {
   const { env } = c
   const sessionToken = getCookie(c, 'session_token')
-  const adminSession = getCookie(c, 'admin_session')
-  
-  // Check for admin session
-  if (adminSession === 'true' && sessionToken) {
-    return c.json({
-      id: 0,
-      email: 'admin',
-      username: 'Administrator',
-      membership_type: 'admin',
-      is_admin: true
-    })
-  }
-  
   const user = await getUserFromSession(env.DB, sessionToken || '', env)
   if (!user) {
     return c.json({ error: 'Not authenticated' }, 401)

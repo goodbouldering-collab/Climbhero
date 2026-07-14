@@ -82,6 +82,8 @@ https://climbhero.vercel.app/static/admin/content-studio/reel.html
 
 Cloudflare側の環境変数・secretには、必要に応じて `JWT_SECRET`、`GEMINI_API_KEY`、`YOUTUBE_API_KEY`、`VIMEO_ACCESS_TOKEN`、OAuth、Turnstile、Stripe、メール関連を設定する。値そのものはリポジトリへ保存しない。
 
+管理画面はパスワードだけでログインする。画面は固定管理者メールを送信せず、Cloudflare backendがD1の管理者アカウントを照合して8時間のJWTセッションを発行する。`/api/admin/*` は必ず管理者セッションで保護する。
+
 完全にCloudflareを廃止する場合は、D1/KV/R2/Cron/Workers AI/AuthをSupabaseまたはVercel互換基盤へ移す別工程として扱う。今回の公開ホスト移行だけでデータ基盤を削除しない。
 
 ## 関連文書

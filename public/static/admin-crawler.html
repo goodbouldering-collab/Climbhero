@@ -30,9 +30,21 @@
     .toggle.on { background: #6366f1; }
     .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: white; border-radius: 50%; transition: 0.2s; }
     .toggle.on::after { left: 20px; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body class="min-h-screen">
+  <section id="admin-login" class="min-h-screen flex items-center justify-center p-6">
+    <form id="admin-login-form" class="card w-full max-w-md" autocomplete="on">
+      <div class="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center mb-5"><i class="fas fa-lock text-white"></i></div>
+      <h1 class="text-2xl font-bold text-white">管理者ログイン</h1>
+      <p class="mt-2 mb-5 text-sm text-slate-400">管理パスワードだけでログインできます。</p>
+      <input id="admin-password" type="password" autocomplete="current-password" maxlength="512" required autofocus placeholder="管理パスワード" class="w-full" />
+      <button id="admin-login-button" type="submit" class="btn-primary w-full mt-4">ログイン</button>
+      <p id="admin-login-error" class="min-h-5 mt-3 text-sm text-red-400" role="alert"></p>
+    </form>
+  </section>
+  <div id="crawler-app" hidden>
   <div class="max-w-7xl mx-auto p-6">
     <header class="mb-6 flex items-center justify-between">
       <div>
@@ -43,6 +55,7 @@
         <a href="/static/admin/content-studio/blog.html" class="btn-primary text-sm"><i class="fas fa-pen-nib mr-1"></i>ブログ Studio</a>
         <a href="/static/admin/content-studio/reel.html" class="btn-secondary text-sm"><i class="fas fa-film mr-1"></i>リール Studio</a>
         <a href="/" class="text-slate-400 hover:text-white text-sm"><i class="fas fa-arrow-left mr-1"></i>サイトに戻る</a>
+        <button type="button" onclick="adminLogout()" class="btn-secondary"><i class="fas fa-sign-out-alt mr-1"></i>ログアウト</button>
       </nav>
     </header>
 
@@ -171,6 +184,7 @@
     </section>
   </div>
 
+  </div>
   <script>
     const $ = (id) => document.getElementById(id);
     const platBadge = (p) => `<span class="badge badge-${p === 'youtube' ? 'yt' : p}">${p}</span>`;
@@ -412,21 +426,56 @@
       }[c]));
     }
 
-    async function startAdmin() {
-      const authCheck = await fetch('/api/admin/video-crawler/settings');
-      if (authCheck.status === 401 || authCheck.status === 403) {
-        window.location.replace('/?login=1');
-        return;
+    let statsTimer = null;
+
+    async function checkAdminSession() {
+      try {
+        const response = await fetch('/api/auth/me', { cache: 'no-store' });
+        if (!response.ok) throw new Error('unauthenticated');
+        const user = await response.json();
+        if (!user.is_admin) throw new Error('forbidden');
+        $('admin-login').hidden = true;
+        $('crawler-app').hidden = false;
+        await loadAll();
+        if (!statsTimer) statsTimer = setInterval(loadStats, 30000);
+      } catch (_error) {
+        $('crawler-app').hidden = true;
+        $('admin-login').hidden = false;
+        $('admin-password').focus();
       }
-      if (!authCheck.ok) {
-        document.body.innerHTML = '<main class="min-h-screen flex items-center justify-center p-6"><div class="card max-w-lg text-center"><h1 class="text-xl font-bold mb-2">管理画面を読み込めません</h1><p class="text-slate-400">APIの状態を確認してから再読み込みしてください。</p></div></main>';
-        return;
-      }
-      await loadAll();
-      setInterval(loadStats, 30000);
     }
 
-    startAdmin();
+    async function handleAdminLogin(event) {
+      event.preventDefault();
+      const button = $('admin-login-button');
+      const error = $('admin-login-error');
+      button.disabled = true;
+      button.textContent = '確認中…';
+      error.textContent = '';
+      try {
+        const response = await fetch('/api/auth/admin-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: $('admin-password').value }),
+        });
+        if (!response.ok) throw new Error('管理パスワードが正しくありません。');
+        $('admin-password').value = '';
+        await checkAdminSession();
+      } catch (loginError) {
+        error.textContent = loginError.message || 'ログインできませんでした。';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'ログイン';
+      }
+    }
+
+    async function adminLogout() {
+      await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+      location.reload();
+    }
+
+    $('admin-login-form').addEventListener('submit', handleAdminLogin);
+    checkAdminSession();
   </script>
 </body>
 </html>
