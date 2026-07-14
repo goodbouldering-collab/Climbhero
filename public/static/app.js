@@ -709,9 +709,7 @@ function renderHomePage() {
                 </div>
                 <button onclick="toggleAutoPlay()" id="autoplay-toggle-btn" class="hero-player-pause">
                   <i id="autoplay-icon" class="fas ${state.autoPlay.isPlaying ? 'fa-pause' : 'fa-play'}"></i>
-                  <span id="autoplay-text" class="hidden md:inline">${state.autoPlay.isPlaying
-                    ? (i18n.getCurrentLanguage() === 'ja' ? '停止' : i18n.getCurrentLanguage() === 'en' ? 'Pause' : i18n.getCurrentLanguage() === 'zh' ? '暂停' : '일시정지')
-                    : (i18n.getCurrentLanguage() === 'ja' ? '再生' : i18n.getCurrentLanguage() === 'en' ? 'Play' : i18n.getCurrentLanguage() === 'zh' ? '播放' : '재생')}</span>
+                  <span id="autoplay-text" class="hidden md:inline">${getAutoPlayToggleLabel(state.autoPlay.isPlaying)}</span>
                 </button>
               </div>
 
@@ -10274,6 +10272,17 @@ function startAutoPlayTimer() {
   }, 100);
 }
 
+function getAutoPlayToggleLabel(isPlaying) {
+  const labels = {
+    ja: { playing: '停止', paused: '再生' },
+    en: { playing: 'Pause', paused: 'Play' },
+    zh: { playing: '暂停', paused: '播放' },
+    ko: { playing: '일시정지', paused: '재생' }
+  };
+  const localeLabels = labels[i18n.getCurrentLanguage()] || labels.ja;
+  return isPlaying ? localeLabels.playing : localeLabels.paused;
+}
+
 // Toggle auto-play on/off
 function toggleAutoPlay() {
   state.autoPlay.isPlaying = !state.autoPlay.isPlaying;
@@ -10283,7 +10292,7 @@ function toggleAutoPlay() {
   
   if (state.autoPlay.isPlaying) {
     if (iconEl) iconEl.className = 'fas fa-pause mr-1 md:mr-2';
-    if (textEl) textEl.textContent = '停止';
+    if (textEl) textEl.textContent = getAutoPlayToggleLabel(true);
     if (state.autoPlay.playerType === 'youtube') {
       state.autoPlay.player?.playVideo?.();
     } else if (state.autoPlay.playerType === 'vimeo') {
@@ -10298,7 +10307,7 @@ function toggleAutoPlay() {
     console.log('▶️ Auto-play resumed');
   } else {
     if (iconEl) iconEl.className = 'fas fa-play mr-1 md:mr-2';
-    if (textEl) textEl.textContent = '再生';
+    if (textEl) textEl.textContent = getAutoPlayToggleLabel(false);
     if (state.autoPlay.timerStartedAt !== null) {
       state.autoPlay.timerElapsed = Math.min(
         state.autoPlay.videoDuration,
