@@ -301,8 +301,13 @@ app.post('/api/auth/admin-login', async (c) => {
     }
 
     if (!adminUser || !adminUser.is_admin) return c.json({ error: 'Invalid credentials' }, 401)
-    const validPassword = await authVerifyPassword(password, adminUser.password_hash)
     const validBootstrap = Boolean(bootstrapPassword && bootstrapPassword.length >= 16 && password === bootstrapPassword)
+    let validPassword = false
+    try {
+      validPassword = await authVerifyPassword(password, adminUser.password_hash)
+    } catch {
+      validPassword = false
+    }
     if (!validPassword && !validBootstrap) return c.json({ error: 'Invalid credentials' }, 401)
 
     if (validPassword && isLegacyHash(adminUser.password_hash)) {
